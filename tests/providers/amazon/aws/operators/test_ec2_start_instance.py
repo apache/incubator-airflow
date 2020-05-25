@@ -26,6 +26,10 @@ from airflow.providers.amazon.aws.operators.ec2_start_instance import EC2StartIn
 
 
 class TestEC2Operator(unittest.TestCase):
+    # Describe response
+    INSTANCES = 'Instances'
+    INSTANCE_ID = 'InstanceId'
+
     def test_init(self):
         ec2_operator = EC2StartInstanceOperator(
             task_id="task_test",
@@ -44,11 +48,11 @@ class TestEC2Operator(unittest.TestCase):
     def test_start_instance(self):
         # create instance
         ec2_hook = EC2Hook()
-        instances = ec2_hook.conn.create_instances(
+        instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[0].instance_id
+        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
 
         # start instance
         start_test = EC2StartInstanceOperator(
@@ -57,4 +61,7 @@ class TestEC2Operator(unittest.TestCase):
         )
         start_test.execute(None)
         # assert instance state is running
-        assert ec2_hook.get_instance_state(instance_id=instance_id) == "running"
+        self.assertEqual(
+            ec2_hook.get_instance_state(instance_id=instance_id),
+            "running"
+        )

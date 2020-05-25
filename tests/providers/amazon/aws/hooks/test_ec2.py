@@ -25,6 +25,12 @@ from airflow.providers.amazon.aws.hooks.ec2 import EC2Hook
 
 
 class TestEC2Hook(unittest.TestCase):
+    # Describe response
+    INSTANCES = 'Instances'
+    STATE = 'State'
+    NAME = 'Name'
+    INSTANCE_ID = 'InstanceId'
+
     def test_init(self):
         ec2_hook = EC2Hook(
             aws_conn_id="aws_conn_test",
@@ -36,31 +42,36 @@ class TestEC2Hook(unittest.TestCase):
     @mock_ec2
     def test_get_conn_returns_boto3_resource(self):
         ec2_hook = EC2Hook()
-        instances = list(ec2_hook.conn.instances.all())
-        assert instances is not None
+        instances = list(ec2_hook.get_instances())
+        self.assertIsNotNone(instances)
 
     @mock_ec2
     def test_get_instance(self):
         ec2_hook = EC2Hook()
-        created_instances = ec2_hook.conn.create_instances(
+        created_instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        created_instance_id = created_instances[0].instance_id
+        created_instance_id = created_instances[self.INSTANCES][0][self.INSTANCE_ID]
         # test get_instance method
-        existing_instance = ec2_hook.get_instance(instance_id=created_instance_id)
-        assert created_instance_id == existing_instance.instance_id
+        existing_instance = ec2_hook.get_instances(
+            instance_ids=[created_instance_id]
+        )[0]
+        self.assertEqual(created_instance_id, existing_instance[self.INSTANCE_ID])
 
     @mock_ec2
     def test_get_instance_state(self):
         ec2_hook = EC2Hook()
-        created_instances = ec2_hook.conn.create_instances(
+        created_instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        created_instance_id = created_instances[0].instance_id
-        all_instances = list(ec2_hook.conn.instances.all())
-        created_instance_state = all_instances[0].state["Name"]
+
+        created_instance_id = created_instances[self.INSTANCES][0][self.INSTANCE_ID]
+        all_instances = ec2_hook.get_instances()
+        created_instance_state = all_instances[0][self.STATE][self.NAME]
         # test get_instance_state method
-        existing_instance_state = ec2_hook.get_instance_state(instance_id=created_instance_id)
-        assert created_instance_state == existing_instance_state
+        existing_instance_state = ec2_hook.get_instance_state(
+            instance_id=created_instance_id
+        )
+        self.assertEqual(created_instance_state, existing_instance_state)

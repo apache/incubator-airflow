@@ -27,6 +27,10 @@ from airflow.providers.amazon.aws.sensors.ec2_instance_state import EC2InstanceS
 
 
 class TestEC2InstanceStateSensor(unittest.TestCase):
+    # Describe response
+    INSTANCES = 'Instances'
+    INSTANCE_ID = 'InstanceId'
+
     def test_init(self):
         ec2_operator = EC2InstanceStateSensor(
             task_id="task_test",
@@ -56,13 +60,13 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
     def test_running(self):
         # create instance
         ec2_hook = EC2Hook()
-        instances = ec2_hook.conn.create_instances(
+        instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[0].instance_id
+        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
         # stop instance
-        ec2_hook.get_instance(instance_id=instance_id).stop()
+        ec2_hook.stop_instances(instance_ids=[instance_id])
 
         # start sensor, waits until ec2 instance state became running
         start_sensor = EC2InstanceStateSensor(
@@ -73,7 +77,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
         # assert instance state is not running
         assert not start_sensor.poke(None)
         # start instance
-        ec2_hook.get_instance(instance_id=instance_id).start()
+        ec2_hook.start_instances(instance_ids=[instance_id])
         # assert instance state is running
         assert start_sensor.poke(None)
 
@@ -81,13 +85,13 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
     def test_stopped(self):
         # create instance
         ec2_hook = EC2Hook()
-        instances = ec2_hook.conn.create_instances(
+        instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[0].instance_id
+        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
         # start instance
-        ec2_hook.get_instance(instance_id=instance_id).start()
+        ec2_hook.start_instances(instance_ids=[instance_id])
 
         # stop sensor, waits until ec2 instance state became stopped
         stop_sensor = EC2InstanceStateSensor(
@@ -98,7 +102,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
         # assert instance state is not stopped
         assert not stop_sensor.poke(None)
         # stop instance
-        ec2_hook.get_instance(instance_id=instance_id).stop()
+        ec2_hook.stop_instances(instance_ids=[instance_id])
         # assert instance state is stopped
         assert stop_sensor.poke(None)
 
@@ -106,13 +110,13 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
     def test_terminated(self):
         # create instance
         ec2_hook = EC2Hook()
-        instances = ec2_hook.conn.create_instances(
+        instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[0].instance_id
+        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
         # start instance
-        ec2_hook.get_instance(instance_id=instance_id).start()
+        ec2_hook.start_instances(instance_ids=[instance_id])
 
         # stop sensor, waits until ec2 instance state became terminated
         stop_sensor = EC2InstanceStateSensor(
@@ -121,8 +125,8 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
             instance_id=instance_id,
         )
         # assert instance state is not terminated
-        assert not stop_sensor.poke(None)
-        # stop instance
-        ec2_hook.get_instance(instance_id=instance_id).terminate()
+        self.assertFalse(stop_sensor.poke(None))
+        # terminate instance
+        ec2_hook.terminate_instances(instance_ids=[instance_id])
         # assert instance state is terminated
         assert stop_sensor.poke(None)
