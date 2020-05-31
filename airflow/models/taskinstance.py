@@ -515,13 +515,6 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
         return cmd
 
     @property
-    def log_filepath(self):
-        """Filepath for TaskInstance"""
-        iso = self.execution_date.isoformat()
-        the_log = os.path.expanduser(conf.get('logging', 'BASE_LOG_FOLDER'))
-        return f"{the_log}/{self.dag_id}/{self.task_id}/{iso}.log"
-
-    @property
     def log_url(self):
         """Log URL for TaskInstance"""
         iso = quote(self.execution_date.isoformat())
@@ -1811,7 +1804,6 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
             'Exception:<br>{{exception_html}}<br>'
             'Log: <a href="{{ti.log_url}}">Link</a><br>'
             'Host: {{ti.hostname}}<br>'
-            'Log file: {{ti.log_filepath}}<br>'
             'Mark success: <a href="{{ti.mark_success_url}}">Link</a><br>'
         )
 
@@ -1820,7 +1812,6 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
             'Exception:<br>Failed attempt to attach error logs<br>'
             'Log: <a href="{{ti.log_url}}">Link</a><br>'
             'Host: {{ti.hostname}}<br>'
-            'Log file: {{ti.log_filepath}}<br>'
             'Mark success: <a href="{{ti.mark_success_url}}">Link</a><br>'
         )
 
