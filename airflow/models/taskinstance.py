@@ -51,6 +51,7 @@ from airflow.models.xcom import XCOM_RETURN_KEY, XCom
 from airflow.sentry import Sentry
 from airflow.settings import STORE_SERIALIZED_DAGS
 from airflow.stats import Stats
+from airflow.task.context.current import set_current_context
 from airflow.ti_deps.dep_context import DepContext
 from airflow.ti_deps.dependencies_deps import REQUEUEABLE_DEPS, RUNNING_DEPS
 from airflow.utils import timezone
@@ -936,6 +937,23 @@ class TaskInstance(Base, LoggingMixin):
                 return date.strftime('%Y%m%dT%H%M%S')
         return ''
 
+    @staticmethod
+    def _execute_task(task, context):
+        """
+        Execute task. If a timeout is specified for the task, make it fail
+        if it goes beyond.
+        """
+        if task.execution_timeout:
+            try:
+                with timeout(int(task.execution_timeout.total_seconds())):
+                    result = task.execute(context=context)
+            except AirflowTaskTimeout:
+                task.on_kill()
+                raise
+        else:
+            result = task.execute(context=context)
+        return result
+
     @provide_session
     @Sentry.enrich_errors
     def _run_raw_task(
@@ -1018,18 +1036,8 @@ class TaskInstance(Base, LoggingMixin):
                     self.log.error("Failed when executing execute callback")
                     self.log.exception(e3)
 
-                # If a timeout is specified for the task, make it fail
-                # if it goes beyond
-                if task_copy.execution_timeout:
-                    try:
-                        with timeout(int(
-                                task_copy.execution_timeout.total_seconds())):
-                            result = task_copy.execute(context=context)
-                    except AirflowTaskTimeout:
-                        task_copy.on_kill()
-                        raise
-                else:
-                    result = task_copy.execute(context=context)
+                with set_current_context(context, task_copy):
+                    result = self._execute_task(task_copy, context)
 
                 # If the task returns a result, push an XCom containing it
                 if task_copy.do_xcom_push and result is not None:

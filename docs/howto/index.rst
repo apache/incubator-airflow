@@ -47,3 +47,4 @@ configuring an Airflow environment.
     tracking-user-activity
     email-config
     use-alternative-secrets-backend
+    use-additional-execute-contextmanager

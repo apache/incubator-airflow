@@ -366,6 +366,17 @@
       type: string
       example: "path.to.CustomXCom"
       default: "airflow.models.xcom.BaseXCom"
+    - name: additional_execute_contextmanager
+      description: |
+        Custom user function that returns a context manager. Syntax is "package.method".
+        Context is entered when operator starts executing task. ``__enter__()`` will be called
+        before the operator's execute method, and ``__exit__()`` shortly after.
+        Function's signature should accept two positional parameters - task instance
+        and execution context
+      version_added: 2.0.0
+      type: string
+      example: my.path.my_context_manager
+      default: ""
 
 - name: logging
   description: ~
