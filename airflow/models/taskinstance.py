@@ -383,13 +383,6 @@ class TaskInstance(Base, LoggingMixin):
         return cmd
 
     @property
-    def log_filepath(self):
-        iso = self.execution_date.isoformat()
-        log = os.path.expanduser(conf.get('logging', 'BASE_LOG_FOLDER'))
-        return ("{log}/{dag_id}/{task_id}/{iso}.log".format(
-            log=log, dag_id=self.dag_id, task_id=self.task_id, iso=iso))
-
-    @property
     def log_url(self):
         iso = quote(self.execution_date.isoformat())
         base_url = conf.get('webserver', 'BASE_URL')
@@ -1480,7 +1473,6 @@ class TaskInstance(Base, LoggingMixin):
             'Exception:<br>{{exception_html}}<br>'
             'Log: <a href="{{ti.log_url}}">Link</a><br>'
             'Host: {{ti.hostname}}<br>'
-            'Log file: {{ti.log_filepath}}<br>'
             'Mark success: <a href="{{ti.mark_success_url}}">Link</a><br>'
         )
 
@@ -1502,7 +1494,6 @@ class TaskInstance(Base, LoggingMixin):
                 'Exception:<br>Failed attempt to attach error logs<br>'
                 'Log: <a href="{{ti.log_url}}">Link</a><br>'
                 'Host: {{ti.hostname}}<br>'
-                'Log file: {{ti.log_filepath}}<br>'
                 'Mark success: <a href="{{ti.mark_success_url}}">Link</a><br>'
             )
             html_content_err = render('html_content_template', default_html_content_err)
