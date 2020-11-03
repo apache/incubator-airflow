@@ -18,7 +18,6 @@
 
 import unittest
 from datetime import timedelta
-from time import sleep
 from unittest.mock import Mock, patch
 
 import pytest
@@ -140,19 +139,7 @@ class TestBaseSensor(unittest.TestCase):
         )
         dr = self._make_dag_run()
 
-        # first run fails and task instance is marked up to retry
-        with pytest.raises(AirflowSensorTimeout):
-            self._run(sensor)
-        tis = dr.get_task_instances()
-        assert len(tis) == 2
-        for ti in tis:
-            if ti.task_id == SENSOR_OP:
-                assert ti.state == State.UP_FOR_RETRY
-            if ti.task_id == DUMMY_OP:
-                assert ti.state == State.NONE
-
-        sleep(0.001)
-        # after retry DAG run is skipped
+        # first run times out and task instance is skipped
         self._run(sensor)
         tis = dr.get_task_instances()
         assert len(tis) == 2
@@ -310,7 +297,7 @@ class TestBaseSensor(unittest.TestCase):
             if ti.task_id == DUMMY_OP:
                 assert ti.state == State.NONE
 
-        # second poke fails and task instance is marked up to retry
+        # second poke timesout and task instance is failed
         date2 = date1 + timedelta(seconds=sensor.poke_interval)
         with freeze_time(date2):
             with pytest.raises(AirflowSensorTimeout):
@@ -319,7 +306,7 @@ class TestBaseSensor(unittest.TestCase):
         assert len(tis) == 2
         for ti in tis:
             if ti.task_id == SENSOR_OP:
-                assert ti.state == State.UP_FOR_RETRY
+                assert ti.state == State.FAILED
             if ti.task_id == DUMMY_OP:
                 assert ti.state == State.NONE
 
