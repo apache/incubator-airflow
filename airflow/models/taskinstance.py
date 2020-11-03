@@ -46,9 +46,8 @@ from airflow.exceptions import (
     AirflowException,
     AirflowFailException,
     AirflowRescheduleException,
-    AirflowSkipException,
-    AirflowSmartSensorException,
-    AirflowTaskTimeout,
+    AirflowSensorTimeout,
+    AirflowSkipException, AirflowSmartSensorException, AirflowTaskTimeout,
 )
 from airflow.models.base import COLLATION_ARGS, ID_LEN, Base
 from airflow.models.log import Log
@@ -1159,7 +1158,7 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
             self.refresh_from_db()
             self._handle_reschedule(actual_start_date, reschedule_exception, test_mode)
             return
-        except AirflowFailException as e:
+        except (AirflowFailException, AirflowSensorTimeout) as e:
             self.refresh_from_db()
             self.handle_failure(e, test_mode, force_fail=True, error_file=error_file)
             raise
