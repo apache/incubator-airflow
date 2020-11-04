@@ -32,7 +32,12 @@ from parameterized import param, parameterized
 from sqlalchemy.orm.session import Session
 
 from airflow import models, settings
-from airflow.exceptions import AirflowException, AirflowFailException, AirflowSensorTimeout, AirflowSkipException
+from airflow.exceptions import (
+    AirflowException,
+    AirflowFailException,
+    AirflowSensorTimeout,
+    AirflowSkipException,
+)
 from airflow.jobs.scheduler_job import SchedulerJob
 from airflow.models import (
     DAG,

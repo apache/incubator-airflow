@@ -47,7 +47,9 @@ from airflow.exceptions import (
     AirflowFailException,
     AirflowRescheduleException,
     AirflowSensorTimeout,
-    AirflowSkipException, AirflowSmartSensorException, AirflowTaskTimeout,
+    AirflowSkipException,
+    AirflowSmartSensorException,
+    AirflowTaskTimeout,
 )
 from airflow.models.base import COLLATION_ARGS, ID_LEN, Base
 from airflow.models.log import Log
