@@ -2142,7 +2142,6 @@ def test_sensor_timeout(mode, retries):
     """
     Test that AirflowSensorTimeout does not cause sensor to retry.
     """
-    from unittest import mock
 
     def timeout():
         raise AirflowSensorTimeout

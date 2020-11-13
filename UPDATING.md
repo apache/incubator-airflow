@@ -273,6 +273,7 @@ See https://airflow.apache.org/docs/apache-airflow/stable/howto/custom-operator.
 ### Adding Operators and Sensors via plugins is no longer supported
 
 ### If a sensor times out, it will not retry
+
 Previously, a sensor is retried when it times out until the number of ``retries`` are exhausted. So the effective timeout of a sensor is ``timeout * (retries + 1)``. This behaviour is now changed. A sensor will immediately fail without retrying if ``timeout`` is reached. If it's desirable to let the sensor continue running for longer time, set a larger ``timeout`` instead.
 
 ### The default value for `[core] enable_xcom_pickling` has been changed to `False`
