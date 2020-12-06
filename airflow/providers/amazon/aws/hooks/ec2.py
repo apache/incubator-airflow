@@ -33,19 +33,10 @@ class EC2Hook(AwsBaseHook):
         :class:`~airflow.providers.amazon.aws.hooks.base_aws.AwsBaseHook`
     """
 
-    # Describe response
-    RESERVATIONS = 'Reservations'
-    INSTANCES = 'Instances'
-    STATE = 'State'
-    NAME = 'Name'
-    INSTANCE_ID = 'InstanceId'
-
-    def __init__(self,
-                 *args,
-                 **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(client_type="ec2", *args, **kwargs)
 
-    def stop_instances(self, instance_ids):
+    def stop_instances(self, instance_ids: list) -> dict:
         """
         Stop instances with given ids
 
@@ -56,7 +47,7 @@ class EC2Hook(AwsBaseHook):
 
         return self.conn.stop_instances(InstanceIds=instance_ids)
 
-    def start_instances(self, instance_ids):
+    def start_instances(self, instance_ids: list) -> dict:
         """
         Start instances with given ids
 
@@ -67,7 +58,7 @@ class EC2Hook(AwsBaseHook):
 
         return self.conn.start_instances(InstanceIds=instance_ids)
 
-    def terminate_instances(self, instance_ids):
+    def terminate_instances(self, instance_ids: list) -> dict:
         """
         Terminate instances with given ids
 
@@ -78,7 +69,7 @@ class EC2Hook(AwsBaseHook):
 
         return self.conn.terminate_instances(InstanceIds=instance_ids)
 
-    def describe_instances(self, filters=None, instance_ids=None):
+    def describe_instances(self, filters: list = None, instance_ids: list = None):
         """
         Describe EC2 instances, optionally applying filters and selective instance ids
 
@@ -94,7 +85,7 @@ class EC2Hook(AwsBaseHook):
 
         return self.conn.describe_instances(Filters=filters, InstanceIds=instance_ids)
 
-    def get_instances(self, filters=None, instance_ids=None):
+    def get_instances(self, filters: list = None, instance_ids: list = None) -> list:
         """
         Get list of instance details, optionally applying filters and selective instance ids
 
@@ -106,17 +97,18 @@ class EC2Hook(AwsBaseHook):
 
         return [
             instance
-            for reservation in description[self.RESERVATIONS] for instance in reservation[self.INSTANCES]
+            for reservation in description['Reservations']
+            for instance in reservation['Instances']
         ]
 
-    def get_instance_ids(self, filters=None):
+    def get_instance_ids(self, filters: list = None) -> list:
         """
         Get list of instance ids, optionally applying filters to fetch selective instances
 
         :param filters: List of filters to specify instances to get
         :return: List of instance ids
         """
-        return [instance[self.INSTANCE_ID] for instance in self.get_instances(filters=filters)]
+        return [instance['InstanceId'] for instance in self.get_instances(filters=filters)]
 
     def get_instance_state(self, instance_id: str) -> str:
         """
@@ -127,12 +119,9 @@ class EC2Hook(AwsBaseHook):
         :return: current state of the instance
         :rtype: str
         """
-        return self.get_instances(instance_ids=[instance_id])[0][self.STATE][self.NAME]
+        return self.get_instances(instance_ids=[instance_id])[0]['State']['Name']
 
-    def wait_for_state(self,
-                       instance_id: str,
-                       target_state: str,
-                       check_interval: float) -> None:
+    def wait_for_state(self, instance_id: str, target_state: str, check_interval: float) -> None:
         """
         Wait EC2 instance until its state is equal to the target_state.
 
@@ -146,24 +135,12 @@ class EC2Hook(AwsBaseHook):
         :return: None
         :rtype: None
         """
-        instance_state = self.get_instance_state(
-            instance_id=instance_id
-        )
+        instance_state = self.get_instance_state(instance_id=instance_id)
 
-        self.log.info(
-            "instance state: %s. Same as target: %s",
-            instance_state,
-            instance_state == target_state
-        )
+        self.log.info("instance state: %s. Same as target: %s", instance_state, instance_state == target_state)
 
         while instance_state != target_state:
             time.sleep(check_interval)
-            instance_state = self.get_instance_state(
-                instance_id=instance_id
-            )
+            instance_state = self.get_instance_state(instance_id=instance_id)
 
-            self.log.info(
-                "instance state: %s. Same as target: %s",
-                instance_state,
-                instance_state == target_state
-            )
+            self.log.info("instance state: %s. Same as target: %s", instance_state, instance_state == target_state)

@@ -44,13 +44,15 @@ class EC2StartInstanceOperator(BaseOperator):
     ui_fgcolor = "#ffffff"
 
     @apply_defaults
-    def __init__(self,
-                 instance_id: str,
-                 aws_conn_id: str = "aws_default",
-                 region_name: Optional[str] = None,
-                 check_interval: float = 15,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        instance_id: str,
+        aws_conn_id: str = "aws_default",
+        region_name: Optional[str] = None,
+        check_interval: float = 15,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.instance_id = instance_id
         self.aws_conn_id = aws_conn_id
@@ -58,10 +60,7 @@ class EC2StartInstanceOperator(BaseOperator):
         self.check_interval = check_interval
 
     def execute(self, context):
-        ec2_hook = EC2Hook(
-            aws_conn_id=self.aws_conn_id,
-            region_name=self.region_name
-        )
+        ec2_hook = EC2Hook(aws_conn_id=self.aws_conn_id, region_name=self.region_name)
         self.log.info("Starting EC2 instance %s", self.instance_id)
         ec2_hook.start_instances(instance_ids=[self.instance_id])
         ec2_hook.wait_for_state(
