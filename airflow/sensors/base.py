@@ -201,11 +201,14 @@ class BaseSensorOperator(BaseOperator, SkipMixin):
 
         if self.reschedule:
 
-            # If reschedule, use first start date of current try
-            task_reschedules = TaskReschedule.find_for_task_instance(context['ti'])
+            # If reschedule, use the start date of the first try (first try can be either the very
+            # first execution of the task, or the first execution after the task was cleared.)
+            first_try_number = context['ti'].max_tries - self.retries + 1
+            task_reschedules = TaskReschedule.find_for_task_instance(
+                context['ti'], try_number=first_try_number
+            )
             if task_reschedules:
                 started_at = task_reschedules[0].start_date
-                try_number = len(task_reschedules) + 1
             else:
                 started_at = timezone.utcnow()
 
