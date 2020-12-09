@@ -508,6 +508,151 @@ class TestBaseSensor(unittest.TestCase):
             assert interval2 >= sensor.poke_interval
             assert interval2 > interval1
 
+    def test_reschedule_and_retry_fail(self):
+        """
+        poke_interval=5
+        timeout=10
+        retries=2
+        retry_delay=timedelta(seconds=3)
+
+        Actual behaviour:
+        00:00 False, try_number=1, max_retries=2
+        00:05 RuntimeError
+        00:08 False, try_number=2, max_retries=2
+        00:13 False, try_number=2, max_retries=2
+        00:18 AirflowSensorTimeout, try_number=2, max_retries=2
+
+        Expected behaviour:
+        00:00 False, try_number=1, max_retries=2
+        00:05 RuntimeError
+        00:08 False, try_number=2, max_retries=2
+        00:13 AirflowSensorTimeout, try_number=2, max_retries=2
+
+        Expected behaviour with clear:
+        00:00 False, try_number=1, max_retries=2
+        00:05 RuntimeError
+        00:08 False, try_number=2, max_retries=2
+        00:13 AirflowSensorTimeout, try_number=2, max_retries=2
+        00:18 Clear (deleted reschedules)
+        00:18 False, try_number=2, max_retries=3
+        00:23 False, try_number=2, max_retries=3
+        00:25 False, try_number=2, max_retries=3
+        00:30 AirflowSensorTimeout, try_number=2, max_retries=3
+        """
+        sensor = self._make_sensor(
+            return_value=None,
+            poke_interval=5,
+            timeout=10,
+            retries=2,
+            retry_delay=timedelta(seconds=3),
+            mode='reschedule',
+        )
+
+        sensor.poke = Mock(side_effect=[False, RuntimeError, False, False, False, False, False, False])
+        dr = self._make_dag_run()
+
+        # first poke returns False and task is re-scheduled
+        date1 = timezone.utcnow()
+        with freeze_time(date1):
+            self._run(sensor)
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 2)
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.UP_FOR_RESCHEDULE)
+                # verify one row in task_reschedule table
+                task_reschedules = TaskReschedule.find_for_task_instance(ti)
+                self.assertEqual(len(task_reschedules), 1)
+                self.assertEqual(task_reschedules[0].start_date, date1)
+                self.assertEqual(
+                    task_reschedules[0].reschedule_date, date1 + timedelta(seconds=sensor.poke_interval)
+                )
+                self.assertEqual(task_reschedules[0].try_number, 1)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
+        # second poke raises RuntimeError and task instance retries
+        date2 = date1 + timedelta(seconds=sensor.poke_interval)
+        with freeze_time(date2):
+            with self.assertRaises(RuntimeError):
+                self._run(sensor)
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 2)
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.UP_FOR_RETRY)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
+        # third poke returns False and task is rescheduled again
+        date3 = date2 + timedelta(seconds=sensor.poke_interval) + sensor.retry_delay
+        with freeze_time(date3):
+            self._run(sensor)
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 2)
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.UP_FOR_RESCHEDULE)
+                # verify one row in task_reschedule table
+                task_reschedules = TaskReschedule.find_for_task_instance(ti)
+                self.assertEqual(len(task_reschedules), 1)
+                self.assertEqual(task_reschedules[0].start_date, date3)
+                self.assertEqual(
+                    task_reschedules[0].reschedule_date, date3 + timedelta(seconds=sensor.poke_interval)
+                )
+                self.assertEqual(task_reschedules[0].try_number, 2)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
+        # fourth poke times out and raises AirflowSensorTimeout
+        date4 = date3 + timedelta(seconds=sensor.poke_interval)
+        with freeze_time(date4):
+            with self.assertRaises(AirflowSensorTimeout):
+                self._run(sensor)
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 2)
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.FAILED)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
+        # Clear the failed sensor
+        sensor.clear()
+
+        date5 = date4 + timedelta(seconds=20)
+
+        with freeze_time(date5):
+            self._run(sensor)
+
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.UP_FOR_RESCHEDULE)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
+        date6 = date5 + timedelta(seconds=sensor.poke_interval)
+
+        with freeze_time(date6):
+            self._run(sensor)
+
+        date7 = date6 + timedelta(seconds=sensor.poke_interval)
+
+        with freeze_time(date7):
+            self._run(sensor)
+
+        date8 = date8 + timedelta(seconds=sensor.poke_interval)
+
+        with freeze_time(date8):
+            with self.assertRaises(AirflowSensorTimeout):
+                self._run(sensor)
+
+        for ti in tis:
+            if ti.task_id == SENSOR_OP:
+                self.assertEqual(ti.state, State.FAILED)
+            if ti.task_id == DUMMY_OP:
+                self.assertEqual(ti.state, State.NONE)
+
 
 @poke_mode_only
 class DummyPokeOnlySensor(BaseSensorOperator):
