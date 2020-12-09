@@ -227,10 +227,8 @@ class BaseSensorOperator(BaseOperator, SkipMixin):
 
         while not self.poke(context):
             if run_duration() > self.timeout:
-                # If sensor is in soft fail mode but will be retried then
-                # give it a chance and fail with timeout.
-                # This gives the ability to set up non-blocking AND soft-fail sensors.
-                if self.soft_fail and not context['ti'].is_eligible_to_retry():
+                # If sensor is in soft fail mode but times out raise AirflowSkipException.
+                if self.soft_fail:
                     raise AirflowSkipException(f"Snap. Time is OUT. DAG id: {log_dag_id}")
                 else:
                     raise AirflowSensorTimeout(f"Snap. Time is OUT. DAG id: {log_dag_id}")
