@@ -26,8 +26,7 @@ from typing import Any, Dict, List, Optional
 import sqlalchemy_jsonfield
 from sqlalchemy import BigInteger, Column, Index, String, and_
 from sqlalchemy.orm import Session, backref, foreign, relationship
-from sqlalchemy.sql import exists
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import literal
 
 from airflow.models.base import ID_LEN, Base
 from airflow.models.dag import DAG, DagModel
@@ -117,15 +116,18 @@ class SerializedDagModel(Base):
         # If Yes, does nothing
         # If No or the DAG does not exists, updates / writes Serialized DAG to DB
         if min_update_interval is not None:
-            if session.query(
-                exists().where(
+            if (
+                session.query(literal(True))
+                .filter(
                     and_(
                         cls.dag_id == dag.dag_id,
                         (timezone.utcnow() - timedelta(seconds=min_update_interval)) < cls.last_updated,
                     )
                 )
-            ).scalar():
-                return False
+                .first()
+                is not None
+            ):
+                return
 
         log.debug("Checking if DAG (%s) changed", dag.dag_id)
         new_serialized_dag = cls(dag)
@@ -217,7 +219,7 @@ class SerializedDagModel(Base):
         :param dag_id: the DAG to check
         :param session: ORM Session
         """
-        return session.query(exists().where(cls.dag_id == dag_id)).scalar()
+        return session.query(literal(True)).filter(cls.dag_id == dag_id).first() is not None
 
     @classmethod
     @provide_session

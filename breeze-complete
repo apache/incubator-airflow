@@ -23,8 +23,8 @@
 # by the BATS tests automatically during pre-commit and CI
 # Those cannot be made read-only as the breeze-complete must be re-sourceable
 
-_breeze_allowed_python_major_minor_versions="3.6 3.7 3.8"
-_breeze_allowed_backends="sqlite mysql postgres"
+_breeze_allowed_python_major_minor_versions="2.7 3.5 3.6 3.7 3.8"
+_breeze_allowed_backends="sqlite mysql postgres mssql"
 _breeze_allowed_integrations="cassandra kerberos mongo openldap pinot rabbitmq redis statsd trino all"
 _breeze_allowed_generate_constraints_modes="source-providers pypi-providers no-providers"
 # registrys is good here even if it is not correct english. We are adding s automatically to all variables
@@ -34,6 +34,7 @@ _breeze_allowed_kubernetes_versions="v1.20.2 v1.19.7 v1.18.15"
 _breeze_allowed_helm_versions="v3.2.4"
 _breeze_allowed_kind_versions="v0.10.0"
 _breeze_allowed_mysql_versions="5.7 8"
+_breeze_allowed_mssql_versions="2017-latest 2019-latest"
 _breeze_allowed_postgres_versions="9.6 10 11 12 13"
 _breeze_allowed_kind_operations="start stop restart status deploy test shell k9s"
 _breeze_allowed_executors="KubernetesExecutor CeleryExecutor LocalExecutor CeleryKubernetesExecutor"
@@ -54,6 +55,7 @@ _breeze_allowed_installation_methods=". apache-airflow"
     _breeze_default_executor=$(echo "${_breeze_allowed_executors}" | awk '{print $1}')
     _breeze_default_postgres_version=$(echo "${_breeze_allowed_postgres_versions}" | awk '{print $1}')
     _breeze_default_mysql_version=$(echo "${_breeze_allowed_mysql_versions}" | awk '{print $1}')
+    _breeze_default_mssql_version=$(echo "${_breeze_allowed_mssql_versions}" | awk '{print $1}')
     _breeze_default_test_type=$(echo "${_breeze_allowed_test_types}" | awk '{print $1}')
     _breeze_default_package_format=$(echo "${_breeze_allowed_package_formats}" | awk '{print $1}')
 }
@@ -173,7 +175,7 @@ verbose assume-yes assume-no assume-quit forward-credentials init-script:
 force-build-images force-pull-images force-pull-base-python-image production-image extras: force-clean-images skip-rebuild-check
 build-cache-local build-cache-pulled build-cache-disabled disable-pip-cache
 dockerhub-user: dockerhub-repo: use-github-registry github-registry: github-repository: github-image-id: generate-constraints-mode:
-postgres-version: mysql-version:
+postgres-version: mysql-version: mssql-version:
 version-suffix-for-pypi: version-suffix-for-svn:
 additional-extras: additional-python-deps: additional-dev-deps: additional-runtime-deps: image-tag:
 disable-mysql-client-installation constraints-location: disable-pip-cache install-from-docker-context-files
@@ -284,6 +286,9 @@ function breeze_complete::get_known_values_breeze() {
         ;;
     --mysql-version)
         _breeze_known_values=${_breeze_allowed_mysql_versions}
+        ;;
+    --mssql-version)
+        _breeze_known_values=${_breeze_allowed_mssql_versions}
         ;;
     -D | --dockerhub-user)
         _breeze_known_values="${_breeze_default_dockerhub_user}"

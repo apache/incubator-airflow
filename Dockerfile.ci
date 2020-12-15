@@ -161,8 +161,25 @@ RUN mkdir -pv /usr/share/man/man1 \
       ${ADDITIONAL_RUNTIME_APT_DEPS} \
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_CLI_VERSION}.tgz \
+    && rm -rf /var/lib/apt/lists/*
+
+#Install MS SQL Drivers
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update -yqq \
+    && apt-get upgrade -yqq \
+    && ACCEPT_EULA=Y apt-get -yqq install -y --no-install-recommends \
+      gcc \
+      unixodbc-dev  \
+      g++ \
+      msodbcsql17 \
+      mssql-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG DOCKER_CLI_VERSION=19.03.9
+ENV DOCKER_CLI_VERSION=${DOCKER_CLI_VERSION}
+
+RUN curl https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_CLI_VERSION}.tgz \
     |  tar -C /usr/bin --strip-components=1 -xvzf - docker/docker
 
 WORKDIR ${AIRFLOW_SOURCES}

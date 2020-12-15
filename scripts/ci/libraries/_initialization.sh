@@ -73,6 +73,7 @@ function initialization::initialize_base_variables() {
     export WEBSERVER_HOST_PORT=${WEBSERVER_HOST_PORT:="28080"}
     export POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT:="25433"}
     export MYSQL_HOST_PORT=${MYSQL_HOST_PORT:="23306"}
+    export MSSQL_HOST_PORT=${MSSQL_HOST_PORT:="21433"}
     export FLOWER_HOST_PORT=${FLOWER_HOST_PORT:="25555"}
     export REDIS_HOST_PORT=${REDIS_HOST_PORT:="26379"}
 
@@ -110,6 +111,9 @@ function initialization::initialize_base_variables() {
 
     # Default MySQL versions
     export MYSQL_VERSION=${MYSQL_VERSION:=${CURRENT_MYSQL_VERSIONS[0]}}
+
+    #Default MS SQL version
+    export MSSQL_VERSION=${MSSQL_VERSION:="2017-latest"}
 
     # If set to true, the database will be reset at entry. Works for Postgres and MySQL
     export DB_RESET=${DB_RESET:="false"}

@@ -35,6 +35,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import backref, relationship, synonym
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql import expression
 
 from airflow import settings
 from airflow.configuration import conf as airflow_conf
@@ -212,8 +213,8 @@ class DagRun(Base, LoggingMixin):
                 DagModel.dag_id == cls.dag_id,
             )
             .filter(
-                DagModel.is_paused.is_(False),
-                DagModel.is_active.is_(True),
+                DagModel.is_paused == expression.false(),
+                DagModel.is_active == expression.true(),
             )
             .order_by(
                 nulls_first(cls.last_scheduling_decision, session=session),
