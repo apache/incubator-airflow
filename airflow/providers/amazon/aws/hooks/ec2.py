@@ -96,9 +96,7 @@ class EC2Hook(AwsBaseHook):
         description = self.describe_instances(filters=filters, instance_ids=instance_ids)
 
         return [
-            instance
-            for reservation in description['Reservations']
-            for instance in reservation['Instances']
+            instance for reservation in description['Reservations'] for instance in reservation['Instances']
         ]
 
     def get_instance_ids(self, filters: list = None) -> list:
@@ -137,10 +135,14 @@ class EC2Hook(AwsBaseHook):
         """
         instance_state = self.get_instance_state(instance_id=instance_id)
 
-        self.log.info("instance state: %s. Same as target: %s", instance_state, instance_state == target_state)
+        self.log.info(
+            "instance state: %s. Same as target: %s", instance_state, instance_state == target_state
+        )
 
         while instance_state != target_state:
             time.sleep(check_interval)
             instance_state = self.get_instance_state(instance_id=instance_id)
 
-            self.log.info("instance state: %s. Same as target: %s", instance_state, instance_state == target_state)
+            self.log.info(
+                "instance state: %s. Same as target: %s", instance_state, instance_state == target_state
+            )
