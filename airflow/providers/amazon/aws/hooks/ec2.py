@@ -77,8 +77,8 @@ class EC2Hook(AwsBaseHook):
         :param instance_ids: List of instance IDs to describe
         :return: Response from EC2 describe_instances API
         """
-        filters = [] if filters is None else filters
-        instance_ids = [] if instance_ids is None else instance_ids
+        filters = filters or []
+        instance_ids = instance_ids or []
 
         self.log.info("Filters provided: %s", filters)
         self.log.info("Instance ids provided: %s", instance_ids)
