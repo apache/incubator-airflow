@@ -141,6 +141,10 @@ constantly.
 From Airflow 2.0.0, the scheduling decisions have been moved from
 DagFileProcessor to Scheduler, so we can keep the default a bit higher: `30`.
 
+### Marking success/failed automatically clears failed downstream tasks
+
+When marking a task success/failed in Graph View, its downstream tasks that are in failed/upstream_failed state are automatically cleared.
+
 ## Airflow 2.0.0
 
 The 2.0 release of the Airflow is a significant upgrade, and includes substantial major changes,
