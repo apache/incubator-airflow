@@ -145,23 +145,6 @@ From the pages seen above (tree view, graph view, gantt, ...), it is always
 possible to click on a task instance, and get to this rich context menu
 that can take you to more detailed metadata, and perform some actions.
 
-These options have similar meanings when applied to "Clear", "Mark Failed" or "Mark Success" actions:
-
-- "Past": Apply the action to the current ``TaskInstance`` as well existing ``TaskInstance``
-  of the same task over past ``execution_date``;
-- "Future": Apply the action to the current ``TaskInstance`` as well existing ``TaskInstance``
-  of the same task over future ``execution_date``;
-- "Upstream": Apply the action to the current ``TaskInstance`` as well existing ``TaskInstance``
-  of its upstream tasks;
-- "Downstream": Apply the action to the current ``TaskInstance`` as well as existing ``TaskInstance``
-  of its downstream tasks;
-
-"Clear" has an additional "Failed" option. It means clearing only tasks in "failed" or "upstream_failed" state.
-
-"Mark Success" has an additional "Resume" option. It means marking the task success and then automatically
-clearing downstream tasks that were in "failed" or "upstream_failed" state. In other words, it marks a
-failed task as success and then clears downstream tasks that were previously blocked by the failure.
-
 ------------
 
 .. image:: img/context.png

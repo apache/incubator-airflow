@@ -166,10 +166,6 @@ the stable REST API, set `enable_experimental_api` option in `[api]` section to 
 Please note that the experimental REST API do not have access control.
 The authenticated user has full access.
 
-### Added "Resume" checkbox for Mark Success in TaskInstance Context Menu
-
-When "Resume" is checked (the default), marking a failed task as success automatically clears downstream tasks that were blocked by the failed task.
-
 ### SparkJDBCHook default connection
 
 For SparkJDBCHook default connection was `spark-default`, and for SparkSubmitHook it was
