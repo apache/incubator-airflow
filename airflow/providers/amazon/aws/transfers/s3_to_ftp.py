@@ -31,7 +31,7 @@ class S3ToFTPOperator(BaseOperator):
         establishing a connection to the FTP server.
     :type ftp_conn_id: str
     :param ftp_path: The ftp remote path in where the file will be stored.
-        The desired filename must be specified here.
+        The desired file name must be specified here.
     :type ftp_path: str
     :param s3_conn_id: The s3 connection id. The name or identifier for
         establishing a connection to S3.
