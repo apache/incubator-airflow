@@ -27,12 +27,11 @@ from airflow.utils.decorators import apply_defaults
 class S3ToFTPOperator(BaseOperator):
     """
     This operator enables the transferring of files from S3 to a FTP server.
-
     :param ftp_conn_id: The ftp connection id. The name or identifier for
         establishing a connection to the FTP server.
     :type ftp_conn_id: str
-    :param ftp_path: The ftp remote path. This is the specified file path for
-        uploading file to the FTP server.
+    :param ftp_path: The ftp remote path in where the file will be stored.
+        The desired filename bust be specified here.
     :type ftp_path: str
     :param s3_conn_id: The s3 connection id. The name or identifier for
         establishing a connection to S3.
@@ -45,18 +44,18 @@ class S3ToFTPOperator(BaseOperator):
     :type s3_key: str
     """
 
-    template_fields = ('s3_bucket', 's3_key')
+    template_fields = ('s3_bucket', 's3_key', 'ftp_path')
 
     @apply_defaults
     def __init__(
-        self,
-        *,
-        s3_bucket,
-        s3_key,
-        ftp_path,
-        aws_conn_id='aws_default',
-        ftp_conn_id='ftp_default',
-        **kwargs,
+            self,
+            *,
+            s3_bucket,
+            s3_key,
+            ftp_path,
+            aws_conn_id='aws_default',
+            ftp_conn_id='ftp_default',
+            **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.s3_bucket = s3_bucket
@@ -69,8 +68,8 @@ class S3ToFTPOperator(BaseOperator):
         s3_hook = S3Hook(self.aws_conn_id)
         ftp_hook = FTPHook(ftp_conn_id=self.ftp_conn_id)
 
-        s3_obj = s3_hook.get_key(self.s3_key, self.s3_bucket)
+        s3_client = s3_hook.get_conn()
 
         with NamedTemporaryFile() as local_tmp_file:
-            s3_obj.download_fileobj(local_tmp_file)
+            s3_client.download_file(self.s3_bucket, self.s3_key, local_tmp_file.name)
             ftp_hook.store_file(self.ftp_path, local_tmp_file.name)
