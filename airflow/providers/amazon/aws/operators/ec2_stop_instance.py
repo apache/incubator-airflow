@@ -46,14 +46,14 @@ class EC2StopInstanceOperator(BaseOperator):
     @apply_defaults
     def __init__(
         self,
+        *,
         instance_id: str,
         aws_conn_id: str = "aws_default",
         region_name: Optional[str] = None,
         check_interval: float = 15,
-        *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self.instance_id = instance_id
         self.aws_conn_id = aws_conn_id
         self.region_name = region_name

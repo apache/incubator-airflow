@@ -34,7 +34,8 @@ class EC2Hook(AwsBaseHook):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(client_type="ec2", *args, **kwargs)
+        kwargs["client_type"] = "ec2"
+        super().__init__(*args, **kwargs)
 
     def stop_instances(self, instance_ids: list) -> dict:
         """

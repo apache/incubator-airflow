@@ -27,10 +27,6 @@ from airflow.providers.amazon.aws.sensors.ec2_instance_state import EC2InstanceS
 
 
 class TestEC2InstanceStateSensor(unittest.TestCase):
-    # Describe response
-    INSTANCES = 'Instances'
-    INSTANCE_ID = 'InstanceId'
-
     def test_init(self):
         ec2_operator = EC2InstanceStateSensor(
             task_id="task_test",
@@ -64,7 +60,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
+        instance_id = instances['Instances'][0]['InstanceId']
         # stop instance
         ec2_hook.stop_instances(instance_ids=[instance_id])
 
@@ -89,7 +85,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
+        instance_id = instances['Instances'][0]['InstanceId']
         # start instance
         ec2_hook.start_instances(instance_ids=[instance_id])
 
@@ -114,7 +110,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[self.INSTANCES][0][self.INSTANCE_ID]
+        instance_id = instances['Instances'][0]['InstanceId']
         # start instance
         ec2_hook.start_instances(instance_ids=[instance_id])
 
