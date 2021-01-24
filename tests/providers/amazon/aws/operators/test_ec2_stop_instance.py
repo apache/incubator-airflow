@@ -57,4 +57,4 @@ class TestEC2Operator(unittest.TestCase):
         )
         stop_test.execute(None)
         # assert instance state is running
-        self.assertEqual(ec2_hook.get_instance_state(instance_id=instance_id), "stopped")
+        assert ec2_hook.get_instance_state(instance_id=instance_id) == "stopped"

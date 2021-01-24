@@ -37,7 +37,7 @@ class TestEC2Hook(unittest.TestCase):
     def test_get_conn_returns_boto3_resource(self):
         ec2_hook = EC2Hook()
         instances = list(ec2_hook.get_instances())
-        self.assertIsNotNone(instances)
+        assert instances is not None
 
     @mock_ec2
     def test_get_instance(self):
@@ -49,7 +49,7 @@ class TestEC2Hook(unittest.TestCase):
         created_instance_id = created_instances['Instances'][0]['InstanceId']
         # test get_instance method
         existing_instance = ec2_hook.get_instances(instance_ids=[created_instance_id])[0]
-        self.assertEqual(created_instance_id, existing_instance['InstanceId'])
+        assert created_instance_id == existing_instance['InstanceId']
 
     @mock_ec2
     def test_get_instance_state(self):
@@ -64,4 +64,4 @@ class TestEC2Hook(unittest.TestCase):
         created_instance_state = all_instances[0]['State']['Name']
         # test get_instance_state method
         existing_instance_state = ec2_hook.get_instance_state(instance_id=created_instance_id)
-        self.assertEqual(created_instance_state, existing_instance_state)
+        assert created_instance_state == existing_instance_state

@@ -121,7 +121,7 @@ class TestEC2InstanceStateSensor(unittest.TestCase):
             instance_id=instance_id,
         )
         # assert instance state is not terminated
-        self.assertFalse(stop_sensor.poke(None))
+        assert not stop_sensor.poke(None)
         # terminate instance
         ec2_hook.terminate_instances(instance_ids=[instance_id])
         # assert instance state is terminated

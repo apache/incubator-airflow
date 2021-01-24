@@ -33,7 +33,7 @@ class EC2Hook(AwsBaseHook):
         :class:`~airflow.providers.amazon.aws.hooks.base_aws.AwsBaseHook`
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         kwargs["client_type"] = "ec2"
         super().__init__(*args, **kwargs)
 
