@@ -1482,11 +1482,16 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             # Bulk fetch the currently active dag runs for the dags we are
             # examining, rather than making one query per DagRun
 
-            # TODO: This query is probably horribly inefficient (though there is an
-            # index on (dag_id,state)). It is to deal with the case when a user
+            # This query will violate max_active_runs by exactly one if tasks in
+            # max_active_runs or more DAGs are cleared while another DAG is
+            # running. It is to deal with the case when a user
             # clears more than max_active_runs older tasks -- we don't want the
             # scheduler to suddenly go and start running tasks from all of the
             # runs. (AIRFLOW-137/GH #1442)
+            # We should also execute the DagRuns in the order of execution_date,
+            # as that is the expected behavior when executing over time.
+            # Therefore, execute the first max_active_runs DagRuns ordered by
+            # execution_date.
             #
             # The longer term fix would be to have `clear` do this, and put DagRuns
             # in to the queued state, then take DRs out of queued before creating
@@ -1495,24 +1500,32 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             # Build up a set of execution_dates that are "active" for a given
             # dag_id -- only tasks from those runs will be scheduled.
             active_runs_by_dag_id = defaultdict(set)
+            dags = {
+                dag_id: self.dagbag.get_dag(dag_id, session=session)
+                for dag_id in {dag_run.dag_id for dag_run in dag_runs}
+            }
 
             query = (
                 session.query(
-                    TI.dag_id,
-                    TI.execution_date,
+                    DR.dag_id,
+                    DR.execution_date,
                 )
                 .filter(
-                    TI.dag_id.in_(list({dag_run.dag_id for dag_run in dag_runs})),
-                    TI.state.notin_(list(State.finished) + [State.REMOVED]),
+                    DR.dag_id.in_(list(dags.keys())),
+                    DR.state.in_([State.RUNNING]),
                 )
-                .group_by(TI.dag_id, TI.execution_date)
+                .order_by(DR.execution_date)
             )
 
             for dag_id, execution_date in query:
-                active_runs_by_dag_id[dag_id].add(execution_date)
+                if (
+                    dags[dag_id].max_active_runs
+                    and len(active_runs_by_dag_id[dag_id]) < dags[dag_id].max_active_runs
+                ):
+                    active_runs_by_dag_id[dag_id].add(execution_date)
 
             for dag_run in dag_runs:
-                self._schedule_dag_run(dag_run, active_runs_by_dag_id.get(dag_run.dag_id, set()), session)
+                self._schedule_dag_run(dag_run, active_runs_by_dag_id[dag_run.dag_id], session)
 
             guard.commit()
 
@@ -1659,18 +1672,14 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             self.log.error("Execution date is in future: %s", dag_run.execution_date)
             return 0
 
-        if dag.max_active_runs:
-            if (
-                len(currently_active_runs) >= dag.max_active_runs
-                and dag_run.execution_date not in currently_active_runs
-            ):
-                self.log.info(
-                    "DAG %s already has %d active runs, not queuing any tasks for run %s",
-                    dag.dag_id,
-                    len(currently_active_runs),
-                    dag_run.execution_date,
-                )
-                return 0
+        if dag.max_active_runs and dag_run.execution_date not in currently_active_runs:
+            self.log.info(
+                "DAG %s already has %d active runs, not queuing any tasks for run %s",
+                dag.dag_id,
+                len(currently_active_runs),
+                dag_run.execution_date,
+            )
+            return 0
 
         self._verify_integrity_if_dag_changed(dag_run=dag_run, session=session)
         # TODO[HA]: Rename update_state -> schedule_dag_run, ?? something else?
