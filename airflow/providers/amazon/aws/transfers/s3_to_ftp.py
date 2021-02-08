@@ -27,6 +27,7 @@ from airflow.utils.decorators import apply_defaults
 class S3ToFTPOperator(BaseOperator):
     """
     This operator enables the transferring of files from S3 to a FTP server.
+
     :param ftp_conn_id: The ftp connection id. The name or identifier for
         establishing a connection to the FTP server.
     :type ftp_conn_id: str
