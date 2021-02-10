@@ -17,143 +17,39 @@
 
 .. contents:: :local:
 
-Contributions
+Welcome
 =============
 
-Contributions are welcome and are greatly appreciated! Every little bit helps,
+Welcome to Apache Airflow! Contributions from the community are the heartbeat of the project. Every little bit helps,
 and credit will always be given.
 
-This document aims to explain the subject of contributions if you have not contributed to
-any Open Source project, but it will also help people who have contributed to other projects learn about the
-rules of that community.
+The guide below contains instructions on how to contribute to core Apache Airflow code. If you are a new contributor,
+follow `Contributors Quick Start <https://github.com/apache/airflow/blob/master
+/CONTRIBUTORS_QUICK_START.rst>`__ first for gentle, step-by-step guidelines on how to set up your development
+environment and make your first contribution.
 
-New Contributor
----------------
-If you are a new contributor, please follow the `Contributors Quick Start <https://github.com/apache/airflow/blob/master
-/CONTRIBUTORS_QUICK_START.rst>`__ guide to get a gentle step-by-step introduction to setting up the development
-environment and making your first contribution.
+If you're interested in contributing to other parts of the project, refer to
+`Contribute to Airflow Documentation <https://github.com/apache/airflow/blob/master
+/CONTRIBUTORS_QUICK_START.rst>`__ or `Contribute to Airflow Providers <https://github.com/apache/airflow/blob/master
+/CONTRIBUTORS_QUICK_START.rst>`__.
 
-Get Mentoring Support
----------------------
+Where to Contribute
+--------------------
+To get started, decide where or what you want to contribute. For ideas, you can browse:
 
-If you are new to the project, you might need some help in understanding how the dynamics
-of the community works and you might need to get some mentorship from other members of the
-community - mostly committers. Mentoring new members of the community is part of committers
-job so do not be afraid of asking committers to help you. You can do it
-via comments in your Pull Request, asking on a devlist or via Slack. For your convenience,
-we have a dedicated #newbie-questions Slack channel where you can ask any questions
-you want - it's a safe space where it is expected that people asking questions do not know
-a lot about Airflow (yet!).
+- `All GitHub Issues <https://github.com/apache/airflow/issues>`__
+- `Reported Bugs <https://github.com/apache/airflow/issues?q=is%3Aopen+is%3Aissue+label%3Akind%3Abug>`__
+- `Requested Features <https://github.com/apache/airflow/labels/kind%3Afeature>`__
 
-If you look for more structured mentoring experience, you can apply to Apache Software Foundation's
-`Official Mentoring Programme <http://community.apache.org/mentoringprogramme.html>`_. Feel free
-to follow it and apply to the programme and follow up with the community.
+Once you decide on a GitHub issue that you want to work on, assign yourself to it. Any unassigned feature request is
+open for anyone in the community to own.
 
-Report Bugs
------------
+If you're interested in contributing a feature or bug fix that hasn't been reported, we always recommend that you create
+a corresponding GitHub issue for it to allow for community feedback, but you do not have to. Follow the guidelines below
+to submit a PR directly with the appropriate labels.
 
-Report bugs through `GitHub <https://github.com/apache/airflow/issues>`__.
-
-Please report relevant information and preferably code that exhibits the
-problem.
-
-Fix Bugs
---------
-
-Look through the GitHub issues for bugs. Anything is open to whoever wants to
-implement it.
-
-Implement Features
-------------------
-
-Look through the `GitHub issues labeled "kind:feature"
-<https://github.com/apache/airflow/labels/kind%3Afeature>`__ for features.
-
-Any unassigned feature request issue is open to whoever wants to implement it.
-
-We've created the operators, hooks, macros and executors we needed, but we've
-made sure that this part of Airflow is extensible. New operators, hooks, macros
-and executors are very welcomed!
-
-Improve Documentation
----------------------
-
-Airflow could always use better documentation, whether as part of the official
-Airflow docs, in docstrings, ``docs/*.rst`` or even on the web as blog posts or
-articles.
-
-Submit Feedback
----------------
-
-The best way to send feedback is to `open an issue on GitHub <https://github.com/apache/airflow/issues/new/choose>`__.
-
-If you are proposing a new feature:
-
--   Explain in detail how it would work.
--   Keep the scope as narrow as possible to make it easier to implement.
--   Remember that this is a volunteer-driven project, and that contributions are
-    welcome :)
-
-
-Roles
-=============
-
-There are several roles within the Airflow Open-Source community.
-
-For detailed information for each role, see: `Committers and PMC's <./COMMITTERS.rst>`__.
-
-PMC Member
------------
-
-The PMC (Project Management Committee) is a group of maintainers that drives changes in the way that
-Airflow is managed as a project.
-
-Considering Apache, the role of the PMC is primarily to ensure that Airflow conforms to Apache's processes
-and guidelines.
-
-Committers/Maintainers
-----------------------
-
-Committers are community members that have write access to the project’s repositories, i.e., they can modify the code,
-documentation, and website by themselves and also accept other contributions.
-
-The official list of committers can be found `here <https://airflow.apache.org/docs/stable/project.html#committers>`__.
-
-Additionally, committers are listed in a few other places (some of these may only be visible to existing committers):
-
-* https://whimsy.apache.org/roster/ppmc/airflow
-* https://github.com/orgs/apache/teams/airflow-committers/members
-
-Committers are responsible for:
-
-* Championing one or more items on the `Roadmap <https://cwiki.apache.org/confluence/display/AIRFLOW/Airflow+Home>`__
-* Reviewing & Merging Pull-Requests
-* Scanning and responding to GitHub issues
-* Responding to questions on the dev mailing list (dev@airflow.apache.org)
-
-Contributors
-------------
-
-A contributor is anyone who wants to contribute code, documentation, tests, ideas, or anything to the
-Apache Airflow project.
-
-Contributors are responsible for:
-
-* Fixing bugs
-* Adding features
-* Championing one or more items on the `Roadmap <https://cwiki.apache.org/confluence/display/AIRFLOW/Airflow+Home>`__.
-
-Contribution Workflow
-=====================
-
-Typically, you start your first contribution by reviewing open tickets
-at `GitHub issues <https://github.com/apache/airflow/issues>`__.
-
-If you create pull-request, you don't have to create an issue first, but if you want, you can do it.
-Creating an issue will allow you to collect feedback or share plans with other people.
-
-For example, you want to have the following sample ticket assigned to you:
-`#7782: Add extra CC: to the emails sent by Airflow <https://github.com/apache/airflow/issues/7782>`_.
+Contribution Workflow Overview
+------------------------------
 
 In general, your contribution includes the following stages:
 
@@ -161,20 +57,15 @@ In general, your contribution includes the following stages:
     :align: center
     :alt: Contribution Workflow
 
-1. Make your own `fork <https://help.github.com/en/github/getting-started-with-github/fork-a-repo>`__ of
-   the Apache Airflow `main repository <https://github.com/apache/airflow>`__.
+1. Fork the Apache Airflow GitHub repository.
 
-2. Create a `local virtualenv <LOCAL_VIRTUALENV.rst>`_,
-   initialize the `Breeze environment <BREEZE.rst>`__, and
-   install `pre-commit framework <STATIC_CODE_CHECKS.rst#pre-commit-hooks>`__.
-   If you want to add more changes in the future, set up your fork and enable GitHub Actions.
+2. Configure your local virtual environment.
 
-3. Join `devlist <https://lists.apache.org/list.html?dev@airflow.apache.org>`__
-   and set up a `Slack account <https://s.apache.org/airflow-slack>`__.
+3. Make your change locally and create a Pull Request from your Fork.
 
-4. Make the change and create a `Pull Request from your fork <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork>`__.
+4. Connect with people in the community.
 
-5. Ping @ #development slack, comment @people. Be annoying. Be considerate.
+5. Pass PR review.
 
 Step 1: Fork the Apache Airflow Repo
 ------------------------------------
@@ -185,10 +76,9 @@ From the `apache/airflow <https://github.com/apache/airflow>`_ repo,
     :align: center
     :alt: Creating a fork
 
-
-Step 2: Configure Your Environment
-----------------------------------
-Configure the Docker-based Breeze development environment and run tests.
+Step 2: Configure Your Local Virtual Environment
+------------------------------------------------
+Configure the Docker-based `Breeze development environment <https://github.com/apache/airflow/blob/master/BREEZE.rst>`__.
 
 You can use the default Breeze configuration as follows:
 
@@ -203,7 +93,7 @@ You can use the default Breeze configuration as follows:
 3. Enter the Docker environment and mount your local sources
    to make them immediately visible in the environment.
 
-4. Create a local virtualenv, for example:
+4. Create a `Local Virtual Env <https://github.com/apache/airflow/blob/master/LOCAL_VIRTUALENV.rst>`__. For example:
 
 .. code-block:: bash
 
@@ -218,28 +108,10 @@ You can use the default Breeze configuration as follows:
 6. Open your IDE (for example, PyCharm) and select the virtualenv you created
    as the project's default virtualenv in your IDE.
 
-Step 3: Connect with People
----------------------------
-
-For effective collaboration, make sure to join the following Airflow groups:
-
-- Mailing lists:
-
-  - Developer’s mailing list `<dev-subscribe@airflow.apache.org>`_
-    (quite substantial traffic on this list)
-
-  - All commits mailing list: `<commits-subscribe@airflow.apache.org>`_
-    (very high traffic on this list)
-
-  - Airflow users mailing list: `<users-subscribe@airflow.apache.org>`_
-    (reasonably small traffic on this list)
-
-- `Issues on GitHub <https://github.com/apache/airflow/issues>`__
-
-- `Slack (chat) <https://s.apache.org/airflow-slack>`__
-
-Step 4: Prepare PR
+Step 3: Prepare a PR
 ------------------
+
+Now that you've made your changes locally, create a `Pull Request from your fork <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork>`__.
 
 1. Update the local sources to address the issue.
 
@@ -318,6 +190,26 @@ Step 4: Prepare PR
 
    More details about the PR workflow be found in `PULL_REQUEST_WORKFLOW.rst <PULL_REQUEST_WORKFLOW.rst>`_.
 
+Step 4: Connect with People
+---------------------------
+
+For effective collaboration, make sure to join the following Airflow groups:
+
+- Mailing lists:
+
+  - Developer’s mailing list `<dev-subscribe@airflow.apache.org>`_
+    (quite substantial traffic on this list)
+
+  - All commits mailing list: `<commits-subscribe@airflow.apache.org>`_
+    (very high traffic on this list)
+
+  - Airflow users mailing list: `<users-subscribe@airflow.apache.org>`_
+    (reasonably small traffic on this list)
+
+- `Issues on GitHub <https://github.com/apache/airflow/issues>`__
+
+- `Airflow Community Slack Channel <https://s.apache.org/airflow-slack>`__
+
 
 Step 5: Pass PR Review
 ----------------------
@@ -329,10 +221,7 @@ Step 5: Pass PR Review
 Note that committers will use **Squash and Merge** instead of **Rebase and Merge**
 when merging PRs and your commit will be squashed to single commit.
 
-You need to have review of at least one committer (if you are committer yourself, it has to be
-another committer). Ideally you should have 2 or more committers reviewing the code that touches
-the core of Airflow.
-
+At least 1 Airflow Committer needs to review and approve your PR in order to have it merged, though 2 Committer reviews are often required. If you are a committer yourself, another committer must review your changes.
 
 Pull Request Guidelines
 =======================
@@ -948,7 +837,7 @@ or to time but not send a metric:
 
     log.info("Code took %.3f seconds", timer.duration)
 
-For full docs on ``timer()`` check out `airflow/stats.py`_.
+For full docs on ``timer()`` check out `airflow/stats.py <https://github.com/apache/airflow/blob/master/airflow/stats.py>`_.
 
 If the start_date of a duration calculation needs to be stored in a database, then this has to be done using
 datetime objects. In all other cases, using datetime for duration calculation MUST be avoided as creating and
