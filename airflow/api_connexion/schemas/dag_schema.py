@@ -49,6 +49,7 @@ class DAGSchema(SQLAlchemySchema):
     dag_id = auto_field(dump_only=True)
     root_dag_id = auto_field(dump_only=True)
     is_paused = auto_field()
+    is_active = auto_field(dump_only=True)
     is_subdag = auto_field(dump_only=True)
     fileloc = auto_field(dump_only=True)
     file_token = fields.Method("get_token", dump_only=True)

@@ -806,6 +806,12 @@ class DAG(LoggingMixin):
         qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
         return qry.value(DagModel.is_paused)
 
+    @provide_session
+    def is_active(self, session=None) -> Optional[None]:
+        """Returns a boolean indicating whether this DAG is active"""
+        qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
+        return qry.value(DagModel.is_active)
+
     @property
     def is_paused(self):
         """This attribute is deprecated. Please use `airflow.models.DAG.get_is_paused` method."""

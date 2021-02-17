@@ -896,6 +896,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
+        - $ref: '#/components/parameters/OnlyActive'
       responses:
         '200':
           description: Success.
@@ -1756,6 +1757,10 @@ components:
           type: boolean
           nullable: true
           description: Whether the DAG is paused.
+        is_active:
+          type: boolean
+          nullable: true
+          description: Whether the DAG was seen on the last DagBag load.
         is_subdag:
           description: Whether the DAG is SubDAG.
           type: boolean
@@ -3154,6 +3159,16 @@ components:
         type: string
       required: true
       description: The variable Key.
+
+    # DAGs
+    OnlyActive:
+      in: query
+      name: only_active
+      schema:
+        type: boolean
+      required: false
+      description: |
+        Only return DAGs which were seen on the last DagBag load.
 
     # Logs
     FullContent:
