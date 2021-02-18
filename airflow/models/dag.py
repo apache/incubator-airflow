@@ -807,7 +807,7 @@ class DAG(LoggingMixin):
         return qry.value(DagModel.is_paused)
 
     @provide_session
-    def is_active(self, session=None) -> Optional[None]:
+    def get_is_active(self, session=None) -> Optional[None]:
         """Returns a boolean indicating whether this DAG is active"""
         qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
         return qry.value(DagModel.is_active)

@@ -24,7 +24,7 @@ from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 from airflow import DAG
 from airflow.api_connexion.schemas.common_schema import ScheduleIntervalSchema, TimeDeltaSchema, TimezoneField
 from airflow.configuration import conf
-from airflow.models.dag import DagModel, DagTag
+from airflow.models.dag import DAG, DagModel, DagTag
 
 
 class DagTagSchema(SQLAlchemySchema):
@@ -86,6 +86,8 @@ class DAGDetailSchema(DAGSchema):
     default_view = fields.String()
     params = fields.Dict()
     tags = fields.Method("get_tags", dump_only=True)
+    is_paused = fields.Method("get_is_paused", dump_only=True)
+    is_active = fields.Method("get_is_active", dump_only=True)
 
     @staticmethod
     def get_tags(obj: DAG):
@@ -101,6 +103,16 @@ class DAGDetailSchema(DAGSchema):
         if not getattr(obj, 'owner', None):
             return []
         return obj.owner.split(",")
+
+    @staticmethod
+    def get_is_paused(obj: DAG):
+        """Checks entry in DAG table to see if this DAG is paused"""
+        return obj.get_is_paused()
+
+    @staticmethod
+    def get_is_active(obj: DAG):
+        """Checks entry in DAG table to see if this DAG is active"""
+        return obj.get_is_active()
 
 
 class DAGCollection(NamedTuple):
