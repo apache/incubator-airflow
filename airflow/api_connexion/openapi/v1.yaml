@@ -900,8 +900,9 @@ paths:
           in: query
           schema:
             type: boolean
+            default: true
           required: false
-          description: Only return DAGs which were seen on the last DagBag load.
+          description: Only return active DAGs.
       responses:
         '200':
           description: Success.
