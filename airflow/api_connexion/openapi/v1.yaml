@@ -1765,7 +1765,7 @@ components:
         is_active:
           type: boolean
           nullable: true
-          description: Whether the DAG is currently seen by the schedulers.
+          description: Whether the DAG is currently seen by the scheduler(s).
         is_subdag:
           description: Whether the DAG is SubDAG.
           type: boolean
