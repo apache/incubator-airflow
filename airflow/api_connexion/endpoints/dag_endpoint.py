@@ -63,17 +63,9 @@ def get_dags(limit, offset=0, only_active=False):
     """Get all DAGs."""
     readable_dags = current_app.appbuilder.sm.get_readable_dags(g.user)
     if only_active:
-        dags = (
-            readable_dags.filter(DagModel.is_active)
-            .order_by(DagModel.dag_id)
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
-        total_entries = readable_dags.filter(DagModel.is_active).count()
-    else:
-        dags = readable_dags.order_by(DagModel.dag_id).offset(offset).limit(limit).all()
-        total_entries = readable_dags.count()
+        readable_dags = readable_dags.filter(DagModel.is_active)
+    dags = readable_dags.order_by(DagModel.dag_id).offset(offset).limit(limit).all()
+    total_entries = readable_dags.count()
 
     return dags_collection_schema.dump(DAGCollection(dags=dags, total_entries=total_entries))
 
