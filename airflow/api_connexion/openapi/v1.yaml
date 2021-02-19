@@ -896,7 +896,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/OnlyActive'
+       - name: only_active
+          in: query
+          schema:
+            type: boolean
+          required: false
+          description: Only return DAGs which were seen on the last DagBag load.
       responses:
         '200':
           description: Success.
@@ -3159,16 +3164,6 @@ components:
         type: string
       required: true
       description: The variable Key.
-
-    # DAGs
-    OnlyActive:
-      in: query
-      name: only_active
-      schema:
-        type: boolean
-      required: false
-      description: |
-        Only return DAGs which were seen on the last DagBag load.
 
     # Logs
     FullContent:
