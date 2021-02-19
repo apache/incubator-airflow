@@ -896,7 +896,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
-       - name: only_active
+        - name: only_active
           in: query
           schema:
             type: boolean
