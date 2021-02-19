@@ -59,7 +59,7 @@ def get_dag_details(dag_id):
 
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG)])
 @format_parameters({'limit': check_limit})
-def get_dags(limit, offset=0, only_active=False):
+def get_dags(limit, offset=0, only_active=True):
     """Get all DAGs."""
     readable_dags = current_app.appbuilder.sm.get_readable_dags(g.user)
     if only_active:

@@ -121,7 +121,7 @@ class TestDagEndpoint:
                 dag_id=f"TEST_DAG_{num}",
                 fileloc=f"/tmp/dag_{num}.py",
                 schedule_interval="2 2 * * *",
-                is_active=False,
+                is_active=True,
             )
             session.add(dag_model)
 
@@ -138,7 +138,7 @@ class TestGetDag(TestDagEndpoint):
             "fileloc": "/tmp/dag_1.py",
             "file_token": 'Ii90bXAvZGFnXzEucHki.EnmIdPaUPo26lHQClbWMbDFD1Pk',
             "is_paused": False,
-            "is_active": False,
+            "is_active": True,
             "is_subdag": False,
             "owners": [],
             "root_dag_id": None,
@@ -408,7 +408,7 @@ class TestGetDags(TestDagEndpoint):
                     "fileloc": "/tmp/dag_1.py",
                     "file_token": file_token,
                     "is_paused": False,
-                    "is_active": False,
+                    "is_active": True,
                     "is_subdag": False,
                     "owners": [],
                     "root_dag_id": None,
@@ -424,7 +424,7 @@ class TestGetDags(TestDagEndpoint):
                     "fileloc": "/tmp/dag_2.py",
                     "file_token": file_token2,
                     "is_paused": False,
-                    "is_active": False,
+                    "is_active": True,
                     "is_subdag": False,
                     "owners": [],
                     "root_dag_id": None,
@@ -439,21 +439,54 @@ class TestGetDags(TestDagEndpoint):
         } == response.json
 
     @provide_session
-    def test_only_active_returns_active_dags(self, session):
-        self._create_dag_models(2)
+    def test_only_active_true_returns_active_dags(self, session):
+        self._create_dag_models(1)
         dag_model = DagModel(
-            dag_id="TEST_DAG_3", fileloc="/tmp/dag_3.py", schedule_interval="2 2 * * *", is_active=True
+            dag_id="TEST_DAG_2", fileloc="/tmp/dag_2.py", schedule_interval="2 2 * * *", is_active=False
         )
         session.add(dag_model)
         response = self.client.get("api/v1/dags?only_active=True", environ_overrides={'REMOTE_USER': "test"})
-        file_token = SERIALIZER.dumps("/tmp/dag_3.py")
+        file_token = SERIALIZER.dumps("/tmp/dag_1.py")
         assert response.status_code == 200
         assert {
             "dags": [
                 {
-                    "dag_id": "TEST_DAG_3",
+                    "dag_id": "TEST_DAG_1",
                     "description": None,
-                    "fileloc": "/tmp/dag_3.py",
+                    "fileloc": "/tmp/dag_1.py",
+                    "file_token": file_token,
+                    "is_paused": False,
+                    "is_active": True,
+                    "is_subdag": False,
+                    "owners": [],
+                    "root_dag_id": None,
+                    "schedule_interval": {
+                        "__type": "CronExpression",
+                        "value": "2 2 * * *",
+                    },
+                    "tags": [],
+                }
+            ],
+            "total_entries": 1,
+        } == response.json
+
+    @provide_session
+    def test_only_active_false_returns_all_dags(self, session):
+        self._create_dag_models(1)
+        dag_model = DagModel(
+            dag_id="TEST_DAG_2", fileloc="/tmp/dag_2.py", schedule_interval="2 2 * * *", is_active=False
+        )
+        session.add(dag_model)
+        response = self.client.get("api/v1/dags?only_active=False", environ_overrides={'REMOTE_USER': "test"})
+        file_token = SERIALIZER.dumps("/tmp/dag_1.py")
+        file_token_2 = SERIALIZER.dumps("/tmp/dag_2.py")
+        assert response.status_code == 200
+        assert {
+            "dags": [
+                {
+                    "dag_id": "TEST_DAG_1",
+                    "description": None,
+                    "fileloc": "/tmp/dag_1.py",
                     "file_token": file_token,
                     "is_paused": False,
                     "is_active": True,
@@ -466,8 +499,24 @@ class TestGetDags(TestDagEndpoint):
                     },
                     "tags": [],
                 },
+                {
+                    "dag_id": "TEST_DAG_2",
+                    "description": None,
+                    "fileloc": "/tmp/dag_2.py",
+                    "file_token": file_token_2,
+                    "is_paused": False,
+                    "is_active": False,
+                    "is_subdag": False,
+                    "owners": [],
+                    "root_dag_id": None,
+                    "schedule_interval": {
+                        "__type": "CronExpression",
+                        "value": "2 2 * * *",
+                    },
+                    "tags": [],
+                },
             ],
-            "total_entries": 1,
+            "total_entries": 2,
         } == response.json
 
     def test_should_respond_200_with_granular_dag_access(self):

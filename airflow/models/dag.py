@@ -801,16 +801,16 @@ class DAG(LoggingMixin):
         return self.get_concurrency_reached()
 
     @provide_session
-    def get_is_paused(self, session=None) -> Optional[None]:
-        """Returns a boolean indicating whether this DAG is paused"""
-        qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
-        return qry.value(DagModel.is_paused)
-
-    @provide_session
     def get_is_active(self, session=None) -> Optional[None]:
         """Returns a boolean indicating whether this DAG is active"""
         qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
         return qry.value(DagModel.is_active)
+
+    @provide_session
+    def get_is_paused(self, session=None) -> Optional[None]:
+        """Returns a boolean indicating whether this DAG is paused"""
+        qry = session.query(DagModel).filter(DagModel.dag_id == self.dag_id)
+        return qry.value(DagModel.is_paused)
 
     @property
     def is_paused(self):
@@ -2108,7 +2108,7 @@ class DagModel(Base):
     is_paused = Column(Boolean, default=is_paused_at_creation)
     # Whether the DAG is a subdag
     is_subdag = Column(Boolean, default=False)
-    # Whether that DAG was seen on the last DagBag load
+    # Whether that DAG is currently seen by the schedulers
     is_active = Column(Boolean, default=False)
     # Last time the scheduler started
     last_parsed_time = Column(UtcDateTime)
