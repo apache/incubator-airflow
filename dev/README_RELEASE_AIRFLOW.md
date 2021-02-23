@@ -230,7 +230,7 @@ Airflow 2+:
 
 ```shell script
 export DOCKER_REPO=docker.io/apache/airflow
-for python_version in "3.6" "3.7" "3.8"
+for python_version in "3.6" "3.7" "3.8" "3.9"
 (
   export DOCKER_TAG=${VERSION}-python${python_version}
   ./scripts/ci/images/ci_build_dockerhub.sh
@@ -242,7 +242,7 @@ This will wipe Breeze cache and docker-context-files in order to make sure the b
 Airflow 1.10:
 
 ```shell script
-for python_version in "2.7" "3.5" "3.6" "3.7" "3.8"
+for python_version in "2.7" "3.5" "3.6" "3.7" "3.8" "3.9"
 do
     ./breeze build-image --production-image --python ${python_version} \
         --image-tag apache/airflow:${VERSION}-python${python_version} --build-cache-local
@@ -663,7 +663,7 @@ In case you need, you can also build and push the images manually:
 
 ```shell script
 export DOCKER_REPO=docker.io/apache/airflow
-for python_version in "3.6" "3.7" "3.8"
+for python_version in "3.6" "3.7" "3.8" "3.9"
 (
   export DOCKER_TAG=${VERSION}-python${python_version}
   ./scripts/ci/images/ci_build_dockerhub.sh
@@ -687,7 +687,7 @@ for python_version in "3.6" "3.7" "3.8"
 ### Airflow 1.10:
 
 ```shell script
-for python_version in "2.7" "3.5" "3.6" "3.7" "3.8"
+for python_version in "2.7" "3.5" "3.6" "3.7" "3.8" "3.9"
 do
     ./breeze build-image --production-image --python ${python_version} \
         --image-tag apache/airflow:${VERSION}-python${python_version} --build-cache-local

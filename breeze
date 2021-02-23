@@ -3468,7 +3468,7 @@ function breeze::run_breeze_command() {
         docker_engine_resources::check_all_resources
         if [[ ${PRODUCTION_IMAGE} == "true" ]]; then
             ${run_command} "${dc_run_file}" run --service-ports --rm airflow "${@}"
-            ${run_command} "${SCRIPTS_CI_DIR}/tools/ci_fix_ownership.sh"
+            ${run_command} "${SCRIPTS_CI_DIR}/tools/ci_fix_ownership.sh"  || true
         else
             ${run_command} "${dc_run_file}" run --service-ports --rm airflow "${@}"
         fi
@@ -3582,7 +3582,7 @@ function breeze::run_breeze_command() {
 # We have different versions of images depending on the python version used. We keep up with the
 # Latest patch-level changes in Python (this is done automatically during CI builds) so we have
 # To only take into account MAJOR and MINOR version of python. This variable keeps the major/minor
-# version of python in X.Y format (3.6, 3.7, 3.8 etc).
+# version of python in X.Y format (3.6, 3.7, 3.8, 3.9).
 #
 # In Breeze the precedence of setting the version is as follows:
 #      1. --python flag (if set, it will explicitly override it in the next step)

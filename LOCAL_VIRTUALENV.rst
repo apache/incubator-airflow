@@ -51,8 +51,8 @@ Required Software Packages
 Use system-level package managers like yum, apt-get for Linux, or
 Homebrew for macOS to install required software packages:
 
-* Python (One of: 3.6, 3.7, 3.8)
-* MySQL
+* Python (One of: 3.6, 3.7, 3.8, 3.9)
+* MySQL 5.7+
 * libxml
 
 Refer to the `Dockerfile.ci <Dockerfile.ci>`__ for a comprehensive list
@@ -102,7 +102,7 @@ Creating a Local virtualenv
 
 To use your IDE for Airflow development and testing, you need to configure a virtual
 environment. Ideally you should set up virtualenv for all Python versions that Airflow
-supports (3.6, 3.7, 3.8).
+supports (3.6, 3.7, 3.8, 3.9).
 
 To create and initialize the local virtualenv:
 

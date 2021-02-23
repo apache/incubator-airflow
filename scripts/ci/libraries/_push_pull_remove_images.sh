@@ -161,7 +161,7 @@ function push_pull_remove_images::pull_ci_images_if_needed() {
             push_pull_remove_images::pull_image_github_dockerhub "${AIRFLOW_CI_IMAGE}" \
                 "${GITHUB_REGISTRY_AIRFLOW_CI_IMAGE}:${GITHUB_REGISTRY_PULL_IMAGE_TAG}"
         else
-            push_pull_remove_images::pull_image_if_not_present_or_forced "${AIRFLOW_CI_IMAGE}"
+            push_pull_remove_images::pull_image_if_not_present_or_forced "${AIRFLOW_CI_IMAGE}" || true
         fi
     fi
 }
