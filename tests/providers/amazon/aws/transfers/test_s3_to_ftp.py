@@ -30,7 +30,7 @@ FTP_CONN_ID = 'ftp_default'
 
 class TestS3ToFTPOperator(unittest.TestCase):
     @mock.patch("airflow.providers.ftp.hooks.ftp.FTPHook.store_file")
-    @mock.patch("airflow.providers.amazon.aws.hooks.s3.S3Hook.get_conn().download_file")
+    @mock.patch("airflow.providers.amazon.aws.hooks.s3.S3Hook.get_conn.download_file")
     @mock.patch("airflow.providers.amazon.aws.transfers.s3_to_ftp.NamedTemporaryFile")
     def test_execute(self, mock_local_tmp_file, mock_s3_hook_download_file, mock_ftp_hook_store_file):
         operator = S3ToFTPOperator(task_id=TASK_ID, s3_bucket=BUCKET, s3_key=S3_KEY, ftp_path=FTP_PATH)
