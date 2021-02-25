@@ -112,14 +112,9 @@ class AsanaCreateTaskOperator(BaseOperator):
         self.resource_subtype = resource_subtype
         self.start_on = start_on
         self.tags = tags
-        self.hook = None
-
-    def get_hook(self):
-        """Function to retrieve the Asana Hook."""
-        return AsanaHook(conn_id=self.asana_conn_id)
+        self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> dict:
-        self.hook = self.get_hook()
         asana_client = self.hook.get_conn()
         params = {}
         for key in ["name", "workspace", "approval_status", "assignee", "custom_fields",
@@ -130,3 +125,37 @@ class AsanaCreateTaskOperator(BaseOperator):
         response = asana_client.tasks.create(params=params)
         self.log.info(response)
         return response
+
+
+class AsanaDeleteTaskOperator(BaseOperator):
+    """
+    This operator can be used to delete Asana tasks.
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:AsanaDeleteTaskOperator`
+
+    :param asana_conn_id: The Asana connection to use.
+    :type asana_conn_id: str
+    :param task_gid: Task ID to delete.
+    :type task_gid: str
+    """
+
+    @apply_defaults
+    def __init__(
+        self,
+        *,
+        asana_conn_id: str,
+        task_gid: str,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.asana_conn_id = asana_conn_id
+        self.task_gid = task_gid
+        self.hook = AsanaHook(conn_id=self.asana_conn_id)
+
+    def execute(self, context: Dict) -> None:
+        asana_client = self.hook.get_conn()
+        response = asana_client.tasks.delete_task(self.task_gid)
+        self.log.info(response)
