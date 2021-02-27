@@ -201,7 +201,7 @@ apache_beam = [
     'apache-beam>=2.20.0',
 ]
 asana = [
-    'asana'
+    'asana>=0.10'
 ]
 async_packages = [
     'eventlet>= 0.9.7',
