@@ -19,26 +19,37 @@ Example showing how to use Asana CreateTaskOperator.
 """
 
 from airflow import DAG
-from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator
+from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator, AsanaDeleteTaskOperator
 from airflow.utils.dates import days_ago
 
 default_args = {
-    'owner': 'airflow',
+    "owner": "airflow",
 }
 
+
 with DAG(
-    'example_asana',
+    "example_asana",
     default_args=default_args,
     start_date=days_ago(1),
-    tags=['example'],
+    tags=["example"],
 ) as dag:
+    asana_conn_id = "asana_test"
 
     # [START run_asana_create_task_operator]
-    task = AsanaCreateTaskOperator(
-        task_id='run_asana_create_task',
-        projects=["your_project"],
-        asana_conn_id='asana_test',
-        name='Test Task',
+    create = AsanaCreateTaskOperator(
+        task_id="run_asana_create_task",
+        optional_task_parameters={
+            "projects": "your_project"
+        },
+        asana_conn_id=asana_conn_id,
+        name="Test Task Create",
     )
     # [END run_asana_create_task_operator]
 
+    # [START run_asana_delete_task_operator]
+    delete = AsanaDeleteTaskOperator(
+        task_id="run_asana_delete_task",
+        asana_conn_id=asana_conn_id,
+        asana_task_gid="your_task_id",
+    )
+    # [END run_asana_delete_task_operator]
