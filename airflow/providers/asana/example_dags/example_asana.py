@@ -19,7 +19,7 @@ Example showing how to use Asana CreateTaskOperator.
 """
 
 from airflow import DAG
-from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator, AsanaDeleteTaskOperator
+from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator, AsanaDeleteTaskOperator, AsanaUpdateTaskOperator
 from airflow.utils.dates import days_ago
 
 default_args = {
@@ -45,6 +45,17 @@ with DAG(
         name="Test Task Create",
     )
     # [END run_asana_create_task_operator]
+
+    # [START run_asana_update_task_operator]
+    update = AsanaUpdateTaskOperator(
+        task_id="run_asana_update_task",
+        asana_task_gid="your_task_id",
+        optional_task_parameters={
+            "notes": "This task was updated!"
+        },
+        asana_conn_id=asana_conn_id,
+    )
+    # [END run_asana_update_task_operator]
 
     # [START run_asana_delete_task_operator]
     delete = AsanaDeleteTaskOperator(

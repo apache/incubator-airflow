@@ -17,7 +17,7 @@
 # under the License.
 import json
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from airflow.models import BaseOperator
 from airflow.providers.asana.hooks.asana import AsanaHook
@@ -49,7 +49,6 @@ class AsanaCreateTaskOperator(BaseOperator):
         *,
         asana_conn_id: str,
         name: str,
-        #workspace: str = None,
         optional_task_parameters: Optional[dict] = {},
         **kwargs,
     ) -> None:
@@ -64,18 +63,51 @@ class AsanaCreateTaskOperator(BaseOperator):
 
         params = {"name": self.name}
         params.update(self.optional_task_parameters)
-
         response = asana_client.tasks.create(params=params)
+
         self.log.info(response)
         return response["gid"]
 
 
 class AsanaUpdateTaskOperator(BaseOperator):
-    pass
+    """
+    This operator can be used to update Asana tasks. For more information on Asana optional task parameters, see
+    https://developers.asana.com/docs/update-a-task
 
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:AsanaUpdateTaskOperator`
 
-class AsanaFindTaskOperator(BaseOperator):
-    pass
+    :param asana_conn_id: The Asana connection to use.
+    :type asana_conn_id: str
+    :param asana_task_gid: Asana task ID to update
+    :type asana_task_gid: str
+    :param optional_task_parameters: Any of the optional task update parameters. See
+    https://developers.asana.com/docs/update-a-task for a complete list.
+    :type optional_task_parameters: dict
+    """
+
+    @apply_defaults
+    def __init__(
+        self,
+        *,
+        asana_conn_id: str,
+        asana_task_gid: str,
+        optional_task_parameters: Optional[dict] = {},
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.asana_conn_id = asana_conn_id
+        self.asana_task_gid = asana_task_gid
+        self.optional_task_parameters = optional_task_parameters
+        self.hook = AsanaHook(conn_id=self.asana_conn_id)
+
+    def execute(self, context: Dict) -> None:
+        asana_client = self.hook.get_conn()
+
+        response = asana_client.tasks.update(task=self.asana_task_gid, params=self.optional_task_parameters)
+        self.log.info(response)
 
 
 class AsanaDeleteTaskOperator(BaseOperator):
