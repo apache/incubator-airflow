@@ -28,10 +28,10 @@ class AsanaHook(BaseHook):
     Wrapper around Asana Python client library.
     """
 
-    conn_name_attr = 'asana_conn_id'
-    default_conn_name = 'asana_default'
-    conn_type = 'asana'
-    hook_name = 'Asana'
+    conn_name_attr = "asana_conn_id"
+    default_conn_name = "asana_default"
+    conn_type = "asana"
+    hook_name = "Asana"
 
     def __init__(self, conn_id: str = default_conn_name, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

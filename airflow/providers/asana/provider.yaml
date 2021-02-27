@@ -33,7 +33,7 @@ integrations:
 operators:
   - integration-name: Asana
     python-modules:
-      - airflow.providers.neo4j.operators.asana_tasks
+      - airflow.providers.asana.operators.asana_tasks
 
 hooks:
   - integration-name: Asana
