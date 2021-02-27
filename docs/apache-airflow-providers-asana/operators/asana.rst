@@ -30,17 +30,16 @@ Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
 Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-personal access token (https://developers.asana.com/docs/personal-access-token) into the
+`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
 password parameter of the connection metadata.
 
-The AsanaCreateTaskOperator minimally requires a task name. There are many other
-task parameters you can specify - a complete list is available here
-https://developers.asana.com/docs/create-a-task - through the `optional_task_parameters`.
-You must specify at least one of 'workspace', 'parent', or 'projects' in the
-`optional_task_parameters`.
+The AsanaCreateTaskOperator minimally requires the new task's name. There are many other
+`task attributes you can specify <https://developers.asana.com/docs/create-a-task>`_
+through the ``optional_task_parameters``. You must specify at least one of 'workspace',
+'parent', or 'projects' in the ``optional_task_parameters``.
 
 
-.. _howto/operator:AsanaCreateTaskOperator:
+.. _howto/operator:AsanaUpdateTaskOperator:
 
 AsanaUpdateTaskOperator
 =======================
@@ -53,15 +52,15 @@ Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
 Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-personal access token (https://developers.asana.com/docs/personal-access-token) into the
+`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
 password parameter of the connection metadata.
 
-The AsanaUpdateTaskOperator minimally requires a task id. There are many other
-task parameters you can specify - a complete list is available here
-https://developers.asana.com/docs/create-a-task - through the `optional_task_parameters`.
+The AsanaUpdateTaskOperator minimally requires the task id to update. There are many other
+`task attributes you can overwrite <https://developers.asana.com/docs/update-a-task>`_
+through the ``optional_task_parameters``.
 
 
-.. _howto/operator:AsanaCreateTaskOperator:
+.. _howto/operator:AsanaDeleteTaskOperator:
 
 AsanaDeleteTaskOperator
 =======================
@@ -74,7 +73,7 @@ Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
 Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-personal access token (https://developers.asana.com/docs/personal-access-token) into the
+`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
 password parameter of the connection metadata.
 
 The AsanaDeleteTaskOperator requires a task id to delete.

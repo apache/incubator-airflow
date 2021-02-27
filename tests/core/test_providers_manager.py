@@ -34,6 +34,7 @@ ALL_PROVIDERS = [
     'apache-airflow-providers-apache-pinot',
     'apache-airflow-providers-apache-spark',
     'apache-airflow-providers-apache-sqoop',
+    'apache-airflow-providers-asana',
     'apache-airflow-providers-celery',
     'apache-airflow-providers-cloudant',
     'apache-airflow-providers-cncf-kubernetes',
@@ -90,6 +91,7 @@ ALL_PROVIDERS = [
 ]
 
 CONNECTIONS_LIST = [
+    'asana',
     'aws',
     'azure',
     'azure_batch',

@@ -1,3 +1,4 @@
+
  .. Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -16,14 +17,11 @@
     under the License.
 
 
+Package apache-airflow-providers-asana
+------------------------------------------------------
 
-Asana Connection
-================
-The Asana connection type provides credentials for accessing the Asana API.
-
-Configuring the Connection
---------------------------
-Password (required)
-    Specify a `personal access token <https://developers.asana.com/docs/personal-access-token>`_ for the account.
+`Asana <https://developers.asana.com/>`__
 
 
+This is detailed commit list of changes for versions provider package: ``asana``.
+For high-level changelog, see :doc:`package information including changelog <index>`.

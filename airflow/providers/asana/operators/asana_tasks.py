@@ -37,9 +37,7 @@ class AsanaCreateTaskOperator(BaseOperator):
     :type asana_conn_id: str
     :param name: Name of the task.
     :type name: str
-    :param optional_task_parameters: Any of the optional task creation parameters. See
-    https://developers.asana.com/docs/create-a-task for a complete list. You must specify
-    at least one of 'workspace', 'parent', or 'projects'
+    :param optional_task_parameters: Any of the optional task creation parameters. See https://developers.asana.com/docs/create-a-task for a complete list. You must specify at least one of 'workspace', 'parent', or 'projects'
     :type optional_task_parameters: dict
     """
 
@@ -82,8 +80,7 @@ class AsanaUpdateTaskOperator(BaseOperator):
     :type asana_conn_id: str
     :param asana_task_gid: Asana task ID to update
     :type asana_task_gid: str
-    :param optional_task_parameters: Any of the optional task update parameters. See
-    https://developers.asana.com/docs/update-a-task for a complete list.
+    :param optional_task_parameters: Any of the optional task update parameters. See https://developers.asana.com/docs/update-a-task for a complete list.
     :type optional_task_parameters: dict
     """
 
