@@ -61,7 +61,7 @@ with DAG(
     update = AsanaUpdateTaskOperator(
         task_id="run_asana_update_task",
         asana_task_gid="your_task_id",
-        optional_task_parameters={
+        task_update_parameters={
             "notes": "This task was updated!",
             "completed": True
         },

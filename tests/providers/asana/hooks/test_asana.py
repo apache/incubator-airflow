@@ -18,9 +18,9 @@
 import unittest
 from unittest import mock
 
+from asana import Client
 from airflow.models import Connection
 from airflow.providers.asana.hooks.asana import AsanaHook
-from asana import Client
 
 
 class TestAsanaHook(unittest.TestCase):
@@ -46,4 +46,3 @@ class TestAsanaHook(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.asana_hook.get_conn()
-

@@ -45,7 +45,8 @@ class TestAsanaTaskOperators(unittest.TestCase):
     @patch("airflow.providers.asana.hooks.asana.Client", autospec=True, return_value=asana_client_mock)
     def test_asana_create_task_operator(self, asana_client):
         asana_client.access_token.return_value.tasks.create.return_value = {"gid": "1"}
-        create_task = AsanaCreateTaskOperator(task_id="update_task", asana_conn_id="asana_test", name="test", dag=self.dag)
+        create_task = AsanaCreateTaskOperator(task_id="update_task",
+                                              asana_conn_id="asana_test", name="test", dag=self.dag)
         create_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
         assert asana_client.access_token.return_value.tasks.create.called
 
@@ -59,12 +60,15 @@ class TestAsanaTaskOperators(unittest.TestCase):
 
     @patch("airflow.providers.asana.hooks.asana.Client", autospec=True, return_value=asana_client_mock)
     def test_asana_update_task_operator(self, asana_client):
-        update_task = AsanaUpdateTaskOperator(task_id="update_task", asana_conn_id="asana_test", asana_task_gid="test", dag=self.dag)
+        update_task = AsanaUpdateTaskOperator(task_id="update_task", asana_conn_id="asana_test",
+                                              asana_task_gid="test",
+                                              task_update_parameters={"completed": True}, dag=self.dag)
         update_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
         assert asana_client.access_token.return_value.tasks.update.called
 
     @patch("airflow.providers.asana.hooks.asana.Client", autospec=True, return_value=asana_client_mock)
     def test_asana_delete_task_operator(self, asana_client):
-        delete_task = AsanaDeleteTaskOperator(task_id="delete_task", asana_conn_id="asana_test", asana_task_gid="test", dag=self.dag)
+        delete_task = AsanaDeleteTaskOperator(task_id="delete_task",
+                                              asana_conn_id="asana_test", asana_task_gid="test", dag=self.dag)
         delete_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
         assert asana_client.access_token.return_value.tasks.delete_task.called
