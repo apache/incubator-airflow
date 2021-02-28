@@ -51,6 +51,10 @@ class AsanaHook(BaseHook):
         if self.client is not None:
             return self.client
 
+        if (self.connection.password is None) or (len(self.connection.password.strip()) == 0):
+            raise ValueError("Asana connection password must contain a personal access token: "
+                             "https://developers.asana.com/docs/personal-access-token")
+
         self.client = Client.access_token(self.connection.password)
 
         return self.client
