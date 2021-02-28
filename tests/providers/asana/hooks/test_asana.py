@@ -19,7 +19,6 @@ import unittest
 from unittest.mock import patch
 
 from asana import Client
-
 from airflow.models import Connection
 from airflow.providers.asana.hooks.asana import AsanaHook
 
