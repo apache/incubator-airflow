@@ -139,3 +139,52 @@ class AsanaDeleteTaskOperator(BaseOperator):
         asana_client = self.hook.get_conn()
         response = asana_client.tasks.delete_task(self.asana_task_gid)
         self.log.info(response)
+
+
+class AsanaFindTaskOperator(BaseOperator):
+    """
+    This operator can be used to retrieve Asana tasks that match various filters.
+    You must specify at least one of `project`, `section`, `tag`, `user_task_list`,
+    or both `assignee` and `workspace`.
+    For a complete list of filters, see
+    https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L182
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:AsanaFindTaskOperator`
+
+    :param asana_conn_id: The Asana connection to use.
+    :type asana_conn_id: str
+    :param search_parameters: The parameters used to find relevant tasks
+    :type search_parameters: dict
+    """
+
+    @apply_defaults
+    def __init__(
+        self,
+        *,
+        asana_conn_id: str,
+        search_parameters: dict,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.asana_conn_id = asana_conn_id
+        self.search_parameters = search_parameters
+        self.hook = AsanaHook(conn_id=self.asana_conn_id)
+
+    def execute(self, context: Dict) -> list:
+        contains_needed_values = any([key in self.search_parameters
+                                      for key in ["project", "section", "tag", "user_task_list"]])
+        contains_needed_values |= ("assignee" in self.search_parameters) and ("workspace" in self.search_parameters)
+        if not contains_needed_values:
+            raise ValueError("You must specify at least one of 'project', 'section', 'tag', 'user_task_list',"
+                             "or both 'assignee' and 'workspace' in the search_parameters.")
+
+        asana_client = self.hook.get_conn()
+        response = asana_client.tasks.find_all(params=self.search_parameters)
+
+        # Convert the python-asana collection to a list
+        response_lst = [task for task in response]
+        self.log.info(response_lst)
+        return response_lst
