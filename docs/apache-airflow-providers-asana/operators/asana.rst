@@ -29,35 +29,11 @@ create an Asana task.
 Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
-Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
-password parameter of the connection metadata.
-
-The AsanaCreateTaskOperator minimally requires the new task's name. There are many other
+The AsanaCreateTaskOperator minimally requires the new task's name and
+the Asana connection to use to connect to your account (``asana_conn_id``). There are many other
 `task attributes you can specify <https://developers.asana.com/docs/create-a-task>`_
 through the ``optional_task_parameters``. You must specify at least one of 'workspace',
 'parent', or 'projects' in the ``optional_task_parameters``.
-
-
-.. _howto/operator:AsanaUpdateTaskOperator:
-
-AsanaUpdateTaskOperator
-=======================
-
-Use the :class:`~airflow.providers.asana.operators.AsanaUpdateTaskOperator` to
-update an existing Asana task.
-
-
-Using the Operator
-^^^^^^^^^^^^^^^^^^
-
-Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
-password parameter of the connection metadata.
-
-The AsanaUpdateTaskOperator minimally requires the task id to update. There are many other
-`task attributes you can overwrite <https://developers.asana.com/docs/update-a-task>`_
-through the ``optional_task_parameters``.
 
 
 .. _howto/operator:AsanaDeleteTaskOperator:
@@ -72,8 +48,40 @@ update an existing Asana task.
 Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
-Use the ``asana_conn_id`` argument to connect to your Asana account. Pass your
-`personal access token <https://developers.asana.com/docs/personal-access-token>`_ into the
-password parameter of the connection metadata.
+The AsanaDeleteTaskOperator requires a task id to delete. Use the ``asana_conn_id``
+parameter to specify the Asana connection to use to connect to your account.
 
-The AsanaDeleteTaskOperator requires a task id to delete.
+
+.. _howto/operator:AsanaFindTaskOperator:
+
+AsanaFindTaskOperator
+=======================
+
+Use the :class:`~airflow.providers.asana.operators.AsanaFindTaskOperator` to
+search for Asana tasks that fit some criteria.
+
+
+Using the Operator
+^^^^^^^^^^^^^^^^^^
+
+The AsanaFindTaskOperator requires a dict of search parameters following the description
+`here <https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L176>`_.
+Use the ``asana_conn_id`` parameter to specify the Asana connection to use to connect
+to your account.
+
+.. _howto/operator:AsanaUpdateTaskOperator:
+
+AsanaUpdateTaskOperator
+=======================
+
+Use the :class:`~airflow.providers.asana.operators.AsanaUpdateTaskOperator` to
+update an existing Asana task.
+
+
+Using the Operator
+^^^^^^^^^^^^^^^^^^
+
+The AsanaUpdateTaskOperator minimally requires the task id to update and
+the Asana connection to use to connect to your account (``asana_conn_id``). There are many other
+`task attributes you can overwrite <https://developers.asana.com/docs/update-a-task>`_
+through the ``optional_task_parameters``.

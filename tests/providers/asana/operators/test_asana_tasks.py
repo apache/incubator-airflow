@@ -20,7 +20,8 @@ from unittest.mock import Mock, patch
 
 from airflow.models import Connection
 from airflow.models.dag import DAG
-from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator, AsanaDeleteTaskOperator, AsanaUpdateTaskOperator
+from airflow.providers.asana.operators.asana_tasks import AsanaCreateTaskOperator, AsanaDeleteTaskOperator, \
+    AsanaFindTaskOperator, AsanaUpdateTaskOperator
 from airflow.utils import db, timezone
 
 DEFAULT_DATE = timezone.datetime(2015, 1, 1)
@@ -47,6 +48,14 @@ class TestAsanaTaskOperators(unittest.TestCase):
         create_task = AsanaCreateTaskOperator(task_id="update_task", asana_conn_id="asana_test", name="test", dag=self.dag)
         create_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
         assert asana_client.access_token.return_value.tasks.create.called
+
+    @patch("airflow.providers.asana.hooks.asana.Client", autospec=True, return_value=asana_client_mock)
+    def test_asana_find_task_operator(self, asana_client):
+        asana_client.access_token.return_value.tasks.create.return_value = {"gid": "1"}
+        find_task = AsanaFindTaskOperator(task_id="update_task", asana_conn_id="asana_test",
+                                          search_parameters={"project": "test"}, dag=self.dag)
+        find_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
+        assert asana_client.access_token.return_value.tasks.find_all.called
 
     @patch("airflow.providers.asana.hooks.asana.Client", autospec=True, return_value=asana_client_mock)
     def test_asana_update_task_operator(self, asana_client):
