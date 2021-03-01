@@ -28,6 +28,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
+from airflow.models.base import COLLATION_ARGS
+
 revision = '7939bcff74ba'
 down_revision = 'fe461863935f'
 branch_labels = None
@@ -39,7 +41,7 @@ def upgrade():
     op.create_table(
         'dag_tag',
         sa.Column('name', sa.String(length=100), nullable=False),
-        sa.Column('dag_id', sa.String(length=250), nullable=False),
+        sa.Column('dag_id', sa.String(length=250, **COLLATION_ARGS), nullable=False),
         sa.ForeignKeyConstraint(
             ['dag_id'],
             ['dag.dag_id'],
