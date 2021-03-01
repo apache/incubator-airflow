@@ -32,8 +32,8 @@ Using the Operator
 The AsanaCreateTaskOperator minimally requires the new task's name and
 the Asana connection to use to connect to your account (``asana_conn_id``). There are many other
 `task attributes you can specify <https://developers.asana.com/docs/create-a-task>`_
-through the ``optional_task_parameters``. You must specify at least one of 'workspace',
-'parent', or 'projects' in the ``optional_task_parameters``.
+through the ``task_parameters``. You must specify at least one of 'workspace',
+'parent', or 'projects' in the ``task_parameters``.
 
 
 .. _howto/operator:AsanaDeleteTaskOperator:
@@ -84,4 +84,4 @@ Using the Operator
 The AsanaUpdateTaskOperator minimally requires the task id to update and
 the Asana connection to use to connect to your account (``asana_conn_id``). There are many other
 `task attributes you can overwrite <https://developers.asana.com/docs/update-a-task>`_
-through the ``optional_task_parameters``.
+through the ``task_parameters``.
