@@ -38,6 +38,7 @@ class AsanaHook(BaseHook):
 
     @cached_property
     def client(self) -> Client:
+        """Instantiates python-asana Client"""
         connection = self.get_connection(self.asana_conn_id)
 
         if not connection.password:
@@ -52,6 +53,7 @@ class AsanaHook(BaseHook):
         return self.client
 
     def create_task(self, task_name: str, task_parameters: dict) -> dict:
+        """Creates an Asana task."""
         params = {"name": task_name}
         if task_parameters is not None:
             params.update(task_parameters)
@@ -59,13 +61,16 @@ class AsanaHook(BaseHook):
         return response
 
     def update_task(self, task_id: str, task_parameters: dict) -> dict:
+        """Updates an existing Asana task."""
         response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
         return response
 
     def find_task(self, search_parameters: dict) -> list:
+        """Retrieves a list of Asana tasks that match search criteria."""
         response = self.client.tasks.find_all(params=search_parameters)  # pylint: disable=no-member
         return list(response)
 
     def delete_task(self, task_id: str) -> dict:
+        """Deletes an Asana task."""
         response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
         return response
