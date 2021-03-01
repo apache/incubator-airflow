@@ -21,9 +21,9 @@
 from typing import Any, Dict
 
 from asana import Client
+from cached_property import cached_property
 
 from airflow.hooks.base import BaseHook
-from cached_property import cached_property
 
 
 class AsanaHook(BaseHook):
