@@ -19,9 +19,9 @@
 """Connect to Asana."""
 
 from asana import Client
+from cached_property import cached_property
 
 from airflow.hooks.base import BaseHook
-from cached_property import cached_property
 
 
 class AsanaHook(BaseHook):
@@ -51,3 +51,22 @@ class AsanaHook(BaseHook):
 
     def get_conn(self) -> Client:
         return self.client
+
+    def create_task(self, task_name: str, task_parameters: dict) -> dict:
+        params = {"name": task_name}
+        if task_parameters is not None:
+            params.update(task_parameters)
+        response = self.client.tasks.create(params=params)  # pylint: disable=no-member
+        return response
+
+    def update_task(self, task_id: str, task_parameters: dict) -> dict:
+        response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
+        return response
+
+    def find_task(self, search_parameters: dict) -> list:
+        response = self.client.tasks.find_all(params=search_parameters)  # pylint: disable=no-member
+        return list(response)
+
+    def delete_task(self, task_id: str) -> dict:
+        response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
+        return response

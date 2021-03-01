@@ -52,19 +52,14 @@ class AsanaCreateTaskOperator(BaseOperator):
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
+
         self.asana_conn_id = asana_conn_id
         self.name = name
         self.task_parameters = task_parameters
 
     def execute(self, context: Dict) -> str:
         hook = AsanaHook(conn_id=self.asana_conn_id)
-        asana_client = hook.get_conn()
-
-        params = {"name": self.name}
-        if self.task_parameters is not None:
-            params.update(self.task_parameters)
-        response = asana_client.tasks.create(params=params)
-
+        response = hook.create_task(self.name, self.task_parameters)
         self.log.info(response)
         return response["gid"]
 
@@ -105,8 +100,7 @@ class AsanaUpdateTaskOperator(BaseOperator):
 
     def execute(self, context: Dict) -> None:
         hook = AsanaHook(conn_id=self.asana_conn_id)
-        asana_client = hook.get_conn()
-        response = asana_client.tasks.update(task=self.asana_task_gid, params=self.task_parameters)
+        response = hook.update_task(self.asana_task_gid, self.task_parameters)
         self.log.info(response)
 
 
@@ -139,8 +133,7 @@ class AsanaDeleteTaskOperator(BaseOperator):
 
     def execute(self, context: Dict) -> None:
         hook = AsanaHook(conn_id=self.asana_conn_id)
-        asana_client = hook.get_conn()
-        response = asana_client.tasks.delete_task(self.asana_task_gid)
+        response = hook.delete_task(self.asana_task_gid)
         self.log.info(response)
 
 
@@ -189,9 +182,6 @@ class AsanaFindTaskOperator(BaseOperator):
 
     def execute(self, context: Dict) -> list:
         hook = AsanaHook(conn_id=self.asana_conn_id)
-        asana_client = hook.get_conn()
-        response = asana_client.tasks.find_all(params=self.search_parameters)
-
-        response_lst = list(response)
-        self.log.info(response_lst)
-        return response_lst
+        response = hook.find_task(self.search_parameters)
+        self.log.info(response)
+        return response
