@@ -35,22 +35,19 @@ class AsanaHook(BaseHook):
     def __init__(self, conn_id: str = default_conn_name, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.asana_conn_id = conn_id
-        self.connection = kwargs.pop("connection", None)
-        self.extras = None
         self.uri = None
 
     @cached_property
     def client(self) -> Client:
-        self.connection = self.get_connection(self.asana_conn_id)
-        self.extras = self.connection.extra_dejson.copy()
+        connection = self.get_connection(self.asana_conn_id)
 
-        if not self.connection.password:
+        if not connection.password:
             raise ValueError(
                 "Asana connection password must contain a personal access token: "
                 "https://developers.asana.com/docs/personal-access-token"
             )
 
-        return Client.access_token(self.connection.password)
+        return Client.access_token(connection.password)
 
     def get_conn(self) -> Client:
         return self.client

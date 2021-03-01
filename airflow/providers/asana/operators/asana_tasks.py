@@ -55,10 +55,10 @@ class AsanaCreateTaskOperator(BaseOperator):
         self.asana_conn_id = asana_conn_id
         self.name = name
         self.task_parameters = task_parameters
-        self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> str:
-        asana_client = self.hook.get_conn()
+        hook = AsanaHook(conn_id=self.asana_conn_id)
+        asana_client = hook.get_conn()
 
         params = {"name": self.name}
         if self.task_parameters is not None:
@@ -102,11 +102,10 @@ class AsanaUpdateTaskOperator(BaseOperator):
         self.asana_conn_id = asana_conn_id
         self.asana_task_gid = asana_task_gid
         self.task_parameters = task_parameters
-        self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> None:
-        asana_client = self.hook.get_conn()
-
+        hook = AsanaHook(conn_id=self.asana_conn_id)
+        asana_client = hook.get_conn()
         response = asana_client.tasks.update(task=self.asana_task_gid, params=self.task_parameters)
         self.log.info(response)
 
@@ -137,10 +136,10 @@ class AsanaDeleteTaskOperator(BaseOperator):
 
         self.asana_conn_id = asana_conn_id
         self.asana_task_gid = asana_task_gid
-        self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> None:
-        asana_client = self.hook.get_conn()
+        hook = AsanaHook(conn_id=self.asana_conn_id)
+        asana_client = hook.get_conn()
         response = asana_client.tasks.delete_task(self.asana_task_gid)
         self.log.info(response)
 
@@ -174,8 +173,6 @@ class AsanaFindTaskOperator(BaseOperator):
         super().__init__(**kwargs)
 
         self.asana_conn_id = asana_conn_id
-        self.hook = AsanaHook(conn_id=self.asana_conn_id)
-
         self.search_parameters = search_parameters
         self.validate_parameters()
 
@@ -191,7 +188,8 @@ class AsanaFindTaskOperator(BaseOperator):
             )
 
     def execute(self, context: Dict) -> list:
-        asana_client = self.hook.get_conn()
+        hook = AsanaHook(conn_id=self.asana_conn_id)
+        asana_client = hook.get_conn()
         response = asana_client.tasks.find_all(params=self.search_parameters)
 
         response_lst = list(response)
