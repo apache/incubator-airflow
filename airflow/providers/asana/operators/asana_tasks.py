@@ -178,13 +178,16 @@ class AsanaFindTaskOperator(BaseOperator):
         self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> list:
-        contains_needed_values = ("assignee" in self.search_parameters) and \
-                                 ("workspace" in self.search_parameters)
+        contains_needed_values = ("assignee" in self.search_parameters) and (
+            "workspace" in self.search_parameters
+        )
         for key in ["project", "section", "tag", "user_task_list"]:
             contains_needed_values |= key in self.search_parameters
         if not contains_needed_values:
-            raise ValueError("You must specify at least one of 'project', 'section', 'tag', 'user_task_list',"
-                             "or both 'assignee' and 'workspace' in the search_parameters.")
+            raise ValueError(
+                "You must specify at least one of 'project', 'section', 'tag', 'user_task_list',"
+                "or both 'assignee' and 'workspace' in the search_parameters."
+            )
 
         asana_client = self.hook.get_conn()
         response = asana_client.tasks.find_all(params=self.search_parameters)

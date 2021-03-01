@@ -24,9 +24,7 @@ from airflow.hooks.base import BaseHook
 
 
 class AsanaHook(BaseHook):
-    """
-    Wrapper around Asana Python client library.
-    """
+    """Wrapper around Asana Python client library."""
 
     conn_name_attr = "asana_conn_id"
     default_conn_name = "asana_default"
@@ -42,9 +40,7 @@ class AsanaHook(BaseHook):
         self.uri = None
 
     def get_conn(self) -> Client:
-        """
-        Creates Asana Client
-        """
+        """Creates Asana Client"""
         self.connection = self.get_connection(self.asana_conn_id)
         self.extras = self.connection.extra_dejson.copy()
 
@@ -52,8 +48,10 @@ class AsanaHook(BaseHook):
             return self.client
 
         if (self.connection.password is None) or (len(self.connection.password.strip()) == 0):
-            raise ValueError("Asana connection password must contain a personal access token: "
-                             "https://developers.asana.com/docs/personal-access-token")
+            raise ValueError(
+                "Asana connection password must contain a personal access token: "
+                "https://developers.asana.com/docs/personal-access-token"
+            )
 
         self.client = Client.access_token(self.connection.password)
 

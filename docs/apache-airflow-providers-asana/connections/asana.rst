@@ -25,5 +25,3 @@ Configuring the Connection
 --------------------------
 Password (required)
     Specify a `personal access token <https://developers.asana.com/docs/personal-access-token>`_ for the account.
-
-

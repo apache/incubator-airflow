@@ -19,30 +19,37 @@ import unittest
 from unittest import mock
 
 from asana import Client
+
 from airflow.models import Connection
 from airflow.providers.asana.hooks.asana import AsanaHook
 
 
 class TestAsanaHook(unittest.TestCase):
+    """
+    Tests for AsanaHook Asana client retrieval
+    """
+
     def setUp(self):
         super().setUp()
         self.asana_hook = AsanaHook()
 
     def test_asana_client_retrieved(self):
-
+        """
+        Test that we successfully retrieve an Asana client given a Connection with complete information.
+        :return: None
+        """
         self.asana_hook.get_connection = mock.Mock()
-        self.asana_hook.get_connection.return_value = Connection(
-            conn_type="asana", password="test"
-        )
+        self.asana_hook.get_connection.return_value = Connection(conn_type="asana", password="test")
         client = self.asana_hook.get_conn()
         self.assertEqual(type(client), Client)
 
     def test_missing_password_raises(self):
-
+        """
+        Test that the Asana hook raises an exception if password not provided.
+        :return: None
+        """
         self.asana_hook.get_connection = mock.Mock()
-        self.asana_hook.get_connection.return_value = Connection(
-            conn_type="asana"
-        )
+        self.asana_hook.get_connection.return_value = Connection(conn_type="asana")
 
         with self.assertRaises(ValueError):
             self.asana_hook.get_conn()
