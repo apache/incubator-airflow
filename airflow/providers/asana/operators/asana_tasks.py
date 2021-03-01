@@ -36,10 +36,10 @@ class AsanaCreateTaskOperator(BaseOperator):
     :type asana_conn_id: str
     :param name: Name of the task.
     :type name: str
-    :param optional_task_parameters: Any of the optional task creation parameters.
+    :param task_parameters: Any of the optional task creation parameters.
         See https://developers.asana.com/docs/create-a-task for a complete list.
         You must specify at least one of 'workspace', 'parent', or 'projects'.
-    :type optional_task_parameters: dict
+    :type task_parameters: dict
     """
 
     @apply_defaults
@@ -48,21 +48,21 @@ class AsanaCreateTaskOperator(BaseOperator):
         *,
         asana_conn_id: str,
         name: str,
-        optional_task_parameters: Optional[dict] = None,
+        task_parameters: Optional[dict] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.asana_conn_id = asana_conn_id
         self.name = name
-        self.optional_task_parameters = optional_task_parameters
+        self.task_parameters = task_parameters
         self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> str:
         asana_client = self.hook.get_conn()
 
         params = {"name": self.name}
-        if self.optional_task_parameters is not None:
-            params.update(self.optional_task_parameters)
+        if self.task_parameters is not None:
+            params.update(self.task_parameters)
         response = asana_client.tasks.create(params=params)
 
         self.log.info(response)
@@ -83,7 +83,7 @@ class AsanaUpdateTaskOperator(BaseOperator):
     :type asana_conn_id: str
     :param asana_task_gid: Asana task ID to update
     :type asana_task_gid: str
-    :param task_update_parameters: Any task parameters that should be updated.
+    :param task_parameters: Any task parameters that should be updated.
         See https://developers.asana.com/docs/update-a-task for a complete list.
     :type task_update_parameters: dict
     """
@@ -94,20 +94,20 @@ class AsanaUpdateTaskOperator(BaseOperator):
         *,
         asana_conn_id: str,
         asana_task_gid: str,
-        task_update_parameters: dict,
+        task_parameters: dict,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
         self.asana_conn_id = asana_conn_id
         self.asana_task_gid = asana_task_gid
-        self.task_update_parameters = task_update_parameters
+        self.task_parameters = task_parameters
         self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
     def execute(self, context: Dict) -> None:
         asana_client = self.hook.get_conn()
 
-        response = asana_client.tasks.update(task=self.asana_task_gid, params=self.task_update_parameters)
+        response = asana_client.tasks.update(task=self.asana_task_gid, params=self.task_parameters)
         self.log.info(response)
 
 
@@ -174,25 +174,25 @@ class AsanaFindTaskOperator(BaseOperator):
         super().__init__(**kwargs)
 
         self.asana_conn_id = asana_conn_id
-        self.search_parameters = search_parameters
         self.hook = AsanaHook(conn_id=self.asana_conn_id)
 
-    def execute(self, context: Dict) -> list:
-        contains_needed_values = ("assignee" in self.search_parameters) and (
-            "workspace" in self.search_parameters
-        )
+        self.search_parameters = search_parameters
+        self.validate_parameters()
+
+    def validate_parameters(self):
+        has_required_filters = {"assignee", "workspace"}.issubset(self.search_parameters)
         for key in ["project", "section", "tag", "user_task_list"]:
-            contains_needed_values |= key in self.search_parameters
-        if not contains_needed_values:
+            has_required_filters |= key in self.search_parameters
+        if not has_required_filters:
             raise ValueError(
                 "You must specify at least one of 'project', 'section', 'tag', 'user_task_list',"
                 "or both 'assignee' and 'workspace' in the search_parameters."
             )
 
+    def execute(self, context: Dict) -> list:
         asana_client = self.hook.get_conn()
         response = asana_client.tasks.find_all(params=self.search_parameters)
 
-        # Convert the python-asana collection to a list
         response_lst = list(response)
         self.log.info(response_lst)
         return response_lst

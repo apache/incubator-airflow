@@ -21,6 +21,7 @@
 from asana import Client
 
 from airflow.hooks.base import BaseHook
+from cached_property import cached_property
 
 
 class AsanaHook(BaseHook):
@@ -35,24 +36,21 @@ class AsanaHook(BaseHook):
         super().__init__(*args, **kwargs)
         self.asana_conn_id = conn_id
         self.connection = kwargs.pop("connection", None)
-        self.client = None
         self.extras = None
         self.uri = None
 
-    def get_conn(self) -> Client:
-        """Creates Asana Client"""
+    @cached_property
+    def client(self) -> Client:
         self.connection = self.get_connection(self.asana_conn_id)
         self.extras = self.connection.extra_dejson.copy()
 
-        if self.client is not None:
-            return self.client
-
-        if (self.connection.password is None) or (len(self.connection.password.strip()) == 0):
+        if not self.connection.password:
             raise ValueError(
                 "Asana connection password must contain a personal access token: "
                 "https://developers.asana.com/docs/personal-access-token"
             )
 
-        self.client = Client.access_token(self.connection.password)
+        return Client.access_token(self.connection.password)
 
+    def get_conn(self) -> Client:
         return self.client

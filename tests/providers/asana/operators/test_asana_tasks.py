@@ -80,7 +80,7 @@ class TestAsanaTaskOperators(unittest.TestCase):
             task_id="update_task",
             asana_conn_id="asana_test",
             asana_task_gid="test",
-            task_update_parameters={"completed": True},
+            task_parameters={"completed": True},
             dag=self.dag,
         )
         update_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
