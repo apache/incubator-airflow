@@ -170,6 +170,7 @@ class AsanaFindTaskOperator(BaseOperator):
         self.validate_parameters()
 
     def validate_parameters(self):
+        """Check that user provided minimal search parameters."""
         one_of_list = {"project", "section", "tag", "user_task_list"}
         both_of_list = {"assignee", "workspace"}
         contains_both = both_of_list.issubset(self.search_parameters)

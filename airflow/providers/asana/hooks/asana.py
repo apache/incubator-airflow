@@ -35,7 +35,6 @@ class AsanaHook(BaseHook):
     def __init__(self, conn_id: str = default_conn_name, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.asana_conn_id = conn_id
-        self.uri = None
 
     @cached_property
     def client(self) -> Client:
