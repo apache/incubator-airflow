@@ -180,13 +180,14 @@ class AsanaFindTaskOperator(BaseOperator):
         self.validate_parameters()
 
     def validate_parameters(self):
-        has_required_filters = {"assignee", "workspace"}.issubset(self.search_parameters)
-        for key in ["project", "section", "tag", "user_task_list"]:
-            has_required_filters |= key in self.search_parameters
-        if not has_required_filters:
+        one_of_list = {"project", "section", "tag", "user_task_list"}
+        both_of_list = {"assignee", "workspace"}
+        contains_both = both_of_list.issubset(self.search_parameters)
+        contains_one = not one_of_list.isdisjoint(self.search_parameters)
+        if not (contains_both or contains_one):
             raise ValueError(
-                "You must specify at least one of 'project', 'section', 'tag', 'user_task_list',"
-                "or both 'assignee' and 'workspace' in the search_parameters."
+                f"You must specify at least one of {one_of_list} "
+                f"or both of {both_of_list} in the search_parameters."
             )
 
     def execute(self, context: Dict) -> list:
