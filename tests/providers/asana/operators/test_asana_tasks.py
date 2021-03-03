@@ -51,7 +51,11 @@ class TestAsanaTaskOperators(unittest.TestCase):
         """
         asana_client.access_token.return_value.tasks.create.return_value = {"gid": "1"}
         create_task = AsanaCreateTaskOperator(
-            task_id="create_task", asana_conn_id="asana_test", name="test", task_parameters={"workspace": "1"}, dag=self.dag
+            task_id="create_task",
+            asana_conn_id="asana_test",
+            name="test",
+            task_parameters={"workspace": "1"},
+            dag=self.dag,
         )
         create_task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
         assert asana_client.access_token.return_value.tasks.create.called

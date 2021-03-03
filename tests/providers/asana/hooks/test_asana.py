@@ -35,7 +35,9 @@ class TestAsanaHook(unittest.TestCase):
         Test that we successfully retrieve an Asana client given a Connection with complete information.
         :return: None
         """
-        with patch.object(AsanaHook, "get_connection", return_value=Connection(conn_type="asana", password="test")):
+        with patch.object(
+            AsanaHook, "get_connection", return_value=Connection(conn_type="asana", password="test")
+        ):
             hook = AsanaHook()
         client = hook.get_conn()
         self.assertEqual(type(client), Client)
@@ -56,7 +58,9 @@ class TestAsanaHook(unittest.TestCase):
         'projects' and 'project'.
         :return: None
         """
-        conn = Connection(conn_type="asana", password="test", extra='{"project": "1", "projects": ["1", "2"]}')
+        conn = Connection(
+            conn_type="asana", password="test", extra='{"project": "1", "projects": ["1", "2"]}'
+        )
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             with self.assertRaises(ValueError):
                 AsanaHook()
@@ -71,7 +75,7 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": "1"}
-        self.assertEqual(expected_merged_params, hook.merge_create_task_parameters("test", {}))
+        self.assertEqual(expected_merged_params, hook._merge_create_task_parameters("test", {}))
 
     def test_merge_create_task_parameters_specified_project(self):
         """
@@ -83,8 +87,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": ["1", "2"]}
-        self.assertEqual(expected_merged_params,
-                         hook.merge_create_task_parameters("test", {"projects": ["1", "2"]}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_create_task_parameters("test", {"projects": ["1", "2"]})
+        )
 
     def test_merge_find_task_parameters_default_project(self):
         """
@@ -96,7 +101,7 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "1"}
-        self.assertEqual(expected_merged_params, hook.merge_find_task_parameters({}))
+        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({}))
 
     def test_merge_find_task_parameters_specified_project(self):
         """
@@ -108,5 +113,4 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "2"}
-        self.assertEqual(expected_merged_params, hook.merge_find_task_parameters({"project": "2"}))
-
+        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({"project": "2"}))

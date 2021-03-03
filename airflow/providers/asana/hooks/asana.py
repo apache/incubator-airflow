@@ -36,7 +36,7 @@ class AsanaHook(BaseHook):
         super().__init__(*args, **kwargs)
         self.connection = self.get_connection(conn_id)
         self.default_params = self.connection.extra_dejson
-        self.clean_default_parameters()
+        self._clean_default_parameters()
 
     def get_conn(self) -> Client:
         return self.client
@@ -52,7 +52,7 @@ class AsanaHook(BaseHook):
 
         return Client.access_token(self.connection.password)
 
-    def clean_default_parameters(self):
+    def _clean_default_parameters(self):
         """
         Downcase the parameter keys, check whether the user specified both 'projects' and
         'project', and rename the 'projects' key to 'project' if present.
@@ -65,12 +65,12 @@ class AsanaHook(BaseHook):
 
     def create_task(self, task_name: str, task_parameters: dict) -> dict:
         """Creates an Asana task."""
-        params = self.merge_create_task_parameters(task_name, task_parameters)
-        self.validate_create_task_parameters(params)
+        params = self._merge_create_task_parameters(task_name, task_parameters)
+        self._validate_create_task_parameters(params)
         response = self.client.tasks.create(params=params)  # pylint: disable=no-member
         return response
 
-    def merge_create_task_parameters(self, task_name: str, task_parameters: dict) -> dict:
+    def _merge_create_task_parameters(self, task_name: str, task_parameters: dict) -> dict:
         """Merge create_task parameters with default params."""
         params = {"name": task_name}
         params.update(self.default_params)
@@ -79,7 +79,7 @@ class AsanaHook(BaseHook):
         return params
 
     @staticmethod
-    def validate_create_task_parameters(task_parameters: dict) -> None:
+    def _validate_create_task_parameters(task_parameters: dict) -> None:
         """Check that user provided minimal create parameters."""
         required_parameters = {"workspace", "projects", "parent"}
         if required_parameters.isdisjoint(task_parameters):
@@ -92,16 +92,19 @@ class AsanaHook(BaseHook):
 
     def find_task(self, search_parameters: dict) -> list:
         """Retrieves a list of Asana tasks that match search criteria."""
-        params = self.merge_find_task_parameters(search_parameters)
+        params = self._merge_find_task_parameters(search_parameters)
+        self._validate_find_task_parameters(params)
         response = self.client.tasks.find_all(params=params)  # pylint: disable=no-member
         return list(response)
 
-    def merge_find_task_parameters(self, search_parameters: dict) -> dict:
+    def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
         """Merge find_task parameters with default params."""
         params = {k: v for k, v in self.default_params.items() if k != "projects"}
         # The Asana API takes a 'project' parameter for find_task,
         # so rename the 'projects' key if it appears in default_params
-        if "projects" in self.default_params and (not search_parameters or "project" not in search_parameters):
+        if "projects" in self.default_params and (
+            not search_parameters or "project" not in search_parameters
+        ):
             if type(self.default_params["projects"] == list):
                 if len(self.default_params["projects"]) > 1:
                     raise ValueError("find_task can accept only one project.")
@@ -112,11 +115,10 @@ class AsanaHook(BaseHook):
 
         if search_parameters:
             params.update(search_parameters)
-        self.validate_find_task_parameters(params)
         return params
 
     @staticmethod
-    def validate_find_task_parameters(search_parameters: dict) -> None:
+    def _validate_find_task_parameters(search_parameters: dict) -> None:
         """Check that user provided minimal search parameters."""
         one_of_list = {"project", "section", "tag", "user_task_list"}
         both_of_list = {"assignee", "workspace"}

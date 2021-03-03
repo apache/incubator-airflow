@@ -141,7 +141,7 @@ class AsanaFindTaskOperator(BaseOperator):
     """
     This operator can be used to retrieve Asana tasks that match various filters.
     You must specify at least one of `project`, `section`, `tag`, `user_task_list`,
-    or both `assignee` and `workspace`.
+    or both `assignee` and `workspace` through the connection extras or through `search_parameters`.
     For a complete list of filters, see
     https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L182
 
