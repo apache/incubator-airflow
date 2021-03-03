@@ -110,9 +110,22 @@ class AsanaHook(BaseHook):
                 f"You must specify at least one of {required_parameters} in the create_task parameters"
             )
 
-    def delete_task(self, task_id: str) -> dict:
-        """Deletes an Asana task."""
-        response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
+    @staticmethod
+    def validate_find_task_parameters(search_parameters: dict) -> None:
+        """Check that user provided minimal search parameters."""
+        one_of_list = {"project", "section", "tag", "user_task_list"}
+        both_of_list = {"assignee", "workspace"}
+        contains_both = both_of_list.issubset(search_parameters)
+        contains_one = not one_of_list.isdisjoint(search_parameters)
+        if not (contains_both or contains_one):
+            raise ValueError(
+                f"You must specify at least one of {one_of_list} "
+                f"or both of {both_of_list} in the search_parameters."
+            )
+
+    def update_task(self, task_id: str, task_parameters: dict) -> dict:
+        """Updates an existing Asana task."""
+        response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
         return response
 
     def find_task(self, params: dict) -> list:
