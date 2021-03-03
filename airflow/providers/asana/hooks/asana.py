@@ -58,10 +58,10 @@ class AsanaHook(BaseHook):
         'project', and rename the 'projects' key to 'project' if present.
         """
         self.default_params = {k.lower(): v for k, v in self.default_params.items()}
-        if "projects" in self.default_params:
-            if "project" in self.default_params:
+        if "project" in self.default_params:
+            if "projects" in self.default_params:
                 raise ValueError("You cannot specify both 'projects' and 'project' in default_params.")
-            self.default_params["project"] = self.default_params.pop("projects")
+            self.default_params["projects"] = self.default_params.pop("project")
 
     def create_task(self, task_name: str, task_parameters: dict) -> dict:
         """Creates an Asana task."""
@@ -73,11 +73,7 @@ class AsanaHook(BaseHook):
     def merge_create_task_parameters(self, task_name: str, task_parameters: dict) -> dict:
         """Merge create_task parameters with default params."""
         params = {"name": task_name}
-        params.update({k: v for k, v in self.default_params.items() if k != "project"})
-        # The Asana API takes a "projects" parameter for create_task,
-        # so rename the 'project' key if it appears in default_params
-        if "project" in self.default_params:
-            params["projects"] = self.default_params["project"]
+        params.update(self.default_params)
         if task_parameters is not None:
             params.update(task_parameters)
         return params
@@ -96,13 +92,28 @@ class AsanaHook(BaseHook):
 
     def find_task(self, search_parameters: dict) -> list:
         """Retrieves a list of Asana tasks that match search criteria."""
-        params = {}
-        params.update(self.default_params)
-        params.update(search_parameters)
-        self.validate_find_task_parameters(params)
-
+        params = self.merge_find_task_parameters(search_parameters)
         response = self.client.tasks.find_all(params=params)  # pylint: disable=no-member
         return list(response)
+
+    def merge_find_task_parameters(self, search_parameters: dict) -> dict:
+        """Merge find_task parameters with default params."""
+        params = {k: v for k, v in self.default_params.items() if k != "projects"}
+        # The Asana API takes a 'project' parameter for find_task,
+        # so rename the 'projects' key if it appears in default_params
+        if "projects" in self.default_params and (not search_parameters or "project" not in search_parameters):
+            if type(self.default_params["projects"] == list):
+                if len(self.default_params["projects"]) > 1:
+                    raise ValueError("find_task can accept only one project.")
+                else:
+                    params["project"] = self.default_params["projects"][0]
+            else:
+                params["project"] = self.default_params["projects"]
+
+        if search_parameters:
+            params.update(search_parameters)
+        self.validate_find_task_parameters(params)
+        return params
 
     @staticmethod
     def validate_find_task_parameters(search_parameters: dict) -> None:

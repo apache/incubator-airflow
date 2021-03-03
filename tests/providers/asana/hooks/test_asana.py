@@ -85,3 +85,28 @@ class TestAsanaHook(unittest.TestCase):
         expected_merged_params = {"name": "test", "projects": ["1", "2"]}
         self.assertEqual(expected_merged_params,
                          hook.merge_create_task_parameters("test", {"projects": ["1", "2"]}))
+
+    def test_merge_find_task_parameters_default_project(self):
+        """
+        Test that merge_find_task_parameters correctly merges the default and method parameters when we
+        do not override the default project.
+        :return: None
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"projects": ["1"]}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"project": "1"}
+        self.assertEqual(expected_merged_params, hook.merge_find_task_parameters({}))
+
+    def test_merge_find_task_parameters_specified_project(self):
+        """
+        Test that merge_find_task_parameters correctly merges the default and method parameters when we
+        do override the default project.
+        :return: None
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"projects": ["1"]}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"project": "2"}
+        self.assertEqual(expected_merged_params, hook.merge_find_task_parameters({"project": "2"}))
+

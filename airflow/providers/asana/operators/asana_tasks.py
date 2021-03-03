@@ -160,7 +160,7 @@ class AsanaFindTaskOperator(BaseOperator):
         self,
         *,
         asana_conn_id: str,
-        search_parameters: dict,
+        search_parameters: Optional[dict] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
