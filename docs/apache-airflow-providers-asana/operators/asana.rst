@@ -33,7 +33,7 @@ The AsanaCreateTaskOperator minimally requires the new task's name and
 the Asana connection to use to connect to your account (``asana_conn_id``). There are many other
 `task attributes you can specify <https://developers.asana.com/docs/create-a-task>`_
 through the ``task_parameters``. You must specify at least one of 'workspace',
-'parent', or 'projects' in the ``task_parameters``.
+'parent', or 'projects' in the ``task_parameters`` or in the connection extras.
 
 
 .. _howto/operator:AsanaDeleteTaskOperator:
@@ -67,7 +67,8 @@ Using the Operator
 The AsanaFindTaskOperator requires a dict of search parameters following the description
 `here <https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L176>`_.
 Use the ``asana_conn_id`` parameter to specify the Asana connection to use to connect
-to your account.
+to your account. Any parameters provided in the connection extras will be used in the
+search if not overridden in the ``search_parameters``.
 
 .. _howto/operator:AsanaUpdateTaskOperator:
 

@@ -167,19 +167,6 @@ class AsanaFindTaskOperator(BaseOperator):
 
         self.asana_conn_id = asana_conn_id
         self.search_parameters = search_parameters
-        self.validate_parameters()
-
-    def validate_parameters(self):
-        """Check that user provided minimal search parameters."""
-        one_of_list = {"project", "section", "tag", "user_task_list"}
-        both_of_list = {"assignee", "workspace"}
-        contains_both = both_of_list.issubset(self.search_parameters)
-        contains_one = not one_of_list.isdisjoint(self.search_parameters)
-        if not (contains_both or contains_one):
-            raise ValueError(
-                f"You must specify at least one of {one_of_list} "
-                f"or both of {both_of_list} in the search_parameters."
-            )
 
     def execute(self, context: Dict) -> list:
         hook = AsanaHook(conn_id=self.asana_conn_id)

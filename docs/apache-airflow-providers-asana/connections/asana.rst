@@ -25,3 +25,5 @@ Configuring the Connection
 --------------------------
 Password (required)
     Specify a `personal access token <https://developers.asana.com/docs/personal-access-token>`_ for the account.
+Extras (optional)
+    Specify a JSON of default parameters to use in requests, such as 'project' or 'workspace'.

@@ -17,6 +17,7 @@
 #
 import unittest
 from unittest import mock
+from unittest.mock import patch
 
 from asana import Client
 
@@ -29,27 +30,58 @@ class TestAsanaHook(unittest.TestCase):
     Tests for AsanaHook Asana client retrieval
     """
 
-    def setUp(self):
-        super().setUp()
-        self.asana_hook = AsanaHook()
-
     def test_asana_client_retrieved(self):
         """
         Test that we successfully retrieve an Asana client given a Connection with complete information.
         :return: None
         """
-        self.asana_hook.get_connection = mock.Mock()
-        self.asana_hook.get_connection.return_value = Connection(conn_type="asana", password="test")
-        client = self.asana_hook.get_conn()
+        with patch.object(AsanaHook, "get_connection", return_value=Connection(conn_type="asana", password="test")):
+            hook = AsanaHook()
+        client = hook.get_conn()
         self.assertEqual(type(client), Client)
 
     def test_missing_password_raises(self):
         """
-        Test that the Asana hook raises an exception if password not provided.
+        Test that the Asana hook raises an exception if password not provided in connection.
         :return: None
         """
-        self.asana_hook.get_connection = mock.Mock()
-        self.asana_hook.get_connection.return_value = Connection(conn_type="asana")
-
+        with patch.object(AsanaHook, "get_connection", return_value=Connection(conn_type="asana")):
+            hook = AsanaHook()
         with self.assertRaises(ValueError):
-            self.asana_hook.get_conn()
+            hook.get_conn()
+
+    def test_conflicting_project_params_raises(self):
+        """
+        Test that the hook raises a ValueError on init if we pass it default parameters containing both
+        'projects' and 'project'.
+        :return: None
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"project": "1", "projects": ["1", "2"]}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            with self.assertRaises(ValueError):
+                AsanaHook()
+
+    def test_merge_create_task_parameters_default_project(self):
+        """
+        Test that merge_create_task_parameters correctly merges the default and method parameters when we
+        do not override the default project.
+        :return: None
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"project": "1"}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"name": "test", "projects": "1"}
+        self.assertEqual(expected_merged_params, hook.merge_create_task_parameters("test", {}))
+
+    def test_merge_create_task_parameters_specified_project(self):
+        """
+        Test that merge_create_task_parameters correctly merges the default and method parameters when we
+        override the default project.
+        :return: None
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"project": "1"}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"name": "test", "projects": ["1", "2"]}
+        self.assertEqual(expected_merged_params,
+                         hook.merge_create_task_parameters("test", {"projects": ["1", "2"]}))
