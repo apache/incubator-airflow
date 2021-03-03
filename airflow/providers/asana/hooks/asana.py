@@ -110,6 +110,25 @@ class AsanaHook(BaseHook):
                 f"You must specify at least one of {required_parameters} in the create_task parameters"
             )
 
+    def merge_find_task_parameters(self, search_parameters: dict) -> dict:
+        """Merge find_task parameters with default params."""
+        params = {k: v for k, v in self.default_params.items() if k != "projects"}
+        # The Asana API takes a 'project' parameter for find_task,
+        # so rename the 'projects' key if it appears in default_params
+        if "projects" in self.default_params and (not search_parameters or "project" not in search_parameters):
+            if type(self.default_params["projects"] == list):
+                if len(self.default_params["projects"]) > 1:
+                    raise ValueError("find_task can accept only one project.")
+                else:
+                    params["project"] = self.default_params["projects"][0]
+            else:
+                params["project"] = self.default_params["projects"]
+
+        if search_parameters:
+            params.update(search_parameters)
+        self.validate_find_task_parameters(params)
+        return params
+
     @staticmethod
     def validate_find_task_parameters(search_parameters: dict) -> None:
         """Check that user provided minimal search parameters."""
