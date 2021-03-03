@@ -54,7 +54,7 @@ class AsanaHook(BaseHook):
 
     def _clean_default_parameters(self):
         """
-        Downcase the parameter keys, check whether the user specified both 'projects' and
+        Lowercase the parameter keys, check whether the user specified both 'projects' and
         'project', and rename the 'projects' key to 'project' if present.
         """
         self.default_params = {k.lower(): v for k, v in self.default_params.items()}
