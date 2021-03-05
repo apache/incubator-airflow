@@ -1971,6 +1971,20 @@
       type: string
       example: ~
       default: "asctime, filename, lineno, levelname, message"
+    - name: host_field
+      description: |
+        The field where host name is stored (normally either `host` or `host.name`)
+      version_added: 2.0.2
+      type: string
+      example: ~
+      default: "host"
+    - name: offset_field
+      description: |
+        The field where offset is stored (normally either `offset` or `log.offset`)
+      version_added: 2.0.2
+      type: string
+      example: ~
+      default: "offset"
 - name: elasticsearch_configs
   description: ~
   options:
