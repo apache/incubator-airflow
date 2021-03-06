@@ -359,6 +359,9 @@ transfers:
   - source-integration-name: Exasol
     target-integration-name: Amazon Simple Storage Service (S3)
     python-module: airflow.providers.amazon.aws.transfers.exasol_to_s3
+  - source-integration-name: Snowflake
+    target-integration-name: Amazon Simple Storage Service (S3)
+    python-module: airflow.providers.amazon.aws.transfers.snowflake_to_s3
 
 hook-class-names:
   - airflow.providers.amazon.aws.hooks.s3.S3Hook

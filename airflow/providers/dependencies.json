@@ -8,6 +8,7 @@
     "mongo",
     "mysql",
     "postgres",
+    "snowflake",
     "ssh"
   ],
   "apache.beam": [
