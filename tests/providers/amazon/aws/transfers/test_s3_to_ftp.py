@@ -16,8 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 import unittest
-from unittest import mock
+from unittest import mock, Mock
 
+from airflow.provider.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_ftp import S3ToFTPOperator
 
 TASK_ID = 'test_s3_to_ftp'
