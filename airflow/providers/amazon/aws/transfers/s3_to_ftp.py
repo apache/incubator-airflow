@@ -27,6 +27,7 @@ from airflow.utils.decorators import apply_defaults
 class S3ToFTPOperator(BaseOperator):
     """
     This operator enables the transferring of files from S3 to a FTP server.
+
     :param s3_bucket: The targeted s3 bucket. This is the S3 bucket from
         where the file is downloaded.
     :type s3_bucket: str
@@ -41,7 +42,6 @@ class S3ToFTPOperator(BaseOperator):
     :param aws_conn_id: The AWS connection id. The name or identifier for
         establishing a connection to S3.
     :type aws_conn_id: str
-
     """
 
     template_fields = ('s3_bucket', 's3_key', 'ftp_path')
