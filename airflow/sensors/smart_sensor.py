@@ -431,6 +431,7 @@ class SmartSensorOperator(BaseOperator, SkipMixin):
         TI = TaskInstance
 
         count_marked = 0
+        query_result = []
         try:
             query_result = (
                 session.query(TI, SI)
@@ -678,7 +679,7 @@ class SmartSensorOperator(BaseOperator, SkipMixin):
             else:
                 cached_work.state = None
 
-        for ti_key, sensor_exception in self.cached_sensor_exceptions.items():
+        for ti_key, sensor_exception in list(self.cached_sensor_exceptions.items()):
             if sensor_exception.fail_current_run or sensor_exception.is_expired():
                 self.cached_sensor_exceptions.pop(ti_key, None)
 
