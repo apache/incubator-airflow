@@ -1096,6 +1096,20 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
                 return date.strftime('%Y%m%dT%H%M%S')
         return ''
 
+    def _log_state(self, lead_msg: str = ''):
+        self.log.info(
+            '%sMarking task as %s.'
+            + ' dag_id=%s, task_id=%s,'
+            + ' execution_date=%s, start_date=%s, end_date=%s',
+            lead_msg,
+            self.state.upper(),
+            self.dag_id,
+            self.task_id,
+            self._date_or_empty('execution_date'),
+            self._date_or_empty('start_date'),
+            self._date_or_empty('end_date'),
+        )
+
     @provide_session
     @Sentry.enrich_errors
     def _run_raw_task(
@@ -1172,17 +1186,7 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
 
         # Recording SKIPPED or SUCCESS
         self.end_date = timezone.utcnow()
-        self.log.info(
-            'Marking task as %s.'
-            ' dag_id=%s, task_id=%s,'
-            ' execution_date=%s, start_date=%s, end_date=%s',
-            self.state.upper(),
-            self.dag_id,
-            self.task_id,
-            self._date_or_empty('execution_date'),
-            self._date_or_empty('start_date'),
-            self._date_or_empty('end_date'),
-        )
+        self._log_state()
         self.set_duration()
         if not test_mode:
             session.add(Log(self.state, self))
@@ -1504,25 +1508,12 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
 
         if force_fail or not self.is_eligible_to_retry():
             self.state = State.FAILED
-            if force_fail:
-                log_message = "Immediate failure requested. Marking task as FAILED."
-            else:
-                log_message = "Marking task as FAILED."
             email_for_state = task.email_on_failure
         else:
             self.state = State.UP_FOR_RETRY
-            log_message = "Marking task as UP_FOR_RETRY."
             email_for_state = task.email_on_retry
 
-        self.log.info(
-            '%s dag_id=%s, task_id=%s, execution_date=%s, start_date=%s, end_date=%s',
-            log_message,
-            self.dag_id,
-            self.task_id,
-            self._safe_date('execution_date', '%Y%m%dT%H%M%S'),
-            self._safe_date('start_date', '%Y%m%dT%H%M%S'),
-            self._safe_date('end_date', '%Y%m%dT%H%M%S'),
-        )
+        self._log_state('Immediate failure requested. ' if force_fail else '')
         if email_for_state and task.email:
             try:
                 self.email_alert(error)
@@ -1548,12 +1539,6 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
     def is_eligible_to_retry(self):
         """Is task instance is eligible for retry"""
         return self.task.retries and self.try_number <= self.max_tries
-
-    def _safe_date(self, date_attr, fmt):
-        result = getattr(self, date_attr, None)
-        if result is not None:
-            return result.strftime(fmt)
-        return ''
 
     @provide_session
     def get_template_context(self, session=None) -> Context:  # pylint: disable=too-many-locals
