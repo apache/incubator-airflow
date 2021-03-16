@@ -1147,15 +1147,6 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
                 self.log.info(e)
             self.refresh_from_db(lock_for_update=True)
             self.state = State.SKIPPED
-            self.log.info(
-                'Marking task as SKIPPED. '
-                'dag_id=%s, task_id=%s, execution_date=%s, start_date=%s, end_date=%s',
-                self.dag_id,
-                self.task_id,
-                self._date_or_empty('execution_date'),
-                self._date_or_empty('start_date'),
-                self._date_or_empty('end_date'),
-            )
         except AirflowRescheduleException as reschedule_exception:
             self.refresh_from_db()
             self._handle_reschedule(actual_start_date, reschedule_exception, test_mode)
@@ -1179,11 +1170,13 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
         finally:
             Stats.incr(f'ti.finish.{task.dag_id}.{task.task_id}.{self.state}')
 
-        # Recording SUCCESS
+        # Recording SKIPPED or SUCCESS
         self.end_date = timezone.utcnow()
         self.log.info(
-            'Marking task as SUCCESS. '
-            'dag_id=%s, task_id=%s, execution_date=%s, start_date=%s, end_date=%s',
+            'Marking task as %s.'
+            ' dag_id=%s, task_id=%s,'
+            ' execution_date=%s, start_date=%s, end_date=%s',
+            self.state.upper(),
             self.dag_id,
             self.task_id,
             self._date_or_empty('execution_date'),
