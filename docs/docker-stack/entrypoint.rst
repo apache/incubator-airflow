@@ -25,68 +25,6 @@ In some cases, you can pass environment variables to the image to trigger some o
 The variables that control the "execution" behaviour start with ``_AIRFLOW`` to distinguish them
 from the variables used to build the image starting with ``AIRFLOW``.
 
-The image entrypoint works as follows:
-
-* In case the user is not "airflow" (with undefined user id) and the group id of the user is set to ``0`` (root),
-  then the user is dynamically added to ``/etc/passwd`` at entry using ``USER_NAME`` variable to define the user name.
-  This is in order to accommodate the
-  `OpenShift Guidelines <https://docs.openshift.com/enterprise/3.0/creating_images/guidelines.html>`_
-
-* The ``AIRFLOW_HOME`` is set by default to ``/opt/airflow/`` - this means that DAGs
-  are in default in the ``/opt/airflow/dags`` folder and logs are in the ``/opt/airflow/logs``
-
-* The working directory is ``/opt/airflow`` by default.
-
-* If ``AIRFLOW__CORE__SQL_ALCHEMY_CONN`` variable is passed to the container and it is either mysql or postgres
-  SQL alchemy connection, then the connection is checked and the script waits until the database is reachable.
-  If ``AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD`` variable is passed to the container, it is evaluated as a
-  command to execute and result of this evaluation is used as ``AIRFLOW__CORE__SQL_ALCHEMY_CONN``. The
-  ``_CMD`` variable takes precedence over the ``AIRFLOW__CORE__SQL_ALCHEMY_CONN`` variable.
-
-* If no ``AIRFLOW__CORE__SQL_ALCHEMY_CONN`` variable is set then SQLite database is created in
-  ``${AIRFLOW_HOME}/airflow.db`` and db reset is executed.
-
-* If first argument equals to "bash" - you are dropped to a bash shell or you can executes bash command
-  if you specify extra arguments. For example:
-
-  .. code-block:: bash
-
-    docker run -it apache/airflow:master-python3.6 bash -c "ls -la"
-    total 16
-    drwxr-xr-x 4 airflow root 4096 Jun  5 18:12 .
-    drwxr-xr-x 1 root    root 4096 Jun  5 18:12 ..
-    drwxr-xr-x 2 airflow root 4096 Jun  5 18:12 dags
-    drwxr-xr-x 2 airflow root 4096 Jun  5 18:12 logs
-
-* If first argument is equal to ``python`` - you are dropped in python shell or python commands are executed if
-  you pass extra parameters. For example:
-
-  .. code-block:: bash
-
-    > docker run -it apache/airflow:master-python3.6 python -c "print('test')"
-    test
-
-* If first argument equals to "airflow" - the rest of the arguments is treated as an airflow command
-  to execute. Example:
-
-  .. code-block:: bash
-
-     docker run -it apache/airflow:master-python3.6 airflow webserver
-
-* If there are any other arguments - they are simply passed to the "airflow" command
-
-  .. code-block:: bash
-
-    > docker run -it apache/airflow:master-python3.6 version
-    2.1.0.dev0
-
-* If ``AIRFLOW__CELERY__BROKER_URL`` variable is passed and airflow command with
-  scheduler, worker of flower command is used, then the script checks the broker connection
-  and waits until the Celery broker database is reachable.
-  If ``AIRFLOW__CELERY__BROKER_URL_CMD`` variable is passed to the container, it is evaluated as a
-  command to execute and result of this evaluation is used as ``AIRFLOW__CELERY__BROKER_URL``. The
-  ``_CMD`` variable takes precedence over the ``AIRFLOW__CELERY__BROKER_URL`` variable.
-
 Creating system user
 --------------------
 
@@ -103,7 +41,7 @@ available. This happens always when you use the default entrypoint.
 
 The script detects backend type depending on the URL schema and assigns default port numbers if not specified
 in the URL. Then it loops until the connection to the host/port specified can be established
-It tries ``CONNECTION_CHECK_MAX_COUNT`` times and sleeps ``CONNECTION_CHECK_SLEEP_TIME`` between checks
+It tries :envvar:`CONNECTION_CHECK_MAX_COUNT` times and sleeps :envvar:`CONNECTION_CHECK_SLEEP_TIME` between checks
 To disable check, set ``CONNECTION_CHECK_MAX_COUNT=0``.
 
 Supported schemes:
@@ -114,10 +52,20 @@ Supported schemes:
 
 In case of SQLite backend, there is no connection to establish and waiting is skipped.
 
+For older than Airflow 1.10.14, waiting for connection involves checking if a matching port is open.
+The host information is derived from the variables :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN` and
+:envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD`. If :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD` variable
+is passed to the container, it is evaluated as a command to execute and result of this evaluation is used
+as :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN`. The :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD` variable
+takes precedence over the :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN` variable.
+
+For newer versions, the ``airflow db check`` command is used, which means that a ``select 1 as is_alive;`` query
+is executed. This also means that you can keep your password in secret backend.
+
 Upgrading Airflow DB
 --------------------
 
-If you set ``_AIRFLOW_DB_UPGRADE`` variable to a non-empty value, the entrypoint will run
+If you set :envvar:`_AIRFLOW_DB_UPGRADE` variable to a non-empty value, the entrypoint will run
 the ``airflow db upgrade`` command right after verifying the connection. You can also use this
 when you are running airflow with internal SQLite database (default) to upgrade the db and create
 admin users at entrypoint, so that you can start the webserver immediately. Note - using SQLite is
@@ -128,10 +76,10 @@ Creating admin user
 -------------------
 
 The entrypoint can also create webserver user automatically when you enter it. you need to set
-``_AIRFLOW_WWW_USER_CREATE`` to a non-empty value in order to do that. This is not intended for
+:envvar:`_AIRFLOW_WWW_USER_CREATE` to a non-empty value in order to do that. This is not intended for
 production, it is only useful if you would like to run a quick test with the production image.
 You need to pass at least password to create such user via ``_AIRFLOW_WWW_USER_PASSWORD`` or
-``_AIRFLOW_WWW_USER_PASSWORD_CMD`` similarly like for other ``*_CMD`` variables, the content of
+:envvar:`_AIRFLOW_WWW_USER_PASSWORD_CMD` similarly like for other ``*_CMD`` variables, the content of
 the ``*_CMD`` will be evaluated as shell command and it's output will be set as password.
 
 User creation will fail if none of the ``PASSWORD`` variables are set - there is no default for
@@ -165,7 +113,7 @@ database and creating an ``admin/admin`` Admin user with the following command:
     --env "_AIRFLOW_DB_UPGRADE=true" \
     --env "_AIRFLOW_WWW_USER_CREATE=true" \
     --env "_AIRFLOW_WWW_USER_PASSWORD=admin" \
-      apache/airflow:master-python3.8 webserver
+      apache/airflow:2.0.1-python3.8 webserver
 
 
 .. code-block:: bash
@@ -174,7 +122,7 @@ database and creating an ``admin/admin`` Admin user with the following command:
     --env "_AIRFLOW_DB_UPGRADE=true" \
     --env "_AIRFLOW_WWW_USER_CREATE=true" \
     --env "_AIRFLOW_WWW_USER_PASSWORD_CMD=echo admin" \
-      apache/airflow:master-python3.8 webserver
+      apache/airflow:2.0.1-python3.8 webserver
 
 The commands above perform initialization of the SQLite database, create admin user with admin password
 and Admin role. They also forward local port ``8080`` to the webserver port and finally start the webserver.
@@ -187,7 +135,7 @@ commands are used the entrypoint will wait until the celery broker DB connection
 
 The script detects backend type depending on the URL schema and assigns default port numbers if not specified
 in the URL. Then it loops until connection to the host/port specified can be established
-It tries ``CONNECTION_CHECK_MAX_COUNT`` times and sleeps ``CONNECTION_CHECK_SLEEP_TIME`` between checks.
+It tries :envvar:`CONNECTION_CHECK_MAX_COUNT` times and sleeps :envvar:`CONNECTION_CHECK_SLEEP_TIME` between checks.
 To disable check, set ``CONNECTION_CHECK_MAX_COUNT=0``.
 
 Supported schemes:
@@ -196,6 +144,49 @@ Supported schemes:
 * ``redis://``               - default port 6379
 * ``postgres://``            - default port 5432
 * ``mysql://``               - default port 3306
-* ``sqlite://``
 
-In case of SQLite backend, there is no connection to establish and waiting is skipped.
+Waiting for connection involves checking if a matching port is open.
+The host information is derived from the variables :envvar:`AIRFLOW__CELERY__BROKER_URL` and
+:envvar:`AIRFLOW__CELERY__BROKER_URL_CMD`. If :envvar:`AIRFLOW__CELERY__BROKER_URL_CMD` variable
+is passed to the container, it is evaluated as a command to execute and result of this evaluation is used
+as :envvar:`AIRFLOW__CELERY__BROKER_URL`. The :envvar:`AIRFLOW__CELERY__BROKER_URL_CMD` variable
+takes precedence over the :envvar:`AIRFLOW__CELERY__BROKER_URL` variable.
+
+.. _entrypoint:commands:
+
+Executing commands
+------------------
+
+If first argument equals to "bash" - you are dropped to a bash shell or you can executes bash command
+if you specify extra arguments. For example:
+
+.. code-block:: bash
+
+  docker run -it apache/airflow:2.0.1-python3.6 bash -c "ls -la"
+  total 16
+  drwxr-xr-x 4 airflow root 4096 Jun  5 18:12 .
+  drwxr-xr-x 1 root    root 4096 Jun  5 18:12 ..
+  drwxr-xr-x 2 airflow root 4096 Jun  5 18:12 dags
+  drwxr-xr-x 2 airflow root 4096 Jun  5 18:12 logs
+
+If first argument is equal to ``python`` - you are dropped in python shell or python commands are executed if
+you pass extra parameters. For example:
+
+.. code-block:: bash
+
+  > docker run -it apache/airflow:2.0.1-python3.6 python -c "print('test')"
+  test
+
+If first argument equals to "airflow" - the rest of the arguments is treated as an airflow command
+to execute. Example:
+
+.. code-block:: bash
+
+   docker run -it apache/airflow:2.0.1-python3.6 airflow webserver
+
+If there are any other arguments - they are simply passed to the "airflow" command
+
+.. code-block:: bash
+
+  > docker run -it apache/airflow:2.0.1-python3.6 version
+  2.1.0
