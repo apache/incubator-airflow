@@ -102,7 +102,7 @@ def get_last_dagrun(dag_id, session, include_externally_triggered=False):
     if not include_externally_triggered:
         query = query.filter(
             DR.external_trigger == expression.false()
-        )  # noqa pylint: disable=singleton-comparison
+        )
     query = query.order_by(DR.execution_date.desc())
     return query.first()
 
