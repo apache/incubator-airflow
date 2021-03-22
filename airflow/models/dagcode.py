@@ -148,7 +148,7 @@ class DagCode(Base):
         :param session: ORM Session
         """
         fileloc_hash = cls.dag_fileloc_hash(fileloc)
-        return session.query(literal(True)).filter(cls.fileloc_hash == fileloc_hash).first() is not None
+        return session.query(literal(True)).filter(cls.fileloc_hash == fileloc_hash).one_or_none() is not None
 
     @classmethod
     def get_code_by_fileloc(cls, fileloc: str) -> str:
