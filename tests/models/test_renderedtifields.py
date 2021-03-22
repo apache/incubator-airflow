@@ -172,6 +172,7 @@ class TestRenderedTaskInstanceFields(unittest.TestCase):
         assert rtif_num == len(result)
 
         # Verify old records are deleted and only 'num_to_keep' records are kept
+        # For other DBs,an extra query is fired in RenderedTaskInstanceFields.delete_old_records
         expected_query_count_based_on_db = (expected_query_count + 1, expected_query_count)[
             session.bind.dialect.name in ["postgresql", "sqlite", "mysql"] or expected_query_count == 0
         ]
