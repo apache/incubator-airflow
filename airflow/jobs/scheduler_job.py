@@ -33,7 +33,7 @@ from multiprocessing.connection import Connection as MultiprocessingConnection
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 from setproctitle import setproctitle
-from sqlalchemy import and_, func, not_, or_, tuple_
+from sqlalchemy import and_, func, not_, or_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.session import Session, make_transient
@@ -1068,15 +1068,15 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
 
         task_instance_str = "\n\t".join([repr(x) for x in executable_tis])
         self.log.info("Setting the following tasks to queued state:\n\t%s", task_instance_str)
-
-        # set TIs to queued state
-        filter_for_tis = TI.filter_for_tis(executable_tis)
-        session.query(TI).filter(filter_for_tis).update(
-            # TODO[ha]: should we use func.now()? How does that work with DB timezone on mysql when it's not
-            # UTC?
-            {TI.state: State.QUEUED, TI.queued_dttm: timezone.utcnow(), TI.queued_by_job_id: self.id},
-            synchronize_session=False,
-        )
+        if len(executable_tis) > 0:
+            # set TIs to queued state
+            filter_for_tis = TI.filter_for_tis(executable_tis)
+            session.query(TI).filter(filter_for_tis).update(
+                # TODO[ha]: should we use func.now()? How does that work with DB timezone
+                # on mysql when it's not UTC?
+                {TI.state: State.QUEUED, TI.queued_dttm: timezone.utcnow(), TI.queued_by_job_id: self.id},
+                synchronize_session=False,
+            )
 
         for ti in executable_tis:
             make_transient(ti)
@@ -1579,15 +1579,16 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         # as DagModel.dag_id and DagModel.next_dagrun
         # This list is used to verify if the DagRun already exist so that we don't attempt to create
         # duplicate dag runs
-        active_dagruns = (
-            session.query(DagRun.dag_id, DagRun.execution_date)
-            .filter(
-                tuple_(DagRun.dag_id, DagRun.execution_date).in_(
-                    [(dm.dag_id, dm.next_dagrun) for dm in dag_models]
-                )
+
+        filter_dms = [
+            and_(
+                DagRun.dag_id == dm.dag_id,
+                DagRun.execution_date == dm.next_dagrun,
             )
-            .all()
-        )
+            for dm in dag_models
+        ]
+
+        active_dagruns = session.query(DagRun.dag_id, DagRun.execution_date).filter(or_(*filter_dms)).all()
 
         for dag_model in dag_models:
             try:
