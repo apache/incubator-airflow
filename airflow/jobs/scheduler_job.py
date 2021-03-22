@@ -33,7 +33,7 @@ from multiprocessing.connection import Connection as MultiprocessingConnection
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 from setproctitle import setproctitle
-from sqlalchemy import and_, func, not_, or_
+from sqlalchemy import and_, func, not_, or_, tuple_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.session import Session, make_transient
@@ -1580,15 +1580,24 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         # This list is used to verify if the DagRun already exist so that we don't attempt to create
         # duplicate dag runs
 
-        filter_dms = [
-            and_(
-                DagRun.dag_id == dm.dag_id,
-                DagRun.execution_date == dm.next_dagrun,
+        if session.bind.dialect.name == 'mssql':
+            active_dagruns_filter = or_(
+                *[
+                    and_(
+                        DagRun.dag_id == dm.dag_id,
+                        DagRun.execution_date == dm.next_dagrun,
+                    )
+                    for dm in dag_models
+                ]
             )
-            for dm in dag_models
-        ]
+        else:
+            active_dagruns_filter = tuple_(DagRun.dag_id, DagRun.execution_date).in_(
+                [(dm.dag_id, dm.next_dagrun) for dm in dag_models]
+            )
 
-        active_dagruns = session.query(DagRun.dag_id, DagRun.execution_date).filter(or_(*filter_dms)).all()
+        active_dagruns = (
+            session.query(DagRun.dag_id, DagRun.execution_date).filter(active_dagruns_filter).all()
+        )
 
         for dag_model in dag_models:
             try:
