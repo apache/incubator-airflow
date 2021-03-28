@@ -113,3 +113,25 @@ class TestAsanaHook(unittest.TestCase):
             hook = AsanaHook()
         expected_merged_params = {"project": "2"}
         self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({"project": "2"}))
+
+    def test_merge_project_parameters(self):
+        """
+        Tests that default parameters are used if not overridden
+        :return:
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"workspace": "1"}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"workspace": "1", "name": "name"}
+        self.assertEqual(expected_merged_params, hook._merge_project_parameters({"name": "name"}))
+
+    def test_merge_project_parameters_override(self):
+        """
+        Tests that default parameters are successfully overridden
+        :return:
+        """
+        conn = Connection(conn_type="asana", password="test", extra='{"workspace": "1"}')
+        with patch.object(AsanaHook, "get_connection", return_value=conn):
+            hook = AsanaHook()
+        expected_merged_params = {"workspace": "2"}
+        self.assertEqual(expected_merged_params, hook._merge_project_parameters({"workspace": "2"}))

@@ -18,6 +18,8 @@
 
 """Connect to Asana."""
 
+import copy
+
 from asana import Client
 from cached_property import cached_property
 
@@ -71,7 +73,7 @@ class AsanaHook(BaseHook):
         return response
 
     def _merge_create_task_parameters(self, task_name: str, task_parameters: dict) -> dict:
-        """Merge create_task parameters with default params."""
+        """Merge create_task parameters with default params from the connection."""
         params = {"name": task_name}
         params.update(self.default_params)
         if task_parameters is not None:
@@ -98,7 +100,7 @@ class AsanaHook(BaseHook):
         return list(response)
 
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
-        """Merge find_task parameters with default params."""
+        """Merge find_task parameters with default params from the connection."""
         params = {k: v for k, v in self.default_params.items() if k != "projects"}
         # The Asana API takes a 'project' parameter for find_task,
         # so rename the 'projects' key if it appears in default_params
@@ -133,4 +135,55 @@ class AsanaHook(BaseHook):
     def update_task(self, task_id: str, task_parameters: dict) -> dict:
         """Updates an existing Asana task."""
         response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
+        return response
+
+    def create_project(self, project_parameters: dict) -> dict:
+        """
+        Creates a new project. See
+        https://developers.asana.com/docs/create-a-project#create-a-project-parameters
+        for a list of possible parameters; you must specify at least one of
+        'workspace' and 'team'.
+        """
+        merged_params = self._merge_project_parameters(project_parameters)
+        self._validate_create_project_parameters(merged_params)
+        response = self.client.projects.create(merged_params)  # pylint: disable=no-member
+        return response
+
+    @staticmethod
+    def _validate_create_project_parameters(project_parameters: dict) -> None:
+        """Check that user provided minimal create parameters."""
+        required_parameters = {"workspace", "team"}
+        if required_parameters.isdisjoint(project_parameters):
+            raise ValueError(
+                f"You must specify at least one of {required_parameters} in the create_project parameters"
+            )
+
+    def _merge_project_parameters(self, project_parameters: dict) -> dict:
+        """Merge parameters passed in to a project method with default params from the connection."""
+        merged_params = copy.deepcopy(self.default_params)
+        merged_params.update(project_parameters)
+        return merged_params
+
+    def find_project(self, search_parameters: dict) -> list:
+        """
+        Searches for projects matching criteria. See
+        https://github.com/Asana/python-asana/blob/40c42dd49c85086c0546129c8bef334817aaa2b5/asana/resources/projects.py#L121
+        for a list of possible parameters.
+        """
+        merged_params = self._merge_project_parameters(search_parameters)
+        response = self.client.projects.find_all(merged_params)  # pylint: disable=no-member
+        return list(response)
+
+    def update_project(self, project_id: str, project_parameters: dict) -> dict:
+        """
+        Updates an existing project. See
+        https://developers.asana.com/docs/update-a-project#update-a-project-parameters
+        for a list of possible parameters
+        """
+        response = self.client.projects.update(project_id, project_parameters)  # pylint: disable=no-member
+        return response
+
+    def delete_project(self, project_id: str) -> dict:
+        """Deletes a project."""
+        response = self.client.projects.delete(project_id)  # pylint: disable=no-member
         return response
