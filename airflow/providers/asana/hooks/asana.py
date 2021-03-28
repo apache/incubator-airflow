@@ -110,42 +110,9 @@ class AsanaHook(BaseHook):
                 f"You must specify at least one of {required_parameters} in the create_task parameters"
             )
 
-    def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
-        """Merge find_task parameters with default params."""
-        params = {k: v for k, v in self.default_params.items() if k != "projects"}
-        # The Asana API takes a 'project' parameter for find_task,
-        # so rename the 'projects' key if it appears in default_params
-        if "projects" in self.default_params and (
-            not search_parameters or "project" not in search_parameters
-        ):
-            if type(self.default_params["projects"] == list):
-                if len(self.default_params["projects"]) > 1:
-                    raise ValueError("find_task can accept only one project.")
-                else:
-                    params["project"] = self.default_params["projects"][0]
-            else:
-                params["project"] = self.default_params["projects"]
-
-        if search_parameters:
-            params.update(search_parameters)
-        return params
-
-    @staticmethod
-    def _validate_find_task_parameters(search_parameters: dict) -> None:
-        """Check that user provided minimal search parameters."""
-        one_of_list = {"project", "section", "tag", "user_task_list"}
-        both_of_list = {"assignee", "workspace"}
-        contains_both = both_of_list.issubset(search_parameters)
-        contains_one = not one_of_list.isdisjoint(search_parameters)
-        if not (contains_both or contains_one):
-            raise ValueError(
-                f"You must specify at least one of {one_of_list} "
-                f"or both of {both_of_list} in the search_parameters."
-            )
-
-    def update_task(self, task_id: str, task_parameters: dict) -> dict:
-        """Updates an existing Asana task."""
-        response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
+    def delete_task(self, task_id: str) -> dict:
+        """Deletes an Asana task."""
+        response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
         return response
 
     def find_task(self, params: dict) -> list:
