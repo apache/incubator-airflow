@@ -229,7 +229,7 @@ class TestHiveCliHook(unittest.TestCase):
         filepath = "/path/to/input/file"
         table = "output_table"
         field_dict = OrderedDict([("name", "string"), ("gender", "string")])
-        fields = ",\n    ".join(['`{k}` {v}'.format(k=k.strip('`'), v=v) for k, v in field_dict.items()])
+        fields = ",\n    ".join([f"`{k.strip('`')}` {v}" for k, v in field_dict.items()])
 
         hook = MockHiveCliHook()
         hook.load_file(filepath=filepath, table=table, field_dict=field_dict, create=True, recreate=True)

@@ -854,17 +854,16 @@ class TestPostDagRun(TestDagRunEndpoint):
     @parameterized.expand(
         [
             (
-                "Conf is an array, not a dict",
                 {
                     "dag_run_id": "TEST_DAG_RUN",
                     "execution_date": "2020-06-11T18:00:00+00:00",
-                    "conf": "some string"
+                    "conf": "some string",
                 },
-                "'some string' is not of type 'object' - 'conf'"
+                "'some string' is not of type 'object' - 'conf'",
             )
         ]
     )
-    def test_should_response_400_for_non_dict_dagrun_conf(self, name, data, expected):
+    def test_should_response_400_for_non_dict_dagrun_conf(self, data, expected):
         self._create_dag("TEST_DAG_ID")
         response = self.client.post(
             "api/v1/dags/TEST_DAG_ID/dagRuns", json=data, environ_overrides={'REMOTE_USER': "test"}

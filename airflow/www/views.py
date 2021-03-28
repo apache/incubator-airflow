@@ -1467,7 +1467,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
         if request_conf:
             try:
                 run_conf = json.loads(request_conf)
-                if type(run_conf) is not dict:
+                if not isinstance(conf, dict):
                     flash("Invalid JSON configuration, must be a dict", "error")
                     return self.render_template(
                         'airflow/trigger.html', dag_id=dag_id, origin=origin, conf=request_conf
