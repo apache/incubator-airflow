@@ -1089,12 +1089,9 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
                 self.log.info("Executing %s on %s", self.task, self.execution_date)
         return True
 
-    def _date_or_empty(self, attr):
-        if hasattr(self, attr):
-            date = getattr(self, attr)
-            if date:
-                return date.strftime('%Y%m%dT%H%M%S')
-        return ''
+    def _date_or_empty(self, attr: str):
+        result = getattr(self, attr, None)  # type: datetime
+        return result.strftime('%Y%m%dT%H%M%S') if result else ''
 
     def _log_state(self, lead_msg: str = ''):
         self.log.info(
