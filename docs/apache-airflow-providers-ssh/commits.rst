@@ -28,14 +28,27 @@ For high-level changelog, see :doc:`package information including changelog <ind
 
 
 
+1.2.0
+.....
+
+Latest change: 2021-02-08
+
+================================================================================================  ===========  ==============================================================================
+Commit                                                                                            Committed    Subject
+================================================================================================  ===========  ==============================================================================
+`f180fa13b <https://github.com/apache/airflow/commit/f180fa13bf2a0ffa31b30bb21468510fe8a20131>`_  2021-02-08   ``Added support for DSS, ECDSA, and Ed25519 private keys in SSHHook (#12467)``
+`10343ec29 <https://github.com/apache/airflow/commit/10343ec29f8f0abc5b932ba26faf49bc63c6bcda>`_  2021-02-05   ``Corrections in docs and tools after releasing provider RCs (#14082)``
+================================================================================================  ===========  ==============================================================================
+
 1.1.0
 .....
 
-Latest change: 2021-02-01
+Latest change: 2021-02-04
 
 ================================================================================================  ===========  ================================================================================
 Commit                                                                                            Committed    Subject
 ================================================================================================  ===========  ================================================================================
+`88bdcfa0d <https://github.com/apache/airflow/commit/88bdcfa0df5bcb4c489486e05826544b428c8f43>`_  2021-02-04   ``Prepare to release a new wave of providers. (#14013)``
 `ac2f72c98 <https://github.com/apache/airflow/commit/ac2f72c98dc0821b33721054588adbf2bb53bb0b>`_  2021-02-01   ``Implement provider versioning tools (#13767)``
 `daedc9985 <https://github.com/apache/airflow/commit/daedc998519f534f604fdecb86b101fa4eb5b5dd>`_  2021-01-30   ``Fix decode error for ssh log (#13943)``
 `a9ac2b040 <https://github.com/apache/airflow/commit/a9ac2b040b64de1aa5d9c2b9def33334e36a8d22>`_  2021-01-23   ``Switch to f-strings using flynt. (#13732)``

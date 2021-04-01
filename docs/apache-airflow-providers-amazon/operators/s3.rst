@@ -1,0 +1,105 @@
+ .. Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+ ..   http://www.apache.org/licenses/LICENSE-2.0
+
+ .. Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+
+Amazon S3 Operators
+====================
+
+.. contents::
+  :depth: 1
+  :local:
+
+Prerequisite Tasks
+------------------
+
+.. include:: _partials/prerequisite_tasks.rst
+
+Overview
+--------
+
+Airflow to Amazon Simple Storage Service (S3) integration provides several operators to create and interact with S3 buckets.
+
+ - :class:`~airflow.providers.amazon.aws.sensors.s3_key.S3KeySensor`
+ - :class:`~airflow.providers.amazon.aws.sensors.s3_key.S3KeySizeSensor`
+ - :class:`~airflow.providers.amazon.aws.sensors.s3_keys_unchanged.S3KeysUnchangedSensor`
+ - :class:`~airflow.providers.amazon.aws.sensors.s3_prefix.S3PrefixSensor`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_bucket.S3CreateBucketOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_bucket.S3DeleteBucketOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_bucket_tagging.S3DeleteBucketTaggingOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_bucket_tagging.S3GetBucketTaggingOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_bucket_tagging.S3PutBucketTaggingOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_copy_object.S3CopyObjectOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_delete_objects.S3DeleteObjectsOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_file_transform.S3FileTransformOperator`
+ - :class:`~airflow.providers.amazon.aws.operators.s3_list.S3ListOperator`
+
+Two example_dags are provided which showcase these operators in action.
+
+ - example_s3_bucket.py
+ - example_s3_bucket_tagging.py
+
+.. _howto/operator:S3CreateBucketOperator:
+.. _howto/operator:S3DeleteBucketOperator:
+
+Create and Delete Amazon S3 Buckets
+-----------------------------------
+
+Purpose
+"""""""
+
+This example dag ``example_s3_bucket.py`` uses ``S3CreateBucketOperator`` and ``S3DeleteBucketOperator`` to create a
+new S3 bucket with a given bucket name then delete it.
+
+Defining tasks
+""""""""""""""
+
+In the following code we create a new bucket, add keys, and then delete the bucket.
+
+.. exampleinclude:: /../../airflow/providers/amazon/aws/example_dags/example_s3_bucket.py
+    :language: python
+    :start-after: [START howto_operator_s3_bucket]
+    :end-before: [END howto_operator_s3_bucket]
+
+.. _howto/operator:S3DeleteBucketTaggingOperator:
+.. _howto/operator:S3GetBucketTaggingOperator:
+.. _howto/operator:S3PutBucketTaggingOperator:
+
+Using Amazon S3 Bucket Tagging
+------------------------------
+
+Purpose
+"""""""
+
+This example dag ``example_s3_bucket_tagging.py`` uses ``S3DeleteBucketTaggingOperator``, ``S3GetBucketTaggingOperator``,
+and ``S3PutBucketTaggingOperator`` to create a new S3 bucket, apply tagging, get tagging, delete tagging, then delete the bucket.
+
+Defining tasks
+""""""""""""""
+
+In the following code we create a new S3 bucket, apply tagging, get tagging, delete tagging, then delete the bucket.
+
+.. exampleinclude:: /../../airflow/providers/amazon/aws/example_dags/example_s3_bucket_tagging.py
+    :language: python
+    :start-after: [START howto_operator_s3_bucket_tagging]
+    :end-before: [END howto_operator_s3_bucket_tagging]
+
+Reference
+---------
+
+For further information, look at:
+
+* `Boto3 Library Documentation for S3 <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html>`__

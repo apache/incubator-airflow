@@ -51,7 +51,7 @@ Package apache-airflow-providers-jenkins
 `Jenkins <https://jenkins.io/>`__
 
 
-Release: 1.0.1
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -103,6 +103,14 @@ PIP package         Version required
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Add allowed_jenkins_states to JenkinsJobTriggerOperator (#14131)``
 
 1.0.1
 .....

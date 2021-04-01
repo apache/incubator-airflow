@@ -31,7 +31,7 @@ class TriggerRuleDep(BaseTIDep):
     """
 
     NAME = "Trigger Rule"
-    IGNOREABLE = True
+    IGNORABLE = True
     IS_TASK_DEP = True
 
     @staticmethod

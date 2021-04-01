@@ -18,7 +18,10 @@
 import os
 from typing import Collection, Optional
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.client_info import ClientInfo
 from google.cloud import storage
 

@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
+from airflow.www.security import EXISTING_ROLES
 
 
 def create_user(app, username, role_name, permissions=None):
@@ -57,8 +58,9 @@ def delete_user(app, username):
     appbuilder = app.appbuilder
     for user in appbuilder.sm.get_all_users():
         if user.username == username:
-            for role in user.roles:
-                delete_role(app, role.name)
+            _ = [
+                delete_role(app, role.name) for role in user.roles if role and role.name not in EXISTING_ROLES
+            ]
             appbuilder.sm.del_register_user(user)
             break
 

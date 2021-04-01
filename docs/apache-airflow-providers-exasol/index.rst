@@ -50,7 +50,7 @@ Package apache-airflow-providers-exasol
 `Exasol <https://docs.exasol.com/home.htm>`__
 
 
-Release: 1.1.0
+Release: 1.1.1
 
 Provider package
 ----------------
@@ -102,6 +102,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.1.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
 
 1.1.0
 .....

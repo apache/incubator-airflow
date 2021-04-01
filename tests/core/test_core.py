@@ -421,3 +421,40 @@ class TestCore(unittest.TestCase):
 
         assert context['prev_ds'] == execution_ds
         assert context['prev_ds_nodash'] == execution_ds_nodash
+
+    def test_dag_params_and_task_params(self):
+        # This test case guards how params of DAG and Operator work together.
+        # - If any key exists in either DAG's or Operator's params,
+        #   it is guaranteed to be available eventually.
+        # - If any key exists in both DAG's params and Operator's params,
+        #   the latter has precedence.
+        TI = TaskInstance
+
+        dag = DAG(
+            TEST_DAG_ID,
+            default_args=self.args,
+            schedule_interval=timedelta(weeks=1),
+            start_date=DEFAULT_DATE,
+            params={'key_1': 'value_1', 'key_2': 'value_2_old'},
+        )
+        task1 = DummyOperator(
+            task_id='task1',
+            dag=dag,
+            params={'key_2': 'value_2_new', 'key_3': 'value_3'},
+        )
+        task2 = DummyOperator(task_id='task2', dag=dag)
+        dag.create_dagrun(
+            run_type=DagRunType.SCHEDULED,
+            execution_date=DEFAULT_DATE,
+            state=State.RUNNING,
+            external_trigger=True,
+        )
+        task1.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
+        task2.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
+        ti1 = TI(task=task1, execution_date=DEFAULT_DATE)
+        ti2 = TI(task=task2, execution_date=DEFAULT_DATE)
+        context1 = ti1.get_template_context()
+        context2 = ti2.get_template_context()
+
+        assert context1['params'] == {'key_1': 'value_1', 'key_2': 'value_2_new', 'key_3': 'value_3'}
+        assert context2['params'] == {'key_1': 'value_1', 'key_2': 'value_2_old'}

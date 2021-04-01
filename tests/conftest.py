@@ -152,11 +152,6 @@ def pytest_addoption(parser):
         action="store_true",
         help="Includes quarantined tests (marked with quarantined marker). They are skipped by default.",
     )
-    group.addoption(
-        "--include-heisentests",
-        action="store_true",
-        help="Includes heisentests (marked with heisentests marker). They are skipped by default.",
-    )
     allowed_trace_sql_columns_list = ",".join(ALLOWED_TRACE_SQL_COLUMNS)
     group.addoption(
         "--trace-sql",
@@ -243,9 +238,6 @@ def pytest_configure(config):
         "markers", "quarantined: mark test that are in quarantine (i.e. flaky, need to be isolated and fixed)"
     )
     config.addinivalue_line(
-        "markers", "heisentests: mark test that should be run in isolation due to resource consumption"
-    )
-    config.addinivalue_line(
         "markers", "credential_file(name): mark tests that require credential file in CREDENTIALS_DIR"
     )
     config.addinivalue_line("markers", "airflow_2: mark tests that works only on Airflow 2.0 / master")
@@ -314,14 +306,6 @@ def skip_quarantined_test(item):
         )
 
 
-def skip_heisen_test(item):
-    for _ in item.iter_markers(name="heisentests"):
-        pytest.skip(
-            "The test is skipped because it has heisentests marker. "
-            "And --include-heisentests flag is passed to pytest. {item}".format(item=item)
-        )
-
-
 def skip_if_integration_disabled(marker, item):
     integration_name = marker.args[0]
     environment_variable_name = "INTEGRATION_" + integration_name.upper()
@@ -378,7 +362,6 @@ def pytest_runtest_setup(item):
 
     include_long_running = item.config.getoption("--include-long-running")
     include_quarantined = item.config.getoption("--include-quarantined")
-    include_heisentests = item.config.getoption("--include-heisentests")
 
     for marker in item.iter_markers(name="integration"):
         skip_if_integration_disabled(marker, item)
@@ -397,8 +380,6 @@ def pytest_runtest_setup(item):
         skip_long_running_test(item)
     if not include_quarantined:
         skip_quarantined_test(item)
-    if not include_heisentests:
-        skip_heisen_test(item)
     skip_if_credential_file_missing(item)
     skip_if_airflow_2_test(item)
 

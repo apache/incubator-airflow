@@ -19,7 +19,11 @@ import re
 from typing import Optional
 
 import google
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.exceptions import NotFound, PermissionDenied
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.cloud.secretmanager_v1 import SecretManagerServiceClient

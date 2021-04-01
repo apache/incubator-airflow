@@ -31,7 +31,7 @@ from airflow.providers.google.cloud.sensors.dataflow import (
     DataflowJobStatusSensor,
 )
 
-TEST_TASK_ID = "tesk-id"
+TEST_TASK_ID = "task_id"
 TEST_JOB_ID = "test_job_id"
 TEST_PROJECT_ID = "test_project"
 TEST_LOCATION = "us-central1"

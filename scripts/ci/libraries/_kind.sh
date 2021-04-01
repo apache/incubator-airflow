@@ -255,13 +255,9 @@ function kind::build_image_for_kubernetes_tests() {
     docker build --tag "${AIRFLOW_PROD_IMAGE_KUBERNETES}" . -f - <<EOF
 FROM ${AIRFLOW_PROD_IMAGE}
 
-USER root
+COPY airflow/example_dags/ \${AIRFLOW_HOME}/dags/
 
-COPY --chown=airflow:root airflow/example_dags/ \${AIRFLOW_HOME}/dags/
-
-COPY --chown=airflow:root airflow/kubernetes_executor_templates/ \${AIRFLOW_HOME}/pod_templates/
-
-USER airflow
+COPY airflow/kubernetes_executor_templates/ \${AIRFLOW_HOME}/pod_templates/
 
 EOF
     echo "The ${AIRFLOW_PROD_IMAGE_KUBERNETES} is prepared for test kubernetes deployment."

@@ -30,7 +30,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 
 try:
     from airflow.kubernetes import kube_client
-except ImportError:
+except (ImportError, NameError):
     pass
 
 

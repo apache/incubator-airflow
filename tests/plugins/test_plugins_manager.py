@@ -77,21 +77,32 @@ class TestPluginsRBAC(unittest.TestCase):
             assert len(plugin_views) == 1
 
     def test_flaskappbuilder_menu_links(self):
-        from tests.plugins.test_plugin import appbuilder_mitem
+        from tests.plugins.test_plugin import appbuilder_mitem, appbuilder_mitem_toplevel
 
-        # menu item should exist matching appbuilder_mitem
-        links = [
+        # menu item (category) should exist matching appbuilder_mitem.category
+        categories = [
             menu_item
             for menu_item in self.appbuilder.menu.menu
             if menu_item.name == appbuilder_mitem['category']
         ]
+        assert len(categories) == 1
 
-        assert len(links) == 1
+        # menu link should be a child in the category
+        category = categories[0]
+        assert category.name == appbuilder_mitem['category']
+        assert category.childs[0].name == appbuilder_mitem['name']
+        assert category.childs[0].href == appbuilder_mitem['href']
 
-        # menu link should also have a link matching the name of the package.
-        link = links[0]
-        assert link.name == appbuilder_mitem['category']
-        assert link.childs[0].name == appbuilder_mitem['name']
+        # a top level link isn't nested in a category
+        top_levels = [
+            menu_item
+            for menu_item in self.appbuilder.menu.menu
+            if menu_item.name == appbuilder_mitem_toplevel['name']
+        ]
+        assert len(top_levels) == 1
+        link = top_levels[0]
+        assert link.href == appbuilder_mitem_toplevel['href']
+        assert link.label == appbuilder_mitem_toplevel['label']
 
     def test_app_blueprints(self):
         from tests.plugins.test_plugin import bp

@@ -22,6 +22,7 @@ description: |
     `Apache Druid <https://druid.apache.org/>`__.
 
 versions:
+  - 1.1.0
   - 1.0.1
   - 1.0.0
 
@@ -41,6 +42,9 @@ hooks:
   - integration-name: Apache Druid
     python-modules:
       - airflow.providers.apache.druid.hooks.druid
+
+hook-class-names:
+  - airflow.providers.apache.druid.hooks.druid.DruidDbApiHook
 
 transfers:
   - source-integration-name: Apache Hive

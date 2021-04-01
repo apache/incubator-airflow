@@ -19,21 +19,8 @@ from typing import Any, Dict, List, Union
 
 from airflow import plugins_manager
 from airflow.cli.simple_table import AirflowConsole
-from airflow.plugins_manager import PluginsDirectorySource
+from airflow.plugins_manager import PluginsDirectorySource, get_plugin_info
 from airflow.utils.cli import suppress_logs_and_warning
-
-# list to maintain the order of items.
-PLUGINS_ATTRIBUTES_TO_DUMP = [
-    "source",
-    "hooks",
-    "executors",
-    "macros",
-    "flask_blueprints",
-    "appbuilder_views",
-    "appbuilder_menu_items",
-    "global_operator_extra_links",
-    "operator_extra_links",
-]
 
 
 def _get_name(class_like_object) -> str:
@@ -52,20 +39,10 @@ def _join_plugins_names(value: Union[List[Any], Any]) -> str:
 @suppress_logs_and_warning
 def dump_plugins(args):
     """Dump plugins information"""
-    plugins_manager.ensure_plugins_loaded()
-    plugins_manager.integrate_macros_plugins()
-    plugins_manager.integrate_executor_plugins()
-    plugins_manager.initialize_extra_operators_links_plugins()
-    plugins_manager.initialize_web_ui_plugins()
+    plugins_info: List[Dict[str, str]] = get_plugin_info()
     if not plugins_manager.plugins:
         print("No plugins loaded")
         return
-
-    plugins_info: List[Dict[str, str]] = []
-    for plugin in plugins_manager.plugins:
-        info = {"name": plugin.name}
-        info.update({n: getattr(plugin, n) for n in PLUGINS_ATTRIBUTES_TO_DUMP})
-        plugins_info.append(info)
 
     # Remove empty info
     if args.output == "table":  # pylint: disable=too-many-nested-blocks

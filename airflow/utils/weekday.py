@@ -41,6 +41,7 @@ class WeekDay(enum.IntEnum):
         """
         sanitized_week_day_str = week_day_str.upper()
 
+        # pylint: disable=unsupported-membership-test
         if sanitized_week_day_str not in cls.__members__:
             raise AttributeError(f'Invalid Week Day passed: "{week_day_str}"')
 

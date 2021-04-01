@@ -50,9 +50,6 @@ class BigQueryToMySqlOperator(BaseOperator):
 
     :param dataset_table: A dotted ``<dataset>.<table>``: the big query table of origin
     :type dataset_table: str
-    :param max_results: The maximum number of records (rows) to be fetched
-        from the table. (templated)
-    :type max_results: str
     :param selected_fields: List of fields to return (comma-separated). If
         unspecified, all fields are returned.
     :type selected_fields: str
@@ -61,7 +58,6 @@ class BigQueryToMySqlOperator(BaseOperator):
     :param delegate_to: The account to impersonate using domain-wide delegation of authority,
         if any. For this to work, the service account making the request must have
         domain-wide delegation enabled.
-    :type delegate_to: str
     :type delegate_to: str
     :param mysql_conn_id: reference to a specific mysql hook
     :type mysql_conn_id: str

@@ -26,9 +26,6 @@ ENV PYTHON_BASE_IMAGE=${PYTHON_BASE_IMAGE}
 ARG AIRFLOW_VERSION="2.0.0.dev0"
 ENV AIRFLOW_VERSION=$AIRFLOW_VERSION
 
-ARG PYTHON_MAJOR_MINOR_VERSION="3.6"
-ENV PYTHON_MAJOR_MINOR_VERSION=${PYTHON_MAJOR_MINOR_VERSION}
-
 # Print versions
 RUN echo "Base image: ${PYTHON_BASE_IMAGE}"
 RUN echo "Airflow version: ${AIRFLOW_VERSION}"
@@ -38,7 +35,7 @@ ENV DEBIAN_FRONTEND=noninteractive LANGUAGE=C.UTF-8 LANG=C.UTF-8 LC_ALL=C.UTF-8 
     LC_CTYPE=C.UTF-8 LC_MESSAGES=C.UTF-8
 
 # By increasing this number we can do force build of all dependencies
-ARG DEPENDENCIES_EPOCH_NUMBER="5"
+ARG DEPENDENCIES_EPOCH_NUMBER="6"
 # Increase the value below to force reinstalling of all dependencies
 ENV DEPENDENCIES_EPOCH_NUMBER=${DEPENDENCIES_EPOCH_NUMBER}
 
@@ -237,11 +234,21 @@ ENV AIRFLOW_EXTRAS=${AIRFLOW_EXTRAS}${ADDITIONAL_AIRFLOW_EXTRAS:+,}${ADDITIONAL_
 
 RUN echo "Installing with extras: ${AIRFLOW_EXTRAS}."
 
-ARG AIRFLOW_CONSTRAINTS_REFERENCE="constraints-master"
-ARG AIRFLOW_CONSTRAINTS_LOCATION="https://raw.githubusercontent.com/apache/airflow/${AIRFLOW_CONSTRAINTS_REFERENCE}/constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+# Allows to override constraints source
+ARG CONSTRAINTS_GITHUB_REPOSITORY="apache/airflow"
+ENV CONSTRAINTS_GITHUB_REPOSITORY=${CONSTRAINTS_GITHUB_REPOSITORY}
+
+ARG AIRFLOW_CONSTRAINTS="constraints"
+ENV AIRFLOW_CONSTRAINTS=${AIRFLOW_CONSTRAINTS}
+ARG AIRFLOW_CONSTRAINTS_REFERENCE=""
+ENV AIRFLOW_CONSTRAINTS_REFERENCE=${AIRFLOW_CONSTRAINTS_REFERENCE}
+ARG AIRFLOW_CONSTRAINTS_LOCATION=""
 ENV AIRFLOW_CONSTRAINTS_LOCATION=${AIRFLOW_CONSTRAINTS_LOCATION}
 
-# By changing the CI build epoch we can force reinstalling Airflow from the current master
+ARG DEFAULT_CONSTRAINTS_BRANCH="constraints-master"
+ENV DEFAULT_CONSTRAINTS_BRANCH=${DEFAULT_CONSTRAINTS_BRANCH}
+
+# By changing the CI build epoch we can force reinstalling Airflow and pip all dependencies
 # It can also be overwritten manually by setting the AIRFLOW_CI_BUILD_EPOCH environment variable.
 ARG AIRFLOW_CI_BUILD_EPOCH="3"
 ENV AIRFLOW_CI_BUILD_EPOCH=${AIRFLOW_CI_BUILD_EPOCH}
@@ -285,10 +292,13 @@ RUN echo "Pip no cache dir: ${PIP_NO_CACHE_DIR}"
 ARG PIP_PROGRESS_BAR="on"
 ENV PIP_PROGRESS_BAR=${PIP_PROGRESS_BAR}
 
-RUN pip install --upgrade "pip==${AIRFLOW_PIP_VERSION}"
+RUN pip install --no-cache-dir --upgrade "pip==${AIRFLOW_PIP_VERSION}"
 
-# Only copy install_airflow_from_latest_master.sh to not invalidate cache on other script changes
-COPY scripts/docker/install_airflow_from_latest_master.sh /scripts/docker/install_airflow_from_latest_master.sh
+# Only copy common.sh to not invalidate further layers
+COPY scripts/docker/common.sh /scripts/docker/common.sh
+
+# Only copy install_airflow_from_branch_tip.sh to not invalidate cache on other script changes
+COPY scripts/docker/install_airflow_from_branch_tip.sh /scripts/docker/install_airflow_from_branch_tip.sh
 
 ARG UPGRADE_TO_NEWER_DEPENDENCIES="false"
 ENV UPGRADE_TO_NEWER_DEPENDENCIES=${UPGRADE_TO_NEWER_DEPENDENCIES}
@@ -302,7 +312,7 @@ ENV UPGRADE_TO_NEWER_DEPENDENCIES=${UPGRADE_TO_NEWER_DEPENDENCIES}
 # account for removed dependencies (we do not install them in the first place)
 RUN if [[ ${AIRFLOW_PRE_CACHED_PIP_PACKAGES} == "true" && \
           ${UPGRADE_TO_NEWER_DEPENDENCIES} == "false" ]]; then \
-        bash /scripts/docker/install_airflow_from_latest_master.sh; \
+        bash /scripts/docker/install_airflow_from_branch_tip.sh; \
     fi
 
 # Generate random hex dump file so that we can determine whether it's faster to rebuild the image
@@ -332,12 +342,15 @@ COPY setup.cfg ${AIRFLOW_SOURCES}/setup.cfg
 COPY airflow/__init__.py ${AIRFLOW_SOURCES}/airflow/__init__.py
 
 # Those are additional constraints that are needed for some extras but we do not want to
-# Force them on the main Airflow package. Those limitations are:
-# * chardet,<4: required by snowflake provider
+# force them on the main Airflow package. Those limitations are:
+# * chardet<4: required by snowflake provider
 # * lazy-object-proxy<1.5.0: required by astroid
-# * pyOpenSSL: Imposed by snowflake provider https://github.com/snowflakedb/snowflake-connector-python/blob/v2.3.6/setup.py#L201
+# * pyOpenSSL: required by snowflake provider https://github.com/snowflakedb/snowflake-connector-python/blob/v2.3.6/setup.py#L201
 # * urllib3<1.26: Required to keep boto3 happy
-ARG EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS="chardet<4 lazy-object-proxy<1.5.0 pyOpenSSL<20.0.0 urllib3<1.26"
+# * pyjwt<2.0.0: flask-jwt-extended requires it
+# * dill<0.3.3 required by apache-beam
+ARG EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS="chardet<4 lazy-object-proxy<1.5.0 pyOpenSSL<20.0.0 urllib3<1.26 pyjwt<2.0.0 dill<0.3.3"
+ENV EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS=${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS}
 
 ARG CONTINUE_ON_PIP_CHECK_FAILURE="false"
 
@@ -405,10 +418,8 @@ RUN SYSTEM=$(uname -s | tr '[:upper:]' '[:lower:]') \
 ARG ADDITIONAL_PYTHON_DEPS=""
 
 RUN if [[ -n "${ADDITIONAL_PYTHON_DEPS}" ]]; then \
-        pip install ${ADDITIONAL_PYTHON_DEPS}; \
+        pip install --no-cache-dir ${ADDITIONAL_PYTHON_DEPS}; \
     fi
-
-WORKDIR ${AIRFLOW_SOURCES}
 
 ENV PATH "/files/bin/:/opt/airflow/scripts/in_container/bin/:${HOME}:${PATH}"
 

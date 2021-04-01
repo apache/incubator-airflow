@@ -78,7 +78,8 @@ Skipping
 --------
 
 In general a non-zero exit code produces an AirflowException and thus a task failure.  In cases where it is desirable
-to instead have the task end in a ``skipped`` state, you can exit with code ``127``.
+to instead have the task end in a ``skipped`` state, you can exit with code ``99`` (or with another exit code if you
+pass ``skip_exit_code``).
 
 .. exampleinclude:: /../../airflow/example_dags/example_bash_operator.py
     :language: python

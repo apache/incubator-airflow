@@ -269,7 +269,7 @@ def test_build_task_group_with_task_decorator():
     """
     Test that TaskGroup can be used with the @task decorator.
     """
-    from airflow.operators.python import task
+    from airflow.decorators import task
 
     @task
     def task_1():

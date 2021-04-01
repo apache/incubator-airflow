@@ -25,7 +25,7 @@ class NotPreviouslySkippedDep(BaseTIDep):
     """
 
     NAME = "Not Previously Skipped"
-    IGNOREABLE = True
+    IGNORABLE = True
     IS_TASK_DEP = True
 
     def _get_dep_statuses(self, ti, session, dep_context):  # pylint: disable=signature-differs

@@ -21,6 +21,7 @@ import json
 import os
 import unittest
 import uuid
+from contextlib import closing
 from unittest import mock
 
 import MySQLdb.cursors
@@ -216,6 +217,21 @@ class TestMySqlHookConnMySqlConnectorPython(unittest.TestCase):
         assert kwargs['allow_local_infile'] == 1
 
 
+class MockMySQLConnectorConnection:
+    DEFAULT_AUTOCOMMIT = 'default'
+
+    def __init__(self):
+        self._autocommit = self.DEFAULT_AUTOCOMMIT
+
+    @property
+    def autocommit(self):
+        return self._autocommit
+
+    @autocommit.setter
+    def autocommit(self, autocommit):
+        self._autocommit = autocommit
+
+
 class TestMySqlHook(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -233,11 +249,24 @@ class TestMySqlHook(unittest.TestCase):
 
         self.db_hook = SubMySqlHook()
 
-    def test_set_autocommit(self):
-        autocommit = True
-        self.db_hook.set_autocommit(self.conn, autocommit)
+    @parameterized.expand([(True,), (False,)])
+    def test_set_autocommit_mysql_connector(self, autocommit):
+        conn = MockMySQLConnectorConnection()
+        self.db_hook.set_autocommit(conn, autocommit)
+        assert conn.autocommit is autocommit
 
+    def test_get_autocommit_mysql_connector(self):
+        conn = MockMySQLConnectorConnection()
+        assert self.db_hook.get_autocommit(conn) == MockMySQLConnectorConnection.DEFAULT_AUTOCOMMIT
+
+    def test_set_autocommit_mysqldb(self):
+        autocommit = False
+        self.db_hook.set_autocommit(self.conn, autocommit)
         self.conn.autocommit.assert_called_once_with(autocommit)
+
+    def test_get_autocommit_mysqldb(self):
+        self.db_hook.get_autocommit(self.conn)
+        self.conn.get_autocommit.assert_called_once()
 
     def test_run_without_autocommit(self):
         sql = 'SQL'
@@ -348,9 +377,10 @@ class TestMySql(unittest.TestCase):
 
     def tearDown(self):
         drop_tables = {'test_mysql_to_mysql', 'test_airflow'}
-        with MySqlHook().get_conn() as conn:
-            for table in drop_tables:
-                conn.execute(f"DROP TABLE IF EXISTS {table}")
+        with closing(MySqlHook().get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for table in drop_tables:
+                    cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
     @parameterized.expand(
         [
@@ -375,19 +405,20 @@ class TestMySql(unittest.TestCase):
                 f.flush()
 
                 hook = MySqlHook('airflow_db')
-                with hook.get_conn() as conn:
-                    conn.execute(
+                with closing(hook.get_conn()) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        cursor.execute(
+                            """
+                            CREATE TABLE IF NOT EXISTS test_airflow (
+                                dummy VARCHAR(50)
+                            )
                         """
-                        CREATE TABLE IF NOT EXISTS test_airflow (
-                            dummy VARCHAR(50)
                         )
-                    """
-                    )
-                    conn.execute("TRUNCATE TABLE test_airflow")
-                    hook.bulk_load("test_airflow", f.name)
-                    conn.execute("SELECT dummy FROM test_airflow")
-                    results = tuple(result[0] for result in conn.fetchall())
-                    assert sorted(results) == sorted(records)
+                        cursor.execute("TRUNCATE TABLE test_airflow")
+                        hook.bulk_load("test_airflow", f.name)
+                        cursor.execute("SELECT dummy FROM test_airflow")
+                        results = tuple(result[0] for result in cursor.fetchall())
+                        assert sorted(results) == sorted(records)
 
     @parameterized.expand(
         [

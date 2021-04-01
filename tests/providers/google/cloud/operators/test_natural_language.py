@@ -38,7 +38,7 @@ DOCUMENT = Document(
     content="Airflow is a platform to programmatically author, schedule and monitor workflows."
 )
 
-CLASSIFY_TEXT_RRESPONSE = ClassifyTextResponse()
+CLASSIFY_TEXT_RESPONSE = ClassifyTextResponse()
 ANALYZE_ENTITIES_RESPONSE = AnalyzeEntitiesResponse()
 ANALYZE_ENTITY_SENTIMENT_RESPONSE = AnalyzeEntitySentimentResponse()
 ANALYZE_SENTIMENT_RESPONSE = AnalyzeSentimentResponse()
@@ -76,7 +76,7 @@ class TestCloudLanguageAnalyzeSentimentOperator(unittest.TestCase):
 class TestCloudLanguageClassifyTextOperator(unittest.TestCase):
     @patch("airflow.providers.google.cloud.operators.natural_language.CloudNaturalLanguageHook")
     def test_minimal_green_path(self, hook_mock):
-        hook_mock.return_value.classify_text.return_value = CLASSIFY_TEXT_RRESPONSE
+        hook_mock.return_value.classify_text.return_value = CLASSIFY_TEXT_RESPONSE
         op = CloudNaturalLanguageClassifyTextOperator(task_id="task-id", document=DOCUMENT)
         resp = op.execute({})
         assert resp == {}

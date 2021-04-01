@@ -14,38 +14,34 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
 from datetime import timedelta
 from unittest import mock
+
+import pytest
 
 from airflow.jobs.base_job import BaseJob
 from airflow.utils import timezone
 from airflow.utils.session import create_session, provide_session
 from airflow.utils.state import State
-from airflow.www import app
 
 HEALTHY = "healthy"
 UNHEALTHY = "unhealthy"
 
 
-class TestHealthTestBase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.app = app.create_app(testing=True)  # type:ignore
-
-    def setUp(self) -> None:
+class TestHealthTestBase:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, minimal_app_for_api) -> None:
+        self.app = minimal_app_for_api
         self.client = self.app.test_client()  # type:ignore
         with create_session() as session:
             session.query(BaseJob).delete()
 
-    def tearDown(self):
-        super().tearDown()
+    def teardown_method(self):
         with create_session() as session:
             session.query(BaseJob).delete()
 
 
-class TestGetHeath(TestHealthTestBase):
+class TestGetHealth(TestHealthTestBase):
     @provide_session
     def test_healthy_scheduler_status(self, session):
         last_scheduler_heartbeat_for_testing_1 = timezone.utcnow()

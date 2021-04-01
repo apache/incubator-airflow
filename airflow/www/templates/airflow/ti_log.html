@@ -18,7 +18,7 @@
 #}
 
 {% extends "airflow/task_instance.html" %}
-{% block title %}Airflow - DAGs{% endblock %}
+{% block title %}DAGs - {{ appbuilder.app_name }}{% endblock %}
 
 {% block content %}
   {{ super() }}

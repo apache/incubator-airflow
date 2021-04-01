@@ -185,6 +185,9 @@
     subPath: known_hosts
   {{- end }}
   {{- end }}
+{{- if and .Values.dags.gitSync.enabled .Values.dags.gitSync.extraVolumeMounts }}
+{{ toYaml .Values.dags.gitSync.extraVolumeMounts | indent 2 }}
+{{- end }}
 {{- end }}
 
 # This helper will change when customers deploy a new image.

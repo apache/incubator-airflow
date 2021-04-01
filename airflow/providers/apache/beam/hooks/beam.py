@@ -25,7 +25,7 @@ from tempfile import TemporaryDirectory
 from typing import Callable, List, Optional
 
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base import BaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.python_virtualenv import prepare_virtualenv
 

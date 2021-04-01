@@ -44,18 +44,19 @@
 
   <h1 class="page-title">Apache Airflow Documentation</h1>
   <div class="row">
-    <div class="col-md-6 col-md-push-6">
+    <div class="col-md order-md-1">
+      <img src="https://github.com/apache/airflow/raw/master/airflow/www/static/pin_100.png" alt="Apache Airflow - logo" width="100" height="100">
+    </div>
+
+    <div class="col-md">
       <h2><a href="/docs/apache-airflow/latest/index.html"><code>apache-airflow</code></a></h2>
       <p>
         Apache Airflow Core, which includes webserver, scheduler, CLI and other components that are needed for minimal Airflow installation.
       </p>
     </div>
-    <div class="col-md-6 col-md-pull-6">
-      <img src="https://github.com/apache/airflow/raw/master/airflow/www/static/pin_100.png" alt="">
-    </div>
   </div>
   <div class="row">
-    <div class="col-md-12">
+    <div class="col">
       <h2><a href="/docs/apache-airflow-providers/index.html">Providers packages</a></h2>
       <p>
         Providers packages include integrations with third party integrations. They are updated independently of the Apache Airflow core.
@@ -65,6 +66,28 @@
         <li><a href="/docs/{{ provider['package-name'] }}/latest/index.html"><code>{{ provider['name'] }}</code></a></li>
         {% endfor %}
       </ul>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md order-md-1">
+      <img src="/docs/docker-stack/_images/docker-logo.png" alt="Docker - logo" width="100" height="86">
+    </div>
+    <div class="col-md">
+      <h2><a href="/docs/docker-stack/index.html">Docker image</a></h2>
+      <p>
+      It makes efficient, lightweight, self-contained environment and guarantees that software will always run the same no matter of where it’s deployed.
+      </p>
+     </div>
+  </div>
+  <div class="row">
+    <div class="col-md order-md-1">
+      <img src="/docs/helm-chart/latest/_images/helm-logo.svg" alt="Helm Chart - logo" width="100" height="115">
+    </div>
+    <div class="col-md">
+      <h2><a href="/docs/helm-chart/latest/index.html">Helm Chart</a></h2>
+      <p>
+        It will help you set up your own Airflow on a cloud/on-prem k8s environment and leverage its scalable nature to support a large group of users. Thanks to Kubernetes, we are not tied to a specific cloud provider.
+      </p>
     </div>
   </div>
 </div>

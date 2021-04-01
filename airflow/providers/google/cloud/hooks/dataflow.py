@@ -404,7 +404,7 @@ class _DataflowJobsController(LoggingMixin):
         :raise: Exception
         """
         if self._wait_until_finished is None:
-            wait_for_running = job['type'] == DataflowJobType.JOB_TYPE_STREAMING
+            wait_for_running = job.get('type') == DataflowJobType.JOB_TYPE_STREAMING
         else:
             wait_for_running = not self._wait_until_finished
 

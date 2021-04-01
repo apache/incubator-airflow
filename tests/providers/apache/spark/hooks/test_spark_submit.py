@@ -60,7 +60,7 @@ class TestSparkSubmitHook(unittest.TestCase):
             '--bar',
             'bar',
             '--with-spaces',
-            'args should keep embdedded spaces',
+            'args should keep embedded spaces',
             'baz',
         ],
     }
@@ -195,7 +195,7 @@ class TestSparkSubmitHook(unittest.TestCase):
             '--bar',
             'bar',
             '--with-spaces',
-            'args should keep embdedded spaces',
+            'args should keep embedded spaces',
             'baz',
         ]
         assert expected_build_cmd == cmd

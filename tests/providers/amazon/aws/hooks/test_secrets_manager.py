@@ -43,12 +43,17 @@ class TestSecretsManagerHook(unittest.TestCase):
         secret_value = '{"user": "test"}'
         hook = SecretsManagerHook(aws_conn_id='aws_default')
 
-        param = {
+        create_param = {
+            'Name': secret_name,
+        }
+
+        put_param = {
             'SecretId': secret_name,
             'SecretString': secret_value,
         }
 
-        hook.get_conn().put_secret_value(**param)
+        hook.get_conn().create_secret(**create_param)
+        hook.get_conn().put_secret_value(**put_param)
 
         secret = hook.get_secret(secret_name)
         assert secret == secret_value
@@ -60,12 +65,17 @@ class TestSecretsManagerHook(unittest.TestCase):
         secret_value = '{"user": "test"}'
         hook = SecretsManagerHook(aws_conn_id='aws_default')
 
-        param = {
+        create_param = {
+            'Name': secret_name,
+        }
+
+        put_param = {
             'SecretId': secret_name,
             'SecretString': secret_value,
         }
 
-        hook.get_conn().put_secret_value(**param)
+        hook.get_conn().create_secret(**create_param)
+        hook.get_conn().put_secret_value(**put_param)
 
         secret = hook.get_secret_as_dict(secret_name)
         assert secret == json.loads(secret_value)
@@ -76,13 +86,17 @@ class TestSecretsManagerHook(unittest.TestCase):
         secret_name = "arn:aws:secretsmanager:us-east-2:999999999999:secret:db_cluster-YYYYYYY"
         secret_value_binary = base64.b64encode(b'{"username": "test"}')
         hook = SecretsManagerHook(aws_conn_id='aws_default')
+        create_param = {
+            'Name': secret_name,
+        }
 
-        param = {
+        put_param = {
             'SecretId': secret_name,
             'SecretBinary': secret_value_binary,
         }
 
-        hook.get_conn().put_secret_value(**param)
+        hook.get_conn().create_secret(**create_param)
+        hook.get_conn().put_secret_value(**put_param)
 
         secret = hook.get_secret(secret_name)
         assert secret == base64.b64decode(secret_value_binary)

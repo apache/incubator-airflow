@@ -25,10 +25,22 @@ from botocore.waiter import Waiter
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
+from airflow.providers.amazon.aws.exceptions import ECSOperatorError
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.amazon.aws.hooks.logs import AwsLogsHook
 from airflow.typing_compat import Protocol, runtime_checkable
 from airflow.utils.decorators import apply_defaults
+
+
+def should_retry(exception: Exception):
+    """Check if exception is related to ECS resource quota (CPU, MEM)."""
+    if isinstance(exception, ECSOperatorError):
+        return any(
+            quota_reason in failure['reason']
+            for quota_reason in ['RESOURCE:MEMORY', 'RESOURCE:CPU']
+            for failure in exception.failures
+        )
+    return False
 
 
 @runtime_checkable
@@ -125,6 +137,8 @@ class ECSOperator(BaseOperator):  # pylint: disable=too-many-instance-attributes
     :param reattach: If set to True, will check if a task from the same family is already running.
         If so, the operator will attach to it instead of starting a new task.
     :type reattach: bool
+    :param quota_retry: Config if and how to retry _start_task() for transient errors.
+    :type quota_retry: dict
     """
 
     ui_color = '#f0ede4'
@@ -150,6 +164,7 @@ class ECSOperator(BaseOperator):  # pylint: disable=too-many-instance-attributes
         awslogs_region: Optional[str] = None,
         awslogs_stream_prefix: Optional[str] = None,
         propagate_tags: Optional[str] = None,
+        quota_retry: Optional[dict] = None,
         reattach: bool = False,
         **kwargs,
     ):
@@ -180,6 +195,7 @@ class ECSOperator(BaseOperator):  # pylint: disable=too-many-instance-attributes
         self.hook: Optional[AwsBaseHook] = None
         self.client: Optional[ECSProtocol] = None
         self.arn: Optional[str] = None
+        self.retry_args = quota_retry
 
     def execute(self, context):
         self.log.info(
@@ -206,6 +222,7 @@ class ECSOperator(BaseOperator):  # pylint: disable=too-many-instance-attributes
 
         return None
 
+    @AwsBaseHook.retry(should_retry)
     def _start_task(self):
         run_opts = {
             'cluster': self.cluster,
@@ -235,7 +252,7 @@ class ECSOperator(BaseOperator):  # pylint: disable=too-many-instance-attributes
 
         failures = response['failures']
         if len(failures) > 0:
-            raise AirflowException(response)
+            raise ECSOperatorError(failures, response)
         self.log.info('ECS Task started: %s', response)
 
         self.arn = response['tasks'][0]['taskArn']

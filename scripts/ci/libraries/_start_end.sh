@@ -16,22 +16,26 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Starts group for Github Actions - makes logs much more readable
+# Starts group for GitHub Actions - makes logs much more readable
 function start_end::group_start {
-    if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
-        echo "::group::${1}"
-    else
-        echo
-        echo "${1}"
-        echo
+    if [[ ${PRINT_INFO_FROM_SCRIPTS} != "false" ]]; then
+        if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
+            echo "::group::${1}"
+        else
+            echo
+            echo "${1}"
+            echo
+        fi
     fi
 }
 
-# Ends group for Github Actions
+# Ends group for GitHub Actions
 function start_end::group_end {
-    if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
-        echo -e "\033[0m"  # Disable any colors set in the group
-        echo "::endgroup::"
+    if [[ ${PRINT_INFO_FROM_SCRIPTS} != "false" ]]; then
+        if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
+            echo -e "\033[0m"  # Disable any colors set in the group
+            echo "::endgroup::"
+        fi
     fi
 }
 
@@ -42,8 +46,12 @@ function start_end::group_end {
 # Also prints some useful diagnostics information at start of the script if VERBOSE is set to true
 #
 function start_end::script_start {
-    verbosity::print_info
+    START_SCRIPT_TIME=$(date +%s)
     verbosity::print_info "Running '${COLOR_GREEN}$(basename "$0")${COLOR_RESET}'"
+    if [[ "${GITHUB_ACTIONS=}" == "true" &&  ${VERBOSE_COMMANDS:="false"} == "false" ]]; then
+      return
+    fi
+
     verbosity::print_info
     verbosity::print_info "${COLOR_BLUE}Log is redirected to '${OUTPUT_LOG}'${COLOR_RESET}"
     verbosity::print_info
@@ -61,7 +69,6 @@ function start_end::script_start {
         verbosity::print_info
         set +x
     fi
-    START_SCRIPT_TIME=$(date +%s)
 }
 
 function start_end::dump_container_logs() {
@@ -120,7 +127,7 @@ function start_end::script_end {
 
     END_SCRIPT_TIME=$(date +%s)
     RUN_SCRIPT_TIME=$((END_SCRIPT_TIME-START_SCRIPT_TIME))
-    if [[ ${BREEZE:=} != "true" ]]; then
+    if [[ ${BREEZE:=} != "true" && ${RUN_TESTS=} != "true" ]]; then
         verbosity::print_info
         verbosity::print_info "Finished the script ${COLOR_GREEN}$(basename "$0")${COLOR_RESET}"
         verbosity::print_info "Elapsed time spent in the script: ${COLOR_BLUE}${RUN_SCRIPT_TIME} seconds${COLOR_RESET}"

@@ -113,7 +113,7 @@ create a V1pod with a single container, and overwrite the fields as follows:
     :start-after: [START task_with_volume]
     :end-before: [END task_with_volume]
 
-Note that volume mounts environment variables, ports, and devices will all be extended instead of overwritten.
+Note that volume mounts, environment variables, ports, and devices will all be extended instead of overwritten.
 
 To add a sidecar container to the launched pod, create a V1pod with an empty first container with the
 name ``base`` and a second container containing your desired sidecar.

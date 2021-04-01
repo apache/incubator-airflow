@@ -610,7 +610,7 @@ class DataprocCreateClusterOperator(BaseOperator):
         # Check if cluster is not in ERROR state
         self._handle_error_state(hook, cluster)
         if cluster.status.state == cluster.status.State.CREATING:
-            # Wait for cluster to be be created
+            # Wait for cluster to be created
             cluster = self._wait_for_cluster_in_creating_state(hook)
             self._handle_error_state(hook, cluster)
         elif cluster.status.state == cluster.status.State.DELETING:
@@ -858,6 +858,9 @@ class DataprocJobBaseOperator(BaseOperator):
     :type job_name: str
     :param cluster_name: The name of the DataProc cluster.
     :type cluster_name: str
+    :param project_id: The ID of the Google Cloud project the cluster belongs to,
+        if not specified the project will be inferred from the provided GCP connection.
+    :type project_id: str
     :param dataproc_properties: Map for the Hive properties. Ideal to put in
         default arguments (templated)
     :type dataproc_properties: dict
@@ -912,6 +915,7 @@ class DataprocJobBaseOperator(BaseOperator):
         *,
         job_name: str = '{{task.task_id}}_{{ds_nodash}}',
         cluster_name: str = "cluster-1",
+        project_id: Optional[str] = None,
         dataproc_properties: Optional[Dict] = None,
         dataproc_jars: Optional[List[str]] = None,
         gcp_conn_id: str = 'google_cloud_default',
@@ -943,9 +947,8 @@ class DataprocJobBaseOperator(BaseOperator):
 
         self.job_error_states = job_error_states if job_error_states is not None else {'ERROR'}
         self.impersonation_chain = impersonation_chain
-
         self.hook = DataprocHook(gcp_conn_id=gcp_conn_id, impersonation_chain=impersonation_chain)
-        self.project_id = self.hook.project_id
+        self.project_id = self.hook.project_id if project_id is None else project_id
         self.job_template = None
         self.job = None
         self.dataproc_job_id = None
@@ -1630,9 +1633,6 @@ class DataprocInstantiateWorkflowTemplateOperator(BaseOperator):
         ``Job`` created and stored in the backend is returned.
         It is recommended to always set this value to a UUID.
     :type request_id: str
-    :param parameters: Optional. Map from parameter names to values that should be used for those
-        parameters. Values may not exceed 100 characters.
-    :type parameters: Dict[str, str]
     :param retry: A retry object used to retry requests. If ``None`` is specified, requests will not be
         retried.
     :type retry: google.api_core.retry.Retry
@@ -1733,9 +1733,6 @@ class DataprocInstantiateInlineWorkflowTemplateOperator(BaseOperator):
         ``Job`` created and stored in the backend is returned.
         It is recommended to always set this value to a UUID.
     :type request_id: str
-    :param parameters: Optional. Map from parameter names to values that should be used for those
-        parameters. Values may not exceed 100 characters.
-    :type parameters: Dict[str, str]
     :param retry: A retry object used to retry requests. If ``None`` is specified, requests will not be
         retried.
     :type retry: google.api_core.retry.Retry

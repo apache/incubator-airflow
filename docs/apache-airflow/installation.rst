@@ -27,7 +27,7 @@ installation with other tools as well.
 
 .. note::
 
-    Airflow is also distributed as a Docker image (OCI Image). For more information, see: :ref:`docker_image`
+    Airflow is also distributed as a Docker image (OCI Image). Consider using it to guarantee that software will always run the same no matter where it is deployed. For more information, see: :doc:`docker-stack:index`.
 
 Prerequisites
 '''''''''''''
@@ -63,7 +63,7 @@ issues from ``pip`` 20.3.0 release have been fixed in 20.3.3). In order to insta
 either downgrade pip to version 20.2.4 ``pip install --upgrade pip==20.2.4`` or, in case you use Pip 20.3, you need to add option
 ``--use-deprecated legacy-resolver`` to your pip install command.
 
-While they are some successes with using other tools like `poetry <https://python-poetry.org/>`_ or
+While there are some successes with using other tools like `poetry <https://python-poetry.org/>`_ or
 `pip-tools <https://pypi.org/project/pip-tools/>`_, they do not share the same workflow as
 ``pip`` - especially when it comes to constraint vs. requirements management.
 Installing via ``Poetry`` or ``pip-tools`` is not currently supported. If you wish to install airflow
@@ -81,8 +81,8 @@ environment. For instance, if you don't need connectivity with Postgres,
 you won't have to go through the trouble of installing the ``postgres-devel``
 yum package, or whatever equivalent applies on the distribution you are using.
 
-Most of the extra dependencies are linked to a corresponding providers package. For example "amazon" extra
-has a corresponding ``apache-airflow-providers-amazon`` providers package to be installed. When you install
+Most of the extra dependencies are linked to a corresponding provider package. For example "amazon" extra
+has a corresponding ``apache-airflow-providers-amazon`` provider package to be installed. When you install
 Airflow with such extras, the necessary provider packages are installed automatically (latest versions from
 PyPI for those packages). However you can freely upgrade and install provider packages independently from
 the main Airflow installation.
@@ -96,7 +96,7 @@ Provider packages
 
 Unlike Apache Airflow 1.10, the Airflow 2.0 is delivered in multiple, separate, but connected packages.
 The core of Airflow scheduling system is delivered as ``apache-airflow`` package and there are around
-60 providers packages which can be installed separately as so called ``Airflow Provider packages``.
+60 provider packages which can be installed separately as so called ``Airflow Provider packages``.
 The default Airflow installation doesn't have many integrations and you have to install them yourself.
 
 You can even develop and install your own providers for Airflow. For more information,
@@ -164,9 +164,9 @@ In order to have repeatable installation, starting from **Airflow 1.10.10** and 
 ``constraints-master``, ``constraints-2-0`` and ``constraints-1-10`` orphan branches and then we create tag
 for each released version e.g. ``constraints-2.0.1``. This way, when we keep a tested and working set of dependencies.
 
-Those "known-to-be-working" constraints are per major/minor python version. You can use them as constraint
+Those "known-to-be-working" constraints are per major/minor Python version. You can use them as constraint
 files when installing Airflow from PyPI. Note that you have to specify correct Airflow version
-and python versions in the URL.
+and Python versions in the URL.
 
 You can create the URL to the file substituting the variables in the template below.
 
@@ -179,35 +179,90 @@ where:
 - ``AIRFLOW_VERSION`` - Airflow version (e.g. ``2.0.1``) or ``master``, ``2-0``, ``1-10`` for latest development version
 - ``PYTHON_VERSION`` Python version e.g. ``3.8``, ``3.7``
 
+There is also a no-providers constraint file, which contains just constraints required to install Airflow core. This allows
+to install and upgrade airflow separately and independently from providers.
+
+You can create the URL to the file substituting the variables in the template below.
+
+.. code-block::
+
+  https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-no-providers-${PYTHON_VERSION}.txt
+
 Installation script
 '''''''''''''''''''
 
-In order to simplify the installation, we have prepared a script that will select `the constraints file <installation:constraints>`__ compatible with your Python version
+In order to simplify the installation, we have prepared examples that will select
+`the constraints file <installation:constraints>`__ compatible with your Python version.
 
-**Plain installation:**
+**Installing Airflow with extras and providers**
 
-If you don't need to install any extra extra, you can use the command set below:
+If you need to install :ref:`extra dependencies of airflow <installation:airflow_extra_dependencies>`,
+you can use the script below to make an installation a one-liner (the example below installs
+postgres and google provider, as well as ``async`` extra.
+
+.. code-block:: bash
+
+    AIRFLOW_VERSION=2.0.1
+    PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
+    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+    pip install "apache-airflow[async,postgres,google]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+
+Note, that it will install the versions of providers that were available at the moment this version of Airflow
+has been prepared. You need to follow next steps if you want to upgrade provider packages in case they were
+released afterwards.
+
+
+**Upgrading Airflow with providers**
+
+You can also upgrade airflow together with extras (providers available at the time of the release of Airflow
+being installed.
+
+
+.. code-block:: bash
+
+    AIRFLOW_VERSION=2.0.1
+    PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
+    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+    pip install --upgrade "apache-airflow[postgres,google]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+
+**Installation and upgrading of Airflow providers separately**
+
+You can manually install all the providers you need. You can continue using the "providers" constraint files
+but the 'versioned' airflow constraints installs only the versions of providers that were available in PyPI at
+the time of preparing of the airflow version. However, usually you can use "master" version of the providers
+to install latest version of providers. Usually the providers work with most versions of Airflow, if there
+will be any incompatibilities, it will be captured as package dependencies.
+
+.. code-block:: bash
+
+    PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
+    # For example: 3.6
+    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-master/constraints-${PYTHON_VERSION}.txt"
+    pip install "apache-airflow-providers-google" --constraint "${CONSTRAINT_URL}"
+
+You can also upgrade the providers to latest versions (you need to use master version of constraints for that):
+
+.. code-block:: bash
+
+    PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
+    # For example: 3.6
+    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-master/constraints-${PYTHON_VERSION}.txt"
+    pip install "apache-airflow-providers-google" --upgrade --constraint "${CONSTRAINT_URL}"
+
+
+**Installation and upgrade of Airflow core:**
+
+If you don't want to install any extra providers, initially you can use the command set below.
 
 .. code-block:: bash
 
     AIRFLOW_VERSION=2.0.1
     PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
     # For example: 3.6
-    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-2.0.1/constraints-3.6.txt
+    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-no-providers-${PYTHON_VERSION}.txt"
+    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-no-providers-2.0.1/constraints-3.6.txt
     pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
 
-**Installing with extras**
-
-If you need to install :ref:`extra dependencies of airflow <installation:airflow_extra_dependencies>`,
-you can use the script below (the example below installs postgres and google extras.
-
-.. code-block:: bash
-
-    AIRFLOW_VERSION=2.0.1
-    PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
-    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-    pip install "apache-airflow[postgres,google]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
 
 Python versions support
 '''''''''''''''''''''''

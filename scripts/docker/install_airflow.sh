@@ -26,15 +26,8 @@
 #                                 dependencies (with EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS added)
 #
 # shellcheck disable=SC2086
-set -euo pipefail
-
-test -v AIRFLOW_INSTALLATION_METHOD
-test -v AIRFLOW_INSTALL_EDITABLE_FLAG
-test -v AIRFLOW_INSTALL_USER_FLAG
-test -v INSTALL_MYSQL_CLIENT
-test -v UPGRADE_TO_NEWER_DEPENDENCIES
-test -v CONTINUE_ON_PIP_CHECK_FAILURE
-test -v AIRFLOW_CONSTRAINTS_LOCATION
+# shellcheck source=scripts/docker/common.sh
+. "$( dirname "${BASH_SOURCE[0]}" )/common.sh"
 
 function install_airflow() {
     # Sanity check for editable installation mode.
@@ -85,6 +78,11 @@ function install_airflow() {
         pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
         pip check || ${CONTINUE_ON_PIP_CHECK_FAILURE}
     fi
+
 }
+
+common::get_airflow_version_specification
+
+common::get_constraints_location
 
 install_airflow

@@ -22,7 +22,7 @@
 Supported languages:
 
 * [Golang](https://github.com/apache/airflow-client-go) generated through `./gen/go.sh`.
-
+* [Python](https://github.com/apache/airflow-client-python) generated through `./gen/python.sh`.
 
 ## Dependencies
 

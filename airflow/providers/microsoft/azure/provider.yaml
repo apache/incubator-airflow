@@ -22,6 +22,7 @@ description: |
     `Microsoft Azure <https://azure.microsoft.com/>`__
 
 versions:
+  - 1.2.0
   - 1.1.0
   - 1.0.0
 
@@ -59,6 +60,10 @@ integrations:
   - integration-name: Microsoft Azure FileShare
     external-doc-url: https://cloud.google.com/storage/
     logo: /integration-logos/azure/Microsoft-Azure-Fileshare.png
+    tags: [azure]
+  - integration-name: Microsoft Azure Data Factory
+    external-doc-url: https://azure.microsoft.com/en-us/services/data-factory/
+    logo: /integration-logos/azure/Azure Data Factory.svg
     tags: [azure]
   - integration-name: Microsoft Azure
     external-doc-url: https://azure.microsoft.com/
@@ -121,6 +126,9 @@ hooks:
   - integration-name: Microsoft Azure Blob Storage
     python-modules:
       - airflow.providers.microsoft.azure.hooks.wasb
+  - integration-name: Microsoft Azure Data Factory
+    python-modules:
+      - airflow.providers.microsoft.azure.hooks.azure_data_factory
 
 transfers:
   - source-integration-name: Local
@@ -146,3 +154,4 @@ hook-class-names:
   - airflow.providers.microsoft.azure.hooks.azure_data_lake.AzureDataLakeHook
   - airflow.providers.microsoft.azure.hooks.azure_container_instance.AzureContainerInstanceHook
   - airflow.providers.microsoft.azure.hooks.wasb.WasbHook
+  - airflow.providers.microsoft.azure.hooks.azure_data_factory.AzureDataFactoryHook

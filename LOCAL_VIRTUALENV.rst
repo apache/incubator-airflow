@@ -21,8 +21,8 @@
 Local Virtual Environment (virtualenv)
 ======================================
 
-Use the local virtualenv development option in the combination with the `Breeze
-<BREEZE.rst#aout-airflow-breeze>`_ development environment. This option helps
+Use the local virtualenv development option in combination with the `Breeze
+<BREEZE.rst#using-local-virtualenv-environment-in-your-host-ide>`_ development environment. This option helps
 you benefit from the infrastructure provided
 by your IDE (for example, IntelliJ PyCharm/IntelliJ Idea) and work in the
 environment where all necessary dependencies and tests are available and set up

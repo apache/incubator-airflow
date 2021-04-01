@@ -14,13 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 from typing import Iterable, List, Optional, Union
 
-from rich.console import Console
-
 from airflow.cli.cli_parser import ActionCommand, GroupCommand, airflow_commands
-from airflow.cli.simple_table import SimpleTable
+from airflow.cli.simple_table import AirflowConsole, SimpleTable
 from airflow.utils.cli import suppress_logs_and_warning
 from airflow.utils.helpers import partition
 
@@ -44,7 +41,7 @@ def display_commands_index():
         actions_iter, groups_iter = partition(lambda x: isinstance(x, GroupCommand), commands)
         actions, groups = list(actions_iter), list(groups_iter)
 
-        console = Console()
+        console = AirflowConsole()
         if actions:
             table = SimpleTable(title=help_msg or "Miscellaneous commands")
             table.add_column(width=40)

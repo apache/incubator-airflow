@@ -14,56 +14,54 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
 
+import pytest
 from parameterized import parameterized
 
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
 from airflow.models.pool import Pool
 from airflow.security import permissions
 from airflow.utils.session import provide_session
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_pools
 
 
-class TestBasePoolEndpoints(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)  # type:ignore
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
 
-        create_user(
-            cls.app,  # type: ignore
-            username="test",
-            role_name="Test",
-            permissions=[
-                (permissions.ACTION_CAN_CREATE, permissions.RESOURCE_POOL),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_POOL),
-                (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_POOL),
-                (permissions.ACTION_CAN_DELETE, permissions.RESOURCE_POOL),
-            ],
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+    create_user(
+        app,  # type: ignore
+        username="test",
+        role_name="Test",
+        permissions=[
+            (permissions.ACTION_CAN_CREATE, permissions.RESOURCE_POOL),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_POOL),
+            (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_POOL),
+            (permissions.ACTION_CAN_DELETE, permissions.RESOURCE_POOL),
+        ],
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
+    yield app
 
-    def setUp(self) -> None:
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
+class TestBasePoolEndpoints:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app) -> None:
+        self.app = configured_app
         self.client = self.app.test_client()  # type:ignore
-        super().setUp()
         clear_db_pools()
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         clear_db_pools()
 
 
 class TestGetPools(TestBasePoolEndpoints):
-    @provide_session
     def test_response_200(self, session):
         pool_model = Pool(pool="test_pool_a", slots=3)
         session.add(pool_model)
@@ -89,6 +87,36 @@ class TestGetPools(TestBasePoolEndpoints):
                     "running_slots": 0,
                     "queued_slots": 0,
                     "open_slots": 3,
+                },
+            ],
+            "total_entries": 2,
+        } == response.json
+
+    def test_response_200_with_order_by(self, session):
+        pool_model = Pool(pool="test_pool_a", slots=3)
+        session.add(pool_model)
+        session.commit()
+        result = session.query(Pool).all()
+        assert len(result) == 2  # accounts for the default pool as well
+        response = self.client.get("/api/v1/pools?order_by=slots", environ_overrides={'REMOTE_USER': "test"})
+        assert response.status_code == 200
+        assert {
+            "pools": [
+                {
+                    "name": "test_pool_a",
+                    "slots": 3,
+                    "occupied_slots": 0,
+                    "running_slots": 0,
+                    "queued_slots": 0,
+                    "open_slots": 3,
+                },
+                {
+                    "name": "default_pool",
+                    "slots": 128,
+                    "occupied_slots": 0,
+                    "running_slots": 0,
+                    "queued_slots": 0,
+                    "open_slots": 128,
                 },
             ],
             "total_entries": 2,
@@ -137,7 +165,6 @@ class TestGetPoolsPagination(TestBasePoolEndpoints):
         pool_ids = [pool["name"] for pool in response.json["pools"]]
         assert pool_ids == expected_pool_ids
 
-    @provide_session
     def test_should_respect_page_size_limit_default(self, session):
         pools = [Pool(pool=f"test_pool{i}", slots=1) for i in range(1, 121)]
         session.add_all(pools)
@@ -148,7 +175,19 @@ class TestGetPoolsPagination(TestBasePoolEndpoints):
         assert response.status_code == 200
         assert len(response.json['pools']) == 100
 
-    @provide_session
+    def test_should_raise_400_for_invalid_orderby(self, session):
+        pools = [Pool(pool=f"test_pool{i}", slots=1) for i in range(1, 121)]
+        session.add_all(pools)
+        session.commit()
+        result = session.query(Pool).count()
+        assert result == 121
+        response = self.client.get(
+            "/api/v1/pools?order_by=open_slots", environ_overrides={'REMOTE_USER': "test"}
+        )
+        assert response.status_code == 400
+        msg = "Ordering with 'open_slots' is disallowed or the attribute does not exist on the model"
+        assert response.json['detail'] == msg
+
     @conf_vars({("api", "maximum_page_limit"): "150"})
     def test_should_return_conf_max_if_req_max_above_conf(self, session):
         pools = [Pool(pool=f"test_pool{i}", slots=1) for i in range(1, 200)]
@@ -162,7 +201,6 @@ class TestGetPoolsPagination(TestBasePoolEndpoints):
 
 
 class TestGetPool(TestBasePoolEndpoints):
-    @provide_session
     def test_response_200(self, session):
         pool_model = Pool(pool="test_pool_a", slots=3)
         session.add(pool_model)
@@ -195,7 +233,6 @@ class TestGetPool(TestBasePoolEndpoints):
 
 
 class TestDeletePool(TestBasePoolEndpoints):
-    @provide_session
     def test_response_204(self, session):
         pool_name = "test_pool"
         pool_instance = Pool(pool=pool_name, slots=3)
@@ -218,7 +255,6 @@ class TestDeletePool(TestBasePoolEndpoints):
             "type": EXCEPTIONS_LINK_MAP[404],
         } == response.json
 
-    @provide_session
     def test_should_raises_401_unauthenticated(self, session):
         pool_name = "test_pool"
         pool_instance = Pool(pool=pool_name, slots=3)
@@ -251,7 +287,6 @@ class TestPostPool(TestBasePoolEndpoints):
             "open_slots": 3,
         } == response.json
 
-    @provide_session
     def test_response_409(self, session):
         pool_name = "test_pool_a"
         pool_instance = Pool(pool=pool_name, slots=3)
@@ -314,7 +349,6 @@ class TestPostPool(TestBasePoolEndpoints):
 
 
 class TestPatchPool(TestBasePoolEndpoints):
-    @provide_session
     def test_response_200(self, session):
         pool = Pool(pool="test_pool", slots=2)
         session.add(pool)
@@ -363,7 +397,6 @@ class TestPatchPool(TestBasePoolEndpoints):
             "type": EXCEPTIONS_LINK_MAP[400],
         } == response.json
 
-    @provide_session
     def test_should_raises_401_unauthenticated(self, session):
         pool = Pool(pool="test_pool", slots=2)
         session.add(pool)

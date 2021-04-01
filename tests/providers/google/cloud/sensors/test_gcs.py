@@ -25,7 +25,7 @@ from airflow.exceptions import AirflowSensorTimeout
 from airflow.models.dag import DAG, AirflowException
 from airflow.providers.google.cloud.sensors.gcs import (
     GCSObjectExistenceSensor,
-    GCSObjectsWtihPrefixExistenceSensor,
+    GCSObjectsWithPrefixExistenceSensor,
     GCSObjectUpdateSensor,
     GCSUploadSessionCompleteSensor,
     ts_function,
@@ -131,7 +131,7 @@ class TestGoogleCloudStorageObjectUpdatedSensor(TestCase):
 class TestGoogleCloudStoragePrefixSensor(TestCase):
     @mock.patch("airflow.providers.google.cloud.sensors.gcs.GCSHook")
     def test_should_pass_arguments_to_hook(self, mock_hook):
-        task = GCSObjectsWtihPrefixExistenceSensor(
+        task = GCSObjectsWithPrefixExistenceSensor(
             task_id="task-id",
             bucket=TEST_BUCKET,
             prefix=TEST_PREFIX,
@@ -152,7 +152,7 @@ class TestGoogleCloudStoragePrefixSensor(TestCase):
 
     @mock.patch("airflow.providers.google.cloud.sensors.gcs.GCSHook")
     def test_should_return_false_on_empty_list(self, mock_hook):
-        task = GCSObjectsWtihPrefixExistenceSensor(
+        task = GCSObjectsWithPrefixExistenceSensor(
             task_id="task-id",
             bucket=TEST_BUCKET,
             prefix=TEST_PREFIX,
@@ -166,7 +166,7 @@ class TestGoogleCloudStoragePrefixSensor(TestCase):
 
     @mock.patch('airflow.providers.google.cloud.sensors.gcs.GCSHook')
     def test_execute(self, mock_hook):
-        task = GCSObjectsWtihPrefixExistenceSensor(
+        task = GCSObjectsWithPrefixExistenceSensor(
             task_id="task-id",
             bucket=TEST_BUCKET,
             prefix=TEST_PREFIX,
@@ -190,7 +190,7 @@ class TestGoogleCloudStoragePrefixSensor(TestCase):
 
     @mock.patch('airflow.providers.google.cloud.sensors.gcs.GCSHook')
     def test_execute_timeout(self, mock_hook):
-        task = GCSObjectsWtihPrefixExistenceSensor(
+        task = GCSObjectsWithPrefixExistenceSensor(
             task_id="task-id", bucket=TEST_BUCKET, prefix=TEST_PREFIX, poke_interval=0, timeout=1
         )
         mock_hook.return_value.list.return_value = []

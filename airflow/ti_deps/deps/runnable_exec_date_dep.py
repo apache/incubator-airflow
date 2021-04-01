@@ -25,7 +25,7 @@ class RunnableExecDateDep(BaseTIDep):
     """Determines whether a task's execution date is valid."""
 
     NAME = "Execution Date"
-    IGNOREABLE = True
+    IGNORABLE = True
 
     @provide_session
     def _get_dep_statuses(self, ti, session, dep_context):

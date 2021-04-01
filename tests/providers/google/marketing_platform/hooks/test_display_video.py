@@ -338,7 +338,7 @@ class TestGoogleDisplayVideo360Hook(TestCase):
     )
     def get_sdf_download_tasks_return_equal_values(self, get_conn_to_display_video):
         operation_name = "operation"
-        response = "reposonse"
+        response = "response"
 
         get_conn_to_display_video.return_value.sdfdownloadtasks.return_value.operations.return_value.get = (
             response

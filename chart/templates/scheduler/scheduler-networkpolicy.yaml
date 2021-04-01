@@ -40,7 +40,7 @@ spec:
       release: {{ .Release.Name }}
   policyTypes:
   - Ingress
-{{- if (or (eq .Values.executor "LocalExecutor") (eq .Values.executor "SequentialExecutor")) }}
+{{- if eq .Values.executor "LocalExecutor" }}
   ingress:
   - from:
     - podSelector:

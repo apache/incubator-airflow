@@ -18,7 +18,7 @@
 ################################
 ## Airflow Scheduler Service
 #################################
-{{- if (or (eq .Values.executor "LocalExecutor") (eq .Values.executor "SequentialExecutor")) }}
+{{- if eq .Values.executor "LocalExecutor" }}
 kind: Service
 apiVersion: v1
 metadata:

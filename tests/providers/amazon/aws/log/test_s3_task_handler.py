@@ -19,6 +19,7 @@
 import os
 import unittest
 from unittest import mock
+from unittest.mock import ANY
 
 import pytest
 from botocore.exceptions import ClientError
@@ -79,6 +80,7 @@ class TestS3TaskHandler(unittest.TestCase):
 
     def test_hook(self):
         assert isinstance(self.s3_task_handler.hook, S3Hook)
+        assert self.s3_task_handler.hook.transfer_config.use_threads is False
 
     @conf_vars({('logging', 'remote_log_conn_id'): 'aws_default'})
     def test_hook_raises(self):
@@ -91,8 +93,9 @@ class TestS3TaskHandler(unittest.TestCase):
 
             mock_error.assert_called_once_with(
                 'Could not create an S3Hook with connection id "%s". Please make '
-                'sure that airflow[aws] is installed and the S3 connection exists.',
+                'sure that airflow[aws] is installed and the S3 connection exists. Exception : "%s"',
                 'aws_default',
+                ANY,
                 exc_info=True,
             )
 

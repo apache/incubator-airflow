@@ -63,8 +63,9 @@
     - name: sql_alchemy_conn
       description: |
         The SqlAlchemy connection string to the metadata database.
-        SqlAlchemy supports many different database engine, more information
-        their website
+        SqlAlchemy supports many different database engines.
+        More information here:
+        http://airflow.apache.org/docs/apache-airflow/stable/howto/set-up-database.html#database-uri
       version_added: ~
       type: string
       sensitive: true
@@ -471,14 +472,18 @@
       default: "False"
     - name: logging_level
       description: |
-        Logging level
+        Logging level.
+
+        Supported values: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG``.
       version_added: ~
       type: string
       example: ~
       default: "INFO"
     - name: fab_logging_level
       description: |
-        Logging level for Flask-appbuilder UI
+        Logging level for Flask-appbuilder UI.
+
+        Supported values: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG``.
       version_added: ~
       type: string
       example: ~
@@ -862,6 +867,13 @@
       type: string
       example: ~
       default: "0"
+    - name: default_queue
+      description: |
+        Default queue that tasks get assigned to and that worker listen on.
+      version_added: ~
+      type: string
+      example: ~
+      default: "default"
     - name: allow_illegal_arguments
       description: |
         Is allowed to pass additional/unused arguments (args, kwargs) to the BaseOperator operator.
@@ -969,7 +981,7 @@
       version_added: ~
       type: string
       example: ~
-      default: "30"
+      default: "6000"
     - name: reload_on_plugin_change
       description: |
         If set to True, Airflow will track files in plugins_folder directory. When it detects changes,
@@ -1061,14 +1073,6 @@
       type: string
       example: ~
       default: "LR"
-    - name: demo_mode
-      description: |
-        Puts the webserver in demonstration mode; blurs the names of Operators for
-        privacy.
-      version_added: ~
-      type: string
-      example: ~
-      default: "False"
     - name: log_fetch_timeout_sec
       description: |
         The amount of time (in secs) webserver will wait for initial handshake
@@ -1236,6 +1240,13 @@
       type: integer
       example: ~
       default: "43200"
+    - name: instance_name
+      description: |
+        Sets a custom page title for the DAGs overview page and site title for all pages
+      version_added: 2.1.0
+      type: string
+      example: ~
+      default:
 
 - name: email
   description: |
@@ -1503,13 +1514,6 @@
       sensitive: true
       example: "user1:password1,user2:password2"
       default: ""
-    - name: default_queue
-      description: |
-        Default queue that tasks get assigned to and that worker listen on.
-      version_added: ~
-      type: string
-      example: ~
-      default: "default"
     - name: sync_parallelism
       description: |
         How many processes CeleryExecutor uses to sync task state.
@@ -1830,6 +1834,22 @@
       type: string
       example: ~
       default: "2"
+    - name: file_parsing_sort_mode
+      description: |
+        One of ``modified_time``, ``random_seeded_by_host`` and ``alphabetical``.
+        The scheduler will list and sort the dag files to decide the parsing order.
+
+        * ``modified_time``: Sort by modified time of the files. This is useful on large scale to parse the
+          recently modified DAGs first.
+        * ``random_seeded_by_host``: Sort randomly across multiple Schedulers but with same order on the
+          same host. This is useful when running with Scheduler in HA mode where each scheduler can
+          parse different DAG files.
+        * ``alphabetical``: Sort by filename
+
+      version_added: 2.1.0
+      type: string
+      example: ~
+      default: "modified_time"
     - name: use_job_schedule
       description: |
         Turn off scheduler use of cron intervals by setting this to False.
@@ -2017,6 +2037,8 @@
       description: |
         If False (and delete_worker_pods is True),
         failed worker pods will not be deleted so users can investigate them.
+        This only prevents removal of worker pods where the worker itself failed,
+        not when the task it ran failed.
       version_added: 1.10.11
       type: string
       example: ~

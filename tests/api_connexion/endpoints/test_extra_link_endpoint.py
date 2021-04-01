@@ -14,64 +14,64 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
-from unittest import mock
+import os
 from urllib.parse import quote_plus
 
+import pytest
 from parameterized import parameterized
 
 from airflow import DAG
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
 from airflow.models.baseoperator import BaseOperatorLink
+from airflow.models.dagbag import DagBag
 from airflow.models.dagrun import DagRun
 from airflow.models.xcom import XCom
 from airflow.plugins_manager import AirflowPlugin
 from airflow.providers.google.cloud.operators.bigquery import BigQueryExecuteQueryOperator
 from airflow.security import permissions
 from airflow.utils.dates import days_ago
-from airflow.utils.session import provide_session
 from airflow.utils.timezone import datetime
 from airflow.utils.types import DagRunType
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import create_user, delete_user
-from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_runs, clear_db_xcom
 from tests.test_utils.mock_plugins import mock_plugin_manager
 
 
-class TestGetExtraLinks(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        with mock.patch.dict("os.environ", SKIP_DAGS_PARSING="True"), conf_vars(
-            {("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}
-        ):
-            cls.app = app.create_app(testing=True)  # type:ignore
-        create_user(
-            cls.app,  # type: ignore
-            username="test",
-            role_name="Test",
-            permissions=[
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
-            ],
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
+    create_user(
+        app,  # type: ignore
+        username="test",
+        role_name="Test",
+        permissions=[
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
+        ],
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
 
-    @provide_session
-    def setUp(self, session) -> None:
+    yield app
+
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
+class TestGetExtraLinks:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app, session) -> None:
         self.default_time = datetime(2020, 1, 1)
 
         clear_db_runs()
         clear_db_xcom()
 
+        self.app = configured_app
+
         self.dag = self._create_dag()
+
+        self.app.dag_bag = DagBag(os.devnull, include_examples=False)
         self.app.dag_bag.dags = {self.dag.dag_id: self.dag}  # type: ignore  # pylint: disable=no-member
         self.app.dag_bag.sync_to_db()  # type: ignore  # pylint: disable=no-member
 
@@ -86,8 +86,7 @@ class TestGetExtraLinks(unittest.TestCase):
 
         self.client = self.app.test_client()  # type:ignore
 
-    def tearDown(self) -> None:
-        super().tearDown()
+    def teardown_method(self) -> None:
         clear_db_runs()
         clear_db_xcom()
 

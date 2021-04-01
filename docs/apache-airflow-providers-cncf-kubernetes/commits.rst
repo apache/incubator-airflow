@@ -28,14 +28,29 @@ For high-level changelog, see :doc:`package information including changelog <ind
 
 
 
+1.0.2
+.....
+
+Latest change: 2021-02-23
+
+================================================================================================  ===========  ============================================================================
+Commit                                                                                            Committed    Subject
+================================================================================================  ===========  ============================================================================
+`809b4f9b1 <https://github.com/apache/airflow/commit/809b4f9b18c7040682e17879248d714f2664273d>`_  2021-02-23   ``Unique pod name (#14186)``
+`649335c04 <https://github.com/apache/airflow/commit/649335c043a9312ef272fa77f2bb830d52cde056>`_  2021-02-07   ``Template k8s.V1EnvVar without adding custom attributes to dict. (#14123)``
+`d4c4db8a1 <https://github.com/apache/airflow/commit/d4c4db8a1833d07b1c03e4c062acea49c79bf5d6>`_  2021-02-05   ``Allow users of the KPO to template environment variables (#14083)``
+`10343ec29 <https://github.com/apache/airflow/commit/10343ec29f8f0abc5b932ba26faf49bc63c6bcda>`_  2021-02-05   ``Corrections in docs and tools after releasing provider RCs (#14082)``
+================================================================================================  ===========  ============================================================================
+
 1.0.1
 .....
 
-Latest change: 2021-02-01
+Latest change: 2021-02-04
 
 ================================================================================================  ===========  ==========================================================================================
 Commit                                                                                            Committed    Subject
 ================================================================================================  ===========  ==========================================================================================
+`88bdcfa0d <https://github.com/apache/airflow/commit/88bdcfa0df5bcb4c489486e05826544b428c8f43>`_  2021-02-04   ``Prepare to release a new wave of providers. (#14013)``
 `ac2f72c98 <https://github.com/apache/airflow/commit/ac2f72c98dc0821b33721054588adbf2bb53bb0b>`_  2021-02-01   ``Implement provider versioning tools (#13767)``
 `a9ac2b040 <https://github.com/apache/airflow/commit/a9ac2b040b64de1aa5d9c2b9def33334e36a8d22>`_  2021-01-23   ``Switch to f-strings using flynt. (#13732)``
 `1b9e3d1c2 <https://github.com/apache/airflow/commit/1b9e3d1c285cb381f2f964c0c923711cd5e1e3d0>`_  2021-01-22   ``Revert "Fix error with quick-failing tasks in KubernetesPodOperator (#13621)" (#13835)``

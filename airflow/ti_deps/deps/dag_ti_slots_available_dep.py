@@ -24,7 +24,7 @@ class DagTISlotsAvailableDep(BaseTIDep):
     """Determines whether a DAG maximum number of running tasks has been reached."""
 
     NAME = "Task Instance Slots Available"
-    IGNOREABLE = True
+    IGNORABLE = True
 
     @provide_session
     def _get_dep_statuses(self, ti, session, dep_context):

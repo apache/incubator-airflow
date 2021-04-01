@@ -23,6 +23,25 @@ from tests.helm_template_generator import render_chart
 
 
 class WorkerTest(unittest.TestCase):
+    def test_should_add_extra_containers(self):
+        docs = render_chart(
+            values={
+                "executor": "CeleryExecutor",
+                "workers": {
+                    "extraContainers": [
+                        {
+                            "name": "test-container",
+                            "image": "test-registry/test-repo:test-tag",
+                            "imagePullPolicy": "Always",
+                        }
+                    ],
+                },
+            },
+            show_only=["templates/workers/worker-deployment.yaml"],
+        )
+
+        assert "test-container" == jmespath.search("spec.template.spec.containers[-1].name", docs[0])
+
     def test_should_add_extra_volume_and_extra_volume_mount(self):
         docs = render_chart(
             values={
@@ -39,3 +58,17 @@ class WorkerTest(unittest.TestCase):
         assert "test-volume" == jmespath.search(
             "spec.template.spec.containers[0].volumeMounts[0].name", docs[0]
         )
+
+    def test_workers_host_aliases(self):
+        docs = render_chart(
+            values={
+                "executor": "CeleryExecutor",
+                "workers": {
+                    "hostAliases": [{"ip": "127.0.0.2", "hostnames": ["test.hostname"]}],
+                },
+            },
+            show_only=["templates/workers/worker-deployment.yaml"],
+        )
+
+        assert "127.0.0.2" == jmespath.search("spec.template.spec.hostAliases[0].ip", docs[0])
+        assert "test.hostname" == jmespath.search("spec.template.spec.hostAliases[0].hostnames[0]", docs[0])

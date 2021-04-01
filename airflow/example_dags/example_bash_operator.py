@@ -21,7 +21,7 @@
 from datetime import timedelta
 
 from airflow import DAG
-from airflow.operators.bash import EXIT_CODE_SKIP, BashOperator
+from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.utils.dates import days_ago
 
@@ -70,7 +70,7 @@ with DAG(
 # [START howto_operator_bash_skip]
 this_will_skip = BashOperator(
     task_id='this_will_skip',
-    bash_command=f'echo "hello world"; exit {EXIT_CODE_SKIP};',
+    bash_command='echo "hello world"; exit 99;',
     dag=dag,
 )
 # [END howto_operator_bash_skip]

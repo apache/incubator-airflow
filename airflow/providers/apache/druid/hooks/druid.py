@@ -138,6 +138,8 @@ class DruidDbApiHook(DbApiHook):
 
     conn_name_attr = 'druid_broker_conn_id'
     default_conn_name = 'druid_broker_default'
+    conn_type = 'druid'
+    hook_name = 'Druid'
     supports_autocommit = False
 
     def get_conn(self) -> connect:

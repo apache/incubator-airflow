@@ -20,7 +20,10 @@
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.retry import Retry
 from google.cloud.vision_v1 import ImageAnnotatorClient, ProductSearchClient
 from google.cloud.vision_v1.types import (

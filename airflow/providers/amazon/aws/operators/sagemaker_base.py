@@ -19,7 +19,10 @@
 import json
 from typing import Iterable
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from airflow.models import BaseOperator
 from airflow.providers.amazon.aws.hooks.sagemaker import SageMakerHook

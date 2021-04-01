@@ -136,6 +136,7 @@ class TestStats(unittest.TestCase):
             ),
         ):
             importlib.reload(airflow.stats)
+            airflow.stats.Stats.incr("dummy_key")
 
     def tearDown(self) -> None:
         # To avoid side-effect

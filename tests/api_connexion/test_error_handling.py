@@ -39,7 +39,7 @@ class TestErrorHandling(unittest.TestCase):
 
         assert 404 == resp_json["status"]
 
-        # When we are hitting non-api incorrect enpoint
+        # When we are hitting non-api incorrect endpoint
 
         resp_json = self.client.get("/incorrect_endpoint").json
 

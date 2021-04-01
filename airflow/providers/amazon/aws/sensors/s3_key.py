@@ -148,6 +148,7 @@ class S3KeySizeSensor(S3KeySensor):
 
             def check_fn(self, data: List) -> bool:
                 return any(f.get('Size', 0) > 1048576 for f in data if isinstance(f, dict))
+    :type check_fn: Optional[Callable[..., bool]]
     """
 
     @apply_defaults

@@ -17,6 +17,7 @@
 # under the License.
 
 import unittest
+from contextlib import closing
 
 import pytest
 from parameterized import parameterized
@@ -43,9 +44,11 @@ class TestMySql(unittest.TestCase):
 
     def tearDown(self):
         drop_tables = {'test_mysql_to_mysql', 'test_airflow'}
-        with MySqlHook().get_conn() as conn:
+        with closing(MySqlHook().get_conn()) as conn:
             for table in drop_tables:
-                conn.execute(f"DROP TABLE IF EXISTS {table}")
+                # Previous version tried to run execute directly on dbapi call, which was accidentally working
+                with closing(conn.cursor()) as cur:
+                    cur.execute(f"DROP TABLE IF EXISTS {table}")
 
     @parameterized.expand(
         [

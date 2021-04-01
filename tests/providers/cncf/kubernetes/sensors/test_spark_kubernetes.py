@@ -664,6 +664,31 @@ class TestSparkKubernetesSensor(unittest.TestCase):
         "kubernetes.client.api.custom_objects_api.CustomObjectsApi.get_namespaced_custom_object",
         return_value=TEST_COMPLETED_APPLICATION,
     )
+    def test_api_group_and_version_from_sensor(self, mock_get_namespaced_crd, mock_kubernetes_hook):
+        api_group = 'sparkoperator.example.com'
+        api_version = 'v1alpha1'
+        sensor = SparkKubernetesSensor(
+            application_name="spark_pi",
+            dag=self.dag,
+            kubernetes_conn_id="kubernetes_with_namespace",
+            task_id="test_task_id",
+            api_group=api_group,
+            api_version=api_version,
+        )
+        sensor.poke(None)
+        mock_kubernetes_hook.assert_called_once_with()
+        mock_get_namespaced_crd.assert_called_once_with(
+            group=api_group,
+            name="spark_pi",
+            namespace="mock_namespace",
+            plural="sparkapplications",
+            version=api_version,
+        )
+
+    @patch(
+        "kubernetes.client.api.custom_objects_api.CustomObjectsApi.get_namespaced_custom_object",
+        return_value=TEST_COMPLETED_APPLICATION,
+    )
     def test_namespace_from_connection(self, mock_get_namespaced_crd, mock_kubernetes_hook):
         sensor = SparkKubernetesSensor(
             application_name="spark_pi",

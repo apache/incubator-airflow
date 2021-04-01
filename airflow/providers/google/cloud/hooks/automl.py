@@ -19,7 +19,10 @@
 """This module contains a Google AutoML hook."""
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.operation import Operation
 from google.api_core.retry import Retry
 from google.cloud.automl_v1beta1 import (

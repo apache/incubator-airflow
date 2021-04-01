@@ -22,7 +22,7 @@ from sqlalchemy import func
 
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import BadRequest, NotFound
-from airflow.api_connexion.parameters import check_limit, format_parameters
+from airflow.api_connexion.parameters import apply_sorting, check_limit, format_parameters
 from airflow.api_connexion.schemas.variable_schema import variable_collection_schema, variable_schema
 from airflow.models import Variable
 from airflow.security import permissions
@@ -50,15 +50,16 @@ def get_variable(variable_key: str) -> Response:
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_VARIABLE)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_variables(session, limit: Optional[int], offset: Optional[int] = None) -> Response:
+def get_variables(
+    session, limit: Optional[int], order_by: str = "id", offset: Optional[int] = None
+) -> Response:
     """Get all variable values"""
     total_entries = session.query(func.count(Variable.id)).scalar()
-    query = session.query(Variable).order_by(Variable.id)
-    if offset:
-        query = query.offset(offset)
-    if limit:
-        query = query.limit(limit)
-    variables = query.all()
+    to_replace = {"value": "val"}
+    allowed_filter_attrs = ['value', 'key', 'id']
+    query = session.query(Variable)
+    query = apply_sorting(query, order_by, to_replace, allowed_filter_attrs)
+    variables = query.offset(offset).limit(limit).all()
     return variable_collection_schema.dump(
         {
             "variables": variables,

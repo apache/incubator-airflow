@@ -57,7 +57,7 @@ Package apache-airflow-providers-apache-spark
 `Apache Spark <https://spark.apache.org/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -109,6 +109,15 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Use apache.spark provider without kubernetes (#14187)``
+
 
 1.0.1
 .....

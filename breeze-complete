@@ -26,6 +26,7 @@
 _breeze_allowed_python_major_minor_versions="2.7 3.5 3.6 3.7 3.8"
 _breeze_allowed_backends="sqlite mysql postgres"
 _breeze_allowed_integrations="cassandra kerberos mongo openldap pinot presto rabbitmq redis statsd all"
+_breeze_allowed_generate_constraints_modes="source-providers pypi-providers no-providers"
 # registrys is good here even if it is not correct english. We are adding s automatically to all variables
 _breeze_allowed_github_registrys="docker.pkg.github.com ghcr.io"
 _breeze_allowed_kubernetes_modes="image"
@@ -35,7 +36,7 @@ _breeze_allowed_kind_versions="v0.8.0"
 _breeze_allowed_mysql_versions="5.7 8"
 _breeze_allowed_postgres_versions="9.6 10 11 12 13"
 _breeze_allowed_kind_operations="start stop restart status deploy test shell k9s"
-_breeze_allowed_test_types="All Core Providers API CLI Integration Other WWW Heisentests Postgres MySQL Helm"
+_breeze_allowed_test_types="All Core Providers API CLI Integration Other WWW Postgres MySQL Helm Quarantined"
 _breeze_allowed_package_formats="both sdist wheel"
 _breeze_allowed_installation_methods=". apache-airflow"
 
@@ -44,6 +45,7 @@ _breeze_allowed_installation_methods=". apache-airflow"
     # Default values for the commands & flags used
     _breeze_default_backend=$(echo "${_breeze_allowed_backends}" | awk '{print $1}')
     _breeze_default_github_registry=$(echo "${_breeze_allowed_github_registrys}" | awk '{print $1}')
+    _breeze_default_generate_providers_mode=$(echo "${_breeze_allowed_generate_constraints_modes}" | awk '{print $1}')
     _breeze_default_kubernetes_mode=$(echo "${_breeze_allowed_kubernetes_modes}" | awk '{print $1}')
     _breeze_default_kubernetes_version=$(echo "${_breeze_allowed_kubernetes_versions}" | awk '{print $1}')
     _breeze_default_helm_version=$(echo "${_breeze_allowed_helm_versions}" | awk '{print $1}')
@@ -55,7 +57,9 @@ _breeze_allowed_installation_methods=". apache-airflow"
 }
 
 _breeze_allowed_install_airflow_versions=$(cat <<-EOF
+2.0.1
 2.0.0
+1.10.15
 1.10.14
 1.10.12
 1.10.11
@@ -130,8 +134,10 @@ setup-order
 setup-extra-packages
 shellcheck
 sort-in-the-wild
+sort-spelling-wordlist
 stylelint
 trailing-whitespace
+ui-lint
 update-breeze-file
 update-extras
 update-local-yml-file
@@ -162,11 +168,11 @@ help python: backend: integration:
 kubernetes-mode: kubernetes-version: helm-version: kind-version:
 skip-mounting-local-sources mount-all-local-sources install-airflow-version: install-airflow-reference: db-reset
 verbose assume-yes assume-no assume-quit forward-credentials init-script:
-force-build-images force-pull-images production-image extras: force-clean-images skip-rebuild-check
+force-build-images force-pull-images force-pull-base-python-image production-image extras: force-clean-images skip-rebuild-check
 build-cache-local build-cache-pulled build-cache-disabled disable-pip-cache
-dockerhub-user: dockerhub-repo: use-github-registry github-registry: github-repository: github-image-id:
+dockerhub-user: dockerhub-repo: use-github-registry github-registry: github-repository: github-image-id: generate-constraints-mode:
 postgres-version: mysql-version:
-version-suffix-for-pypi: version-suffix-for-svn: backports
+version-suffix-for-pypi: version-suffix-for-svn:
 additional-extras: additional-python-deps: additional-dev-deps: additional-runtime-deps: image-tag:
 disable-mysql-client-installation constraints-location: disable-pip-cache install-from-docker-context-files
 additional-extras: additional-python-deps: disable-pypi-when-building skip-installing-airflow-providers-from-sources
@@ -174,8 +180,7 @@ dev-apt-deps: additional-dev-apt-deps: dev-apt-command: additional-dev-apt-comma
 runtime-apt-deps: additional-runtime-apt-deps: runtime-apt-command: additional-runtime-apt-command: additional-runtime-apt-env:
 load-default-connections load-example-dags
 install-packages-from-dist no-rbac-ui package-format: upgrade-to-newer-dependencies installation-method: continue-on-pip-check-failure
-test-type:
-preserve-volumes
+test-type: preserve-volumes dry-run-docker
 "
 
 _breeze_commands="
@@ -301,6 +306,9 @@ function breeze_complete::get_known_values_breeze() {
         ;;
     --github-registry)
         _breeze_known_values="${_breeze_allowed_github_registrys}"
+        ;;
+    --generate-constraints-mode)
+        _breeze_known_values="${_breeze_allowed_generate_constraints_modes}"
         ;;
     *)
         _breeze_known_values=""

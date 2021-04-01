@@ -21,10 +21,11 @@ import logging
 import os
 import subprocess
 import unittest
+from copy import deepcopy
 from distutils import log
 from os.path import dirname, relpath
 from textwrap import wrap
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Tuple
 
 from setuptools import Command, Distribution, find_namespace_packages, setup
 from setuptools.command.develop import develop as develop_orig
@@ -193,8 +194,7 @@ def get_sphinx_theme_version() -> str:
 # If you change this mark you should also change ./scripts/ci/check_order_setup.py
 # Start dependencies group
 amazon = [
-    'boto3>=1.15.0,<1.16.0',
-    'botocore>=1.18.0,<1.19.0',
+    'boto3>=1.15.0,<1.18.0',
     'watchtower~=0.7.3',
 ]
 apache_beam = [
@@ -216,6 +216,7 @@ azure = [
     'azure-keyvault>=4.1.0',
     'azure-kusto-data>=0.0.43,<0.1',
     'azure-mgmt-containerinstance>=1.5.0,<2.0',
+    'azure-mgmt-datafactory>=1.0.0,<2.0',
     'azure-mgmt-datalake-store>=0.5.0',
     'azure-mgmt-resource>=2.2.0',
     'azure-storage-blob>=12.7.0',
@@ -223,7 +224,7 @@ azure = [
     'azure-storage-file>=2.1.0',
 ]
 cassandra = [
-    'cassandra-driver>=3.13.0,<3.21.0',
+    'cassandra-driver>=3.13.0,<4',
 ]
 celery = [
     'celery~=4.4.2',
@@ -244,7 +245,8 @@ datadog = [
     'datadog>=0.14.0',
 ]
 doc = [
-    'sphinx>=2.1.2',
+    # Sphinx is limited to < 3.5.0 because of https://github.com/sphinx-doc/sphinx/issues/8880
+    'sphinx>=2.1.2, <3.5.0',
     f'sphinx-airflow-theme{get_sphinx_theme_version()}',
     'sphinx-argparse>=0.1.13',
     'sphinx-autoapi==1.0.0',
@@ -312,6 +314,7 @@ google = [
     'grpcio-gcp>=0.2.2',
     'json-merge-patch~=0.2',
     'pandas-gbq',
+    'plyvel',
 ]
 grpc = [
     'google-auth>=1.0.0, <2.0.0dev',
@@ -361,7 +364,7 @@ mssql = [
 ]
 mysql = [
     'mysql-connector-python>=8.0.11, <=8.0.22',
-    'mysqlclient>=1.3.6,<1.4',
+    'mysqlclient>=1.3.6,<3',
 ]
 neo4j = ['neo4j>=4.2.1']
 odbc = [
@@ -387,7 +390,7 @@ pinot = [
     'pinotdb>0.1.2,<1.0.0',
 ]
 plexus = [
-    'arrow>=0.16.0',
+    'arrow>=0.16.0,<1.0.0',
 ]
 postgres = [
     'psycopg2-binary>=2.7.4',
@@ -424,10 +427,7 @@ slack = [
     'slack_sdk>=3.0.0,<4.0.0',
 ]
 snowflake = [
-    # Snowflake connector > 2.3.8 is needed because it has vendored-in, patched urllib and requests libraries
-    # In earlier versions of the snowflake library, monkey-patching the libraries caused other
-    # providers to fail (Google, Amazon etc.)
-    'snowflake-connector-python>=2.3.8',
+    'snowflake-connector-python>=2.4.1',
     'snowflake-sqlalchemy>=1.1.0',
 ]
 spark = [
@@ -440,6 +440,9 @@ ssh = [
 ]
 statsd = [
     'statsd>=3.3.0, <4.0',
+]
+tableau = [
+    'tableauserverclient',
 ]
 telegram = [
     'python-telegram-bot==13.0',
@@ -465,6 +468,7 @@ zendesk = [
 # End dependencies group
 
 devel = [
+    'aws_xray_sdk',
     'beautifulsoup4~=4.7.1',
     'black',
     'blinker',
@@ -482,17 +486,15 @@ devel = [
     'ipdb',
     'jira',
     'jsonpath-ng',
-    # HACK: Moto is not compatible with newer versions
-    # See: https://github.com/spulec/moto/issues/3535
-    'mock<4.0.3',
+    'jsondiff',
     'mongomock',
-    'moto',
+    'moto~=2.0',
     'mypy==0.770',
     'parameterized',
     'paramiko',
     'pipdeptree',
     'pre-commit',
-    'pylint==2.6.0',
+    'pylint>=2.7.0',
     'pysftp',
     'pytest~=6.0',
     'pytest-cov',
@@ -500,10 +502,10 @@ devel = [
     'pytest-rerunfailures~=9.1',
     'pytest-timeouts',
     'pytest-xdist',
+    'python-jose',
     'pywinrm',
     'qds-sdk>=1.9.6',
     'requests_mock',
-    'testfixtures',
     'wheel',
     'yamllint',
 ]
@@ -513,6 +515,7 @@ devel_hadoop = devel_minreq + hdfs + hive + kerberos + presto + webhdfs
 
 # Dict of all providers which are part of the Apache Airflow repository together with their requirements
 PROVIDERS_REQUIREMENTS: Dict[str, List[str]] = {
+    'airbyte': [],
     'amazon': amazon,
     'apache.beam': apache_beam,
     'apache.cassandra': cassandra,
@@ -572,20 +575,30 @@ PROVIDERS_REQUIREMENTS: Dict[str, List[str]] = {
     'snowflake': snowflake,
     'sqlite': [],
     'ssh': ssh,
+    'tableau': tableau,
     'telegram': telegram,
     'vertica': vertica,
     'yandex': yandex,
     'zendesk': zendesk,
 }
 
-
-# Those are all extras which do not have own 'providers'
-EXTRAS_REQUIREMENTS: Dict[str, List[str]] = {
+# Those are all additional extras which do not have their own 'providers'
+# The 'apache.atlas' and 'apache.webhdfs' are extras that provide additional libraries
+# but they do not have separate providers (yet?), they are merely there to add extra libraries
+# That can be used in custom python/bash operators.
+ADDITIONAL_EXTRAS_REQUIREMENTS: Dict[str, List[str]] = {
     'apache.atlas': atlas,
-    'apache.beam': apache_beam,
     'apache.webhdfs': webhdfs,
+}
+
+
+# Those are extras that are extensions of the 'core' Airflow. They provide additional features
+# To airflow core. They do not have separate providers because they do not have any operators/hooks etc.
+CORE_EXTRAS_REQUIREMENTS: Dict[str, List[str]] = {
     'async': async_packages,
+    'celery': celery,  # also has provider, but it extends the core with the Celery executor
     'cgroups': cgroups,
+    'cncf.kubernetes': kubernetes,  # also has provider, but it extends the core with the KubernetesExecutor
     'dask': dask,
     'github_enterprise': flask_oauth,
     'google_auth': flask_oauth,
@@ -599,6 +612,9 @@ EXTRAS_REQUIREMENTS: Dict[str, List[str]] = {
 }
 
 
+EXTRAS_REQUIREMENTS: Dict[str, List[str]] = deepcopy(CORE_EXTRAS_REQUIREMENTS)
+
+
 def add_extras_for_all_providers() -> None:
     """
     Adds extras for all providers.
@@ -609,7 +625,14 @@ def add_extras_for_all_providers() -> None:
         EXTRAS_REQUIREMENTS[provider_name] = provider_requirement
 
 
+def add_additional_extras() -> None:
+    """Adds extras for all additional extras."""
+    for extra_name, extra_requirement in ADDITIONAL_EXTRAS_REQUIREMENTS.items():
+        EXTRAS_REQUIREMENTS[extra_name] = extra_requirement
+
+
 add_extras_for_all_providers()
+add_additional_extras()
 
 #############################################################################################################
 #  The whole section can be removed in Airflow 3.0 as those old aliases are deprecated in 2.* series
@@ -633,7 +656,6 @@ EXTRAS_DEPRECATED_ALIASES: Dict[str, str] = {
     'qds': 'qubole',
     's3': 'amazon',
     'spark': 'apache.spark',
-    'tableau': 'salesforce',
     'webhdfs': 'apache.webhdfs',
     'winrm': 'microsoft.winrm',
 }
@@ -717,11 +739,15 @@ PACKAGES_EXCLUDED_FOR_ALL.extend(
     ]
 )
 
-# Those packages are excluded because they break tests (downgrading mock and few other requirements)
-# and they are not needed to run our test suite. This can be removed as soon as we get non-conflicting
-# requirements for the apache-beam as well. This waits for azure fixes:
+# Those packages are excluded because they break tests and they are not needed to run our test suite.
+# This can be removed as soon as we get non-conflicting
+# requirements for the apache-beam as well.
 #
-# * Azure: https://github.com/apache/airflow/issues/11968
+# Currently Apache Beam has very narrow and old dependencies for 'mock' package which
+# are required only for our tests.
+# once https://github.com/apache/beam/pull/14328 is solved and new version of apache-beam is released
+# we will be able to remove this exclusion and get rid of `install_remaining_dependencies`
+# function in `scripts/in_container`.
 #
 PACKAGES_EXCLUDED_FOR_CI = [
     'apache-beam',
@@ -777,11 +803,6 @@ def sort_extras_requirements() -> Dict[str, List[str]]:
 
 EXTRAS_REQUIREMENTS = sort_extras_requirements()
 
-# A set that keeps all extras that install some providers.
-# It is used by pre-commit that verifies if documentation in docs/apache-airflow/extra-packages-ref.rst
-# are synchronized.
-EXTRAS_WITH_PROVIDERS: Set[str] = set()
-
 # Those providers are pre-installed always when airflow is installed.
 # Those providers do not have dependency on airflow2.0 because that would lead to circular dependencies.
 # This is not a problem for PIP but some tools (pipdeptree) show those as a warning.
@@ -802,6 +823,11 @@ def get_provider_package_from_package_id(package_id: str):
     """
     package_suffix = package_id.replace(".", "-")
     return f"apache-airflow-providers-{package_suffix}"
+
+
+def get_all_provider_packages():
+    """Returns all provider packages configured in setup.py"""
+    return " ".join([get_provider_package_from_package_id(package) for package in PROVIDERS_REQUIREMENTS])
 
 
 class AirflowDistribution(Distribution):
@@ -835,14 +861,50 @@ class AirflowDistribution(Distribution):
             )
 
 
-def add_provider_packages_to_extras_requirements(extra: str, providers: List[str]) -> None:
+def replace_extra_requirement_with_provider_packages(extra: str, providers: List[str]) -> None:
     """
-    Adds provider packages to requirements of extra.
+    Replaces extra requirement with provider package. The intention here is that when
+    the provider is added as dependency of extra, there is no need to add the dependencies
+    separately. This is not needed and even harmful, because in case of future versions of
+    the provider, the requirements might change, so hard-coding requirements from the version
+    that was available at the release time might cause dependency conflicts in the future.
+
+    Say for example that you have salesforce provider with those deps:
+
+    { 'salesforce': ['simple-salesforce>=1.0.0', 'tableauserverclient'] }
+
+    Initially ['salesforce'] extra has those requirements and it works like that when you install
+    it when INSTALL_PROVIDERS_FROM_SOURCES is set to `true` (during the development). However, when
+    the production installation is used, The dependencies are changed:
+
+    { 'salesforce': ['apache-airflow-providers-salesforce'] }
+
+    And then, 'apache-airflow-providers-salesforce' package has those 'install_requires' dependencies:
+            ['simple-salesforce>=1.0.0', 'tableauserverclient']
+
+    So transitively 'salesforce' extra has all the requirements it needs and in case the provider
+    changes it's dependencies, they will transitively change as well.
+
+    In the constraint mechanism we save both - provider versions and it's dependencies
+    version, which means that installation using constraints is repeatable.
 
     :param extra: Name of the extra to add providers to
     :param providers: list of provider ids
     """
-    EXTRAS_WITH_PROVIDERS.add(extra)
+    EXTRAS_REQUIREMENTS[extra] = [
+        get_provider_package_from_package_id(package_name) for package_name in providers
+    ]
+
+
+def add_provider_packages_to_extra_requirements(extra: str, providers: List[str]) -> None:
+    """
+    Adds provider packages as requirements to extra. This is used to add provider packages as requirements
+    to the "bulk" kind of extras. Those bulk extras do not have the detailed 'extra' requirements as
+    initial values, so instead of replacing them (see previous function) we can extend them.
+
+    :param extra: Name of the extra to add providers to
+    :param providers: list of provider ids
+    """
     EXTRAS_REQUIREMENTS[extra].extend(
         [get_provider_package_from_package_id(package_name) for package_name in providers]
     )
@@ -859,12 +921,12 @@ def add_all_provider_packages() -> None:
 
     """
     for provider in ALL_PROVIDERS:
-        add_provider_packages_to_extras_requirements(provider, [provider])
-    add_provider_packages_to_extras_requirements("all", ALL_PROVIDERS)
-    add_provider_packages_to_extras_requirements("devel_ci", ALL_PROVIDERS)
-    add_provider_packages_to_extras_requirements("devel_all", ALL_PROVIDERS)
-    add_provider_packages_to_extras_requirements("all_dbs", ALL_DB_PROVIDERS)
-    add_provider_packages_to_extras_requirements("devel_hadoop", ["apache.hdfs", "apache.hive", "presto"])
+        replace_extra_requirement_with_provider_packages(provider, [provider])
+    add_provider_packages_to_extra_requirements("all", ALL_PROVIDERS)
+    add_provider_packages_to_extra_requirements("devel_ci", ALL_PROVIDERS)
+    add_provider_packages_to_extra_requirements("devel_all", ALL_PROVIDERS)
+    add_provider_packages_to_extra_requirements("all_dbs", ALL_DB_PROVIDERS)
+    add_provider_packages_to_extra_requirements("devel_hadoop", ["apache.hdfs", "apache.hive", "presto"])
 
 
 class Develop(develop_orig):

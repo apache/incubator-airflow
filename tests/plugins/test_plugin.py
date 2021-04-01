@@ -77,15 +77,19 @@ v_appbuilder_package = {"name": "Test View", "category": "Test Plugin", "view": 
 
 v_nomenu_appbuilder_package = {"view": v_appbuilder_view}
 
-# Creating a flask appbuilder Menu Item
+# Creating flask appbuilder Menu Items
 appbuilder_mitem = {
     "name": "Google",
-    "category": "Search",
-    "category_icon": "fa-th",
     "href": "https://www.google.com",
+    "category": "Search",
+}
+appbuilder_mitem_toplevel = {
+    "name": "apache",
+    "href": "https://www.apache.org/",
+    "label": "The Apache Software Foundation",
 }
 
-# Creating a flask blueprint to intergrate the templates and static folder
+# Creating a flask blueprint to integrate the templates and static folder
 bp = Blueprint(
     "test_plugin",
     __name__,
@@ -105,7 +109,7 @@ class AirflowTestPlugin(AirflowPlugin):
     macros = [plugin_macro]
     flask_blueprints = [bp]
     appbuilder_views = [v_appbuilder_package]
-    appbuilder_menu_items = [appbuilder_mitem]
+    appbuilder_menu_items = [appbuilder_mitem, appbuilder_mitem_toplevel]
     global_operator_extra_links = [
         AirflowLink(),
         GithubLink(),

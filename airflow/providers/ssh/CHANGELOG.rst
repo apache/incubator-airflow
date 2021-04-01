@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Added support for DSS, ECDSA, and Ed25519 private keys in SSHHook (#12467)``
+
 1.1.0
 .....
 

@@ -106,3 +106,40 @@ class WebserverDeploymentTest(unittest.TestCase):
             jmespath.search("spec.template.spec.containers[0].readinessProbe.httpGet.httpHeaders", docs[0])
             is None
         )
+
+    def test_should_add_volume_and_volume_mount_when_exist_webserver_config(self):
+        docs = render_chart(
+            values={"webserver": {"webserverConfig": "CSRF_ENABLED = True"}},
+            show_only=["templates/webserver/webserver-deployment.yaml"],
+        )
+
+        assert {
+            "name": "webserver-config",
+            "configMap": {"name": "RELEASE-NAME-webserver-config"},
+        } in jmespath.search("spec.template.spec.volumes", docs[0])
+
+        assert {
+            "name": "webserver-config",
+            "mountPath": "/opt/airflow/webserver_config.py",
+            "subPath": "webserver_config.py",
+            "readOnly": True,
+        } in jmespath.search("spec.template.spec.containers[0].volumeMounts", docs[0])
+
+    def test_should_add_extra_containers(self):
+        docs = render_chart(
+            values={
+                "executor": "CeleryExecutor",
+                "webserver": {
+                    "extraContainers": [
+                        {
+                            "name": "test-container",
+                            "image": "test-registry/test-repo:test-tag",
+                            "imagePullPolicy": "Always",
+                        }
+                    ],
+                },
+            },
+            show_only=["templates/webserver/webserver-deployment.yaml"],
+        )
+
+        assert "test-container" == jmespath.search("spec.template.spec.containers[-1].name", docs[0])

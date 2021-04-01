@@ -42,7 +42,7 @@
 
 # What the provider packages are
 
-The Prvider Provider packages are separate packages (one package per provider) that implement
+The Provider packages are separate packages (one package per provider) that implement
 integrations with external services for Airflow in the form of installable Python packages.
 
 The Release Manager prepares packages separately from the main Airflow Release, using
@@ -75,22 +75,17 @@ They are stored in the documentation directory. The `README.md` file generated d
 preparation is not stored anywhere in the repository - it contains however link to the Changelog
 generated.
 
+The `README.rst` file contains the following information:
 
-Note! For Backport providers (until April 2021) the changelog was embedded and stored in the
-`airflow/providers/<PROVIDER>/README_BACKPORT_PACKAGES.md`. Those files will be updated only till April
-2021 and will be removed afterwards.
-
-The `README.md` file contains the following information:
-
-* summary of requirements for each backport package
+* summary of requirements for each provider package
 * list of dependencies (including extras to install them) when package depends on other providers package
-* link to the detailed `README.rst` - generated documentation for the packages.
+* link to the detailed changelog/index.rst file: generated documentation for the packages.
 
 The `index.rst` stored in the `docs\apache-airflow-providers-<PROVIDER>` folder contains:
 
 * Contents this is manually maintained there
 * the general package information (same for all packages with the name change)
-* summary of requirements for each backport package
+* summary of requirements for each provider package
 * list of dependencies (including extras to install them) when package depends on other providers package
 * Content of high-level CHANGELOG.rst file that is stored in the provider folder next to
   ``provider.yaml`` file.
@@ -187,6 +182,7 @@ also do not container the leading 0s.
 
 * You can install the .whl packages with `pip install <PACKAGE_FILE>`
 
+You can add `--verbose` flag if you want to see detailed commands executed by the script.
 
 # Testing and debugging provider preparation
 
@@ -248,6 +244,9 @@ You can see for example list of all provider packages:
 ```shell script
 ./dev/provider_packages/prepare_provider_packages.py list-providers-packages
 ```
+
+
+You can add `--verbose` flag in breeze command if you want to see commands executed.
 
 ## Debugging import check
 
@@ -333,8 +332,9 @@ pip install -e ".[devel_all]"
 3) Run update documentation (version suffix might be empty):
 
 ```shell script
-./dev/provider_packages/prepare_provider_packages.py --version-suffix <SUFFIX> \
-    update-package-documentation <PACKAGE>
+./dev/provider_packages/prepare_provider_packages.py update-package-documentation \
+    --version-suffix <SUFFIX> \
+    <PACKAGE>
 ```
 
 This script will fetch the latest version of airflow from Airflow's repo (it will automatically add
@@ -343,6 +343,8 @@ to setup any credentials for it.
 
 In case version being prepared is already tagged in the repo documentation preparation returns immediately
 and prints warning.
+
+You can add `--verbose` flag if you want to see detailed commands executed by the script.
 
 ## Debugging preparing setup files
 
@@ -356,23 +358,7 @@ This script prepares the actual packages.
 
 (all the rest is in-container)
 
-3) Copy Provider Packages sources
-
-This steps copies provider package sources (with cleaning it up before) to `provider_packages`
-folder so that the packages can be built from there. This was necessary for Backport Providers
-(described in [their own readme](README_BACKPORT_PACKAGES.md) as we also performed refactor of
-the code. When we remove Backport Packages in April 2021 we can likely simplify the steps using
-existing setuptools features, and we will be able to simplify the process.
-
-```shell script
-./dev/provider_packages/copy_provider_package_sources.py
-```
-
-Now you can run package generation step-by-step, separately building one package at a time.
-The `breeze` command are more convenient if you want to build several packages at the same
-time, but for testing and debugging those are the commands executed next:
-
-4) Cleanup the artifact directories:
+2) Cleanup the artifact directories:
 
 This is needed because setup tools does not clean those files and generating packages one by one
 without cleanup, might include artifacts from previous package to be included in the new one.
@@ -381,7 +367,7 @@ without cleanup, might include artifacts from previous package to be included in
 rm -rf -- *.egg-info build/
 ```
 
-5) Generate setup.py/setup.cfg/MANIFEST.in/provider_info.py/README files  files for:
+3) Generate setup.py/setup.cfg/MANIFEST.in/provider_info.py/README files  files for:
 
 * alpha/beta packages (specify a1,a2,.../b1,b2... suffix)
 * release candidates (specify r1,r2,... suffix) - those are release candidate
@@ -394,9 +380,12 @@ last time it was generated. In the CI we always add 'dev' suffix, and we never c
 TAG for it, so in the CI the setup.py is generated and should never fail.
 
 ```shell script
-./dev/provider_packages/prepare_provider_packages.py --version-suffix "<SUFFIX>" \
-  generate-setup-files <PACKAGE>
+./dev/provider_packages/prepare_provider_packages.py generate-setup-files \
+    --version-suffix "<SUFFIX>" \
+    <PACKAGE>
 ```
+
+You can add `--verbose` flag if you want to see detailed commands executed by the script.
 
 ## Debugging preparing the packages
 
@@ -424,8 +413,9 @@ pip install -e ".[devel_all]"
 3) Run update documentation (version suffix might be empty):
 
 ```shell script
-./dev/provider_packages/prepare_provider_packages.py --version-suffix <SUFFIX> \
-    build-provider-packages <PACKAGE>
+./dev/provider_packages/prepare_provider_packages.py build-provider-packages \
+    --version-suffix <SUFFIX> \
+    <PACKAGE>
 ```
 
 In case version being prepared is already tagged in the repo documentation preparation returns immediately
@@ -466,7 +456,6 @@ This prepares airflow package in the "dist" folder
 
 ```shell script
 export INSTALL_AIRFLOW_VERSION="wheel"
-unset BACKPORT_PACKAGES
 
 ./dev/provider_packages/enter_breeze_provider_package_tests.sh
 ```

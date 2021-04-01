@@ -40,7 +40,7 @@ class SalesforceToGcsOperator(BaseOperator):
     :type object_name: str
     :param salesforce_conn_id: the name of the connection that has the parameters
         we need to connect to Salesforce.
-    :type conn_id: str
+    :type salesforce_conn_id: str
     :param include_deleted: True if the query should include deleted records.
     :type include_deleted: bool
     :param query_params: Additional optional arguments
@@ -57,7 +57,7 @@ class SalesforceToGcsOperator(BaseOperator):
     :param gzip: Option to compress local file or file data for upload
     :type gzip: bool
     :param gcp_conn_id: the name of the connection that has the parameters we need to connect to GCS.
-    :type conn_id: str
+    :type gcp_conn_id: str
     """
 
     template_fields = (

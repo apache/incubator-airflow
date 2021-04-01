@@ -17,6 +17,7 @@
 # under the License.
 set -euo pipefail
 
+set -x
 declare -a packages
 
 MYSQL_VERSION="8.0"

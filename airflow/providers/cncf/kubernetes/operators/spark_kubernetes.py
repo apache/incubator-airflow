@@ -36,6 +36,10 @@ class SparkKubernetesOperator(BaseOperator):
     :type namespace: str
     :param kubernetes_conn_id: the connection to Kubernetes cluster
     :type kubernetes_conn_id: str
+    :param api_group: kubernetes api group of sparkApplication
+    :type api_group: str
+    :param api_version: kubernetes api version of sparkApplication
+    :type api_version: str
     """
 
     template_fields = ['application_file', 'namespace']
@@ -49,19 +53,23 @@ class SparkKubernetesOperator(BaseOperator):
         application_file: str,
         namespace: Optional[str] = None,
         kubernetes_conn_id: str = 'kubernetes_default',
+        api_group: str = 'sparkoperator.k8s.io',
+        api_version: str = 'v1beta2',
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.application_file = application_file
         self.namespace = namespace
         self.kubernetes_conn_id = kubernetes_conn_id
+        self.api_group = api_group
+        self.api_version = api_version
 
     def execute(self, context):
         self.log.info("Creating sparkApplication")
         hook = KubernetesHook(conn_id=self.kubernetes_conn_id)
         response = hook.create_custom_object(
-            group="sparkoperator.k8s.io",
-            version="v1beta2",
+            group=self.api_group,
+            version=self.api_version,
             plural="sparkapplications",
             body=self.application_file,
             namespace=self.namespace,

@@ -132,7 +132,7 @@ with DAG(
     # The following tasks are generated using for loop. The first task puts the eight
     # csv files to HDFS. The second task loads these files from HDFS to respected Hive
     # tables. These two for loops could be combined into one loop. However, in most cases,
-    # you will be running different analysis on your incoming incoming and outgoing tweets,
+    # you will be running different analysis on your incoming and outgoing tweets,
     # and hence they are kept separated in this example.
     # --------------------------------------------------------------------------------
 

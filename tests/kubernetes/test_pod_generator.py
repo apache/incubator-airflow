@@ -293,7 +293,7 @@ class TestPodGenerator(unittest.TestCase):
         }
         assert (
             result_from_pod == expected_from_pod
-        ), "There was a discrepency between KubernetesExecutor and pod_override"
+        ), "There was a discrepancy between KubernetesExecutor and pod_override"
 
         assert {
             'apiVersion': 'v1',
@@ -499,6 +499,9 @@ class TestPodGenerator(unittest.TestCase):
         assert result.metadata.name == 'a' * 63 + '.' + self.static_uuid.hex
         for _, v in result.metadata.labels.items():
             assert len(v) <= 63
+
+        assert 'a' * 512 == result.metadata.annotations['dag_id']
+        assert 'a' * 512 == result.metadata.annotations['task_id']
 
     def test_merge_objects_empty(self):
         annotations = {'foo1': 'bar1'}

@@ -23,7 +23,7 @@ from tests.helm_template_generator import render_chart
 
 
 class StatsdTest(unittest.TestCase):
-    def test_should_create_statsd_defalut(self):
+    def test_should_create_statsd_default(self):
         docs = render_chart(show_only=["templates/statsd/statsd-deployment.yaml"])
 
         assert "RELEASE-NAME-statsd" == jmespath.search("metadata.name", docs[0])

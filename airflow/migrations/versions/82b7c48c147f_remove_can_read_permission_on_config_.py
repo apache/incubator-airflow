@@ -23,6 +23,7 @@ Revises: e959f08ac86c
 Create Date: 2021-02-04 12:45:58.138224
 
 """
+import logging
 
 from airflow.security import permissions
 from airflow.www.app import create_app
@@ -36,6 +37,9 @@ depends_on = None
 
 def upgrade():
     """Remove can_read permission on config resource for User and Viewer role"""
+    log = logging.getLogger()
+    handlers = log.handlers[:]
+
     appbuilder = create_app(config={'FAB_UPDATE_PERMS': False}).appbuilder
     roles_to_modify = [role for role in appbuilder.sm.get_all_roles() if role.name in ["User", "Viewer"]]
     can_read_on_config_perm = appbuilder.sm.find_permission_view_menu(
@@ -47,6 +51,8 @@ def upgrade():
             permissions.RESOURCE_CONFIG, permissions.ACTION_CAN_READ, [role.id]
         ):
             appbuilder.sm.del_permission_role(role, can_read_on_config_perm)
+
+    log.handlers = handlers
 
 
 def downgrade():

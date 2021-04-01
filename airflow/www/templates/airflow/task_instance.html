@@ -57,18 +57,5 @@
 {% endblock %}
 {% block tail %}
   {{ super() }}
-  <script>
-    $(document).ready(function () {
-      function date_change(e) {
-          // We don't want to navigate away if the datetimepicker is still visible
-          if ($('.datetimepicker bootstrap-datetimepicker-widget :visible').length > 0) {
-            return;
-          }
-
-          $('input#execution_date').parents('form').submit();
-      }
-      $('input#execution_date').parents('.datetimepicker').on('dp.change', date_change);
-      $('input#execution_date').parents('.datetimepicker').on('dp.hide', date_change);
-    });
-  </script>
+  <script src="{{ url_for_asset('taskInstance.js') }}"></script>
 {% endblock %}

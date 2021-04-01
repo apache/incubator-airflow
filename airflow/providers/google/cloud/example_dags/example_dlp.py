@@ -33,6 +33,7 @@ from airflow.providers.google.cloud.operators.dlp import (
     CloudDLPCreateInspectTemplateOperator,
     CloudDLPCreateJobTriggerOperator,
     CloudDLPCreateStoredInfoTypeOperator,
+    CloudDLPDeidentifyContentOperator,
     CloudDLPDeleteInspectTemplateOperator,
     CloudDLPDeleteJobTriggerOperator,
     CloudDLPDeleteStoredInfoTypeOperator,
@@ -177,3 +178,33 @@ with models.DAG(
     )
     # [END howto_operator_dlp_delete_job_trigger]
     create_trigger >> update_trigger >> delete_trigger
+
+# [START dlp_deidentify_config_example]
+DEIDENTIFY_CONFIG = {
+    "info_type_transformations": {
+        "transformations": [
+            {
+                "primitive_transformation": {
+                    "replace_config": {"new_value": {"string_value": "[deidentified_number]"}}
+                }
+            }
+        ]
+    }
+}
+# [END dlp_deidentify_config_example]
+
+with models.DAG(
+    "example_gcp_dlp_deidentify_content",
+    schedule_interval=None,
+    start_date=days_ago(1),
+    tags=["example", "dlp", "deidentify"],
+) as dag4:
+    # [START _howto_operator_dlp_deidentify_content]
+    deidentify_content = CloudDLPDeidentifyContentOperator(
+        project_id=GCP_PROJECT,
+        item=ITEM,
+        deidentify_config=DEIDENTIFY_CONFIG,
+        inspect_config=INSPECT_CONFIG,
+        task_id="deidentify_content",
+    )
+    # [END _howto_operator_dlp_deidentify_content]

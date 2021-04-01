@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import time
 import unittest
 from datetime import timedelta
 
@@ -45,14 +44,10 @@ class TestMarkTasks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         models.DagBag(include_examples=True, read_dags_from_db=False).sync_to_db()
-        dagbag = models.DagBag(include_examples=True, read_dags_from_db=True)
-        dagbag.collect_dags_from_db()
-        cls.dag1 = dagbag.dags['miscellaneous_test_dag']
-        cls.dag1.sync_to_db()
-        cls.dag2 = dagbag.dags['example_subdag_operator']
-        cls.dag2.sync_to_db()
-        cls.dag3 = dagbag.dags['example_trigger_target_dag']
-        cls.dag3.sync_to_db()
+        dagbag = models.DagBag(include_examples=False, read_dags_from_db=True)
+        cls.dag1 = dagbag.get_dag('miscellaneous_test_dag')
+        cls.dag2 = dagbag.get_dag('example_subdag_operator')
+        cls.dag3 = dagbag.get_dag('example_trigger_target_dag')
         cls.execution_dates = [days_ago(2), days_ago(1)]
         start_date3 = cls.dag3.start_date
         cls.dag3_execution_dates = [
@@ -68,7 +63,6 @@ class TestMarkTasks(unittest.TestCase):
         )
         for dr in drs:
             dr.dag = self.dag1
-            dr.verify_integrity()
 
         drs = _create_dagruns(
             self.dag2, [self.dag2.start_date], state=State.RUNNING, run_type=DagRunType.SCHEDULED
@@ -76,14 +70,12 @@ class TestMarkTasks(unittest.TestCase):
 
         for dr in drs:
             dr.dag = self.dag2
-            dr.verify_integrity()
 
         drs = _create_dagruns(
             self.dag3, self.dag3_execution_dates, state=State.SUCCESS, run_type=DagRunType.MANUAL
         )
         for dr in drs:
             dr.dag = self.dag3
-            dr.verify_integrity()
 
     def tearDown(self):
         clear_db_runs()
@@ -568,8 +560,6 @@ class TestMarkDAGRun(unittest.TestCase):
         middle_time = timezone.utcnow()
         self._set_default_task_instance_states(dr)
 
-        time.sleep(2)
-
         altered = set_dag_run_state_to_running(self.dag1, date, commit=True)
 
         # None of the tasks should be altered, since we've only altered the DAG itself
@@ -592,7 +582,7 @@ class TestMarkDAGRun(unittest.TestCase):
 
         will_be_altered = set_dag_run_state_to_failed(self.dag1, date, commit=False)
 
-        # Only the running task shouldbe altered.
+        # Only the running task should be altered.
         expected = self._get_num_tasks_with_starting_state(State.RUNNING, inclusion=True)
         assert len(will_be_altered) == expected
         self._verify_dag_run_state(self.dag1, date, State.RUNNING)

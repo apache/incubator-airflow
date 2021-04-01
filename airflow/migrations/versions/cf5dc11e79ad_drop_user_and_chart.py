@@ -37,7 +37,7 @@ depends_on = None
 def upgrade():  # noqa: D103
     # We previously had a KnownEvent's table, but we deleted the table without
     # a down migration to remove it (so we didn't delete anyone's data if they
-    # were happing to use the feature.
+    # were happening to use the feature.
     #
     # But before we can delete the users table we need to drop the FK
 

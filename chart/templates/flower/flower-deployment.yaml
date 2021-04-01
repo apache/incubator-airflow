@@ -18,6 +18,7 @@
 ################################
 ## Airflow Flower Deployment
 #################################
+{{- if .Values.flower.enabled }}
 {{- if or (eq .Values.executor "CeleryExecutor") (eq .Values.executor "CeleryKubernetesExecutor") }}
 {{- $nodeSelector := or .Values.flower.nodeSelector .Values.nodeSelector }}
 {{- $affinity := or .Values.flower.affinity .Values.affinity }}
@@ -120,4 +121,5 @@ spec:
         - name: config
           configMap:
             name: {{ template "airflow_config" . }}
+{{- end }}
 {{- end }}

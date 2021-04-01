@@ -67,7 +67,7 @@ class TestGceInstanceStart(unittest.TestCase):
         )
         assert result
 
-    # Setting all of the operator's input parameters as template dag_ids
+    # Setting all the operator's input parameters as template dag_ids
     # (could be anything else) just to test if the templating works for all fields
     @mock.patch('airflow.providers.google.cloud.operators.compute.ComputeEngineHook')
     def test_instance_start_with_templates(self, _):
@@ -146,7 +146,7 @@ class TestGceInstanceStop(unittest.TestCase):
             zone=GCE_ZONE, resource_id=RESOURCE_ID, project_id=GCP_PROJECT_ID
         )
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all fields
     @mock.patch('airflow.providers.google.cloud.operators.compute.ComputeEngineHook')
     def test_instance_stop_with_templates(self, _):
@@ -238,7 +238,7 @@ class TestGceInstanceSetMachineType(unittest.TestCase):
             zone=GCE_ZONE, resource_id=RESOURCE_ID, body=SET_MACHINE_TYPE_BODY, project_id=GCP_PROJECT_ID
         )
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all fields
     @mock.patch('airflow.providers.google.cloud.operators.compute.ComputeEngineHook')
     def test_set_machine_type_with_templates(self, _):

@@ -72,20 +72,17 @@ class TestCassandraHook(unittest.TestCase):
         hook.shutdown_cluster()
 
     def test_get_conn(self):
-        with mock.patch.object(Cluster, "connect") as mock_connect, mock.patch(
-            "socket.getaddrinfo", return_value=[]
-        ) as mock_getaddrinfo:
-            mock_connect.return_value = 'session'
-            hook = CassandraHook(cassandra_conn_id='cassandra_test')
-            hook.get_conn()
-            assert mock_getaddrinfo.called
-            mock_connect.assert_called_once_with('test_keyspace')
+        with mock.patch.object(Cluster, "__init__") as mock_cluster_ctor:
+            mock_cluster_ctor.return_value = None
+            CassandraHook(cassandra_conn_id='cassandra_test')
+            mock_cluster_ctor.assert_called_once_with(
+                contact_points=['host-1', 'host-2'],
+                port=9042,
+                protocol_version=4,
+                load_balancing_policy=mock.ANY,
+            )
 
-            cluster = hook.get_cluster()
-            assert cluster.contact_points == ['host-1', 'host-2']
-            assert cluster.port == 9042
-            assert cluster.protocol_version == 4
-            assert isinstance(cluster.load_balancing_policy, TokenAwarePolicy)
+            assert isinstance(mock_cluster_ctor.call_args[1]['load_balancing_policy'], TokenAwarePolicy)
 
     def test_get_lb_policy_with_no_args(self):
         # test LB policies with no args

@@ -89,8 +89,6 @@ class ComputeEngineStartInstanceOperator(ComputeEngineBaseOperator):
     :param api_version: Optional, API version used (for example v1 - or beta). Defaults
         to v1.
     :type api_version: str
-    :param validate_body: Optional, If set to False, body validation is not performed.
-        Defaults to False.
     :param impersonation_chain: Optional service account to impersonate using short-term
         credentials, or chained list of accounts required to get the access_token
         of the last account in the list, which will be impersonated in the request.
@@ -166,8 +164,6 @@ class ComputeEngineStopInstanceOperator(ComputeEngineBaseOperator):
     :param api_version: Optional, API version used (for example v1 - or beta). Defaults
         to v1.
     :type api_version: str
-    :param validate_body: Optional, If set to False, body validation is not performed.
-        Defaults to False.
     :param impersonation_chain: Optional service account to impersonate using short-term
         credentials, or chained list of accounts required to get the access_token
         of the last account in the list, which will be impersonated in the request.
@@ -355,7 +351,7 @@ GCE_INSTANCE_TEMPLATE_VALIDATION_PATCH_SPECIFICATION = [
                     dict(name="onHostMaintenance", optional=True),
                     dict(name="automaticRestart", optional=True),
                     dict(name="preemptible", optional=True),
-                    dict(name="nodeAffinitites", optional=True),  # not validating deeper
+                    dict(name="nodeAffinities", optional=True),  # not validating deeper
                 ],
             ),
             dict(name="labels", optional=True),
@@ -553,9 +549,6 @@ class ComputeEngineInstanceGroupUpdateManagerTemplateOperator(ComputeEngineBaseO
     :param api_version: Optional, API version used (for example v1 - or beta). Defaults
         to v1.
     :type api_version: str
-    :param validate_body: Optional, If set to False, body validation is not performed.
-        Defaults to False.
-    :type validate_body: bool
     :param impersonation_chain: Optional service account to impersonate using short-term
         credentials, or chained list of accounts required to get the access_token
         of the last account in the list, which will be impersonated in the request.

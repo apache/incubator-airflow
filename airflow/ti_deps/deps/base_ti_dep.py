@@ -30,8 +30,8 @@ class BaseTIDep:
     """
 
     # If this dependency can be ignored by a context in which it is added to. Needed
-    # because some dependencies should never be ignoreable in their contexts.
-    IGNOREABLE = False
+    # because some dependencies should never be ignorable in their contexts.
+    IGNORABLE = False
 
     # Whether this dependency is not a global task instance dependency but specific
     # to some tasks (e.g. depends_on_past is not specified by all tasks).
@@ -90,7 +90,7 @@ class BaseTIDep:
         if dep_context is None:
             dep_context = DepContext()
 
-        if self.IGNOREABLE and dep_context.ignore_all_deps:
+        if self.IGNORABLE and dep_context.ignore_all_deps:
             yield self._passing_status(reason="Context specified all dependencies should be ignored.")
             return
 

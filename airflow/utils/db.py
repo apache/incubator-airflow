@@ -256,7 +256,7 @@ def create_default_connections(session=None):
             conn_id="facebook_default",
             conn_type="facebook_social",
             extra="""
-                {   "account_id": "<AD_ACCOUNNT_ID>",
+                {   "account_id": "<AD_ACCOUNT_ID>",
                     "app_id": "<FACEBOOK_APP_ID>",
                     "app_secret": "<FACEBOOK_APP_SECRET>",
                     "access_token": "<FACEBOOK_AD_ACCESS_TOKEN>"
@@ -325,6 +325,14 @@ def create_default_connections(session=None):
             port=7070,
             login="ADMIN",
             password="KYLIN",
+        ),
+        session,
+    )
+    merge_conn(
+        Connection(
+            conn_id="leveldb_default",
+            conn_type="leveldb",
+            host="localhost",
         ),
         session,
     )
@@ -578,8 +586,9 @@ def _get_alembic_config():
 def check_migrations(timeout):
     """
     Function to wait for all airflow migrations to complete.
-    @param timeout:
-    @return:
+
+    :param timeout: Timeout for the migration in seconds
+    :return: None
     """
     from alembic.runtime.migration import MigrationContext
     from alembic.script import ScriptDirectory
@@ -700,8 +709,9 @@ def resetdb():
 def drop_airflow_models(connection):
     """
     Drops all airflow models.
-    @param connection:
-    @return: None
+
+    :param connection: SQLAlchemy Connection
+    :return: None
     """
     from airflow.models.base import Base
 
@@ -734,8 +744,9 @@ def drop_airflow_models(connection):
 def drop_flask_models(connection):
     """
     Drops all Flask models.
-    @param connection:
-    @return:
+
+    :param connection: SQLAlchemy Connection
+    :return: None
     """
     from flask_appbuilder.models.sqla import Base
 
@@ -746,6 +757,7 @@ def drop_flask_models(connection):
 def check(session=None):
     """
     Checks if the database works.
+
     :param session: session of the sqlalchemy
     """
     session.execute('select 1 as is_alive;')

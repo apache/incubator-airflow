@@ -319,7 +319,7 @@ class TestGcpStorageTransferJobCreateOperator(unittest.TestCase):
         result = op.execute(None)
         assert result == VALID_TRANSFER_JOB_AWS_RAW
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -367,7 +367,7 @@ class TestGcpStorageTransferJobUpdateOperator(unittest.TestCase):
         mock_hook.return_value.update_transfer_job.assert_called_once_with(job_name=JOB_NAME, body=body)
         assert result == VALID_TRANSFER_JOB_GCS
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -410,7 +410,7 @@ class TestGcpStorageTransferJobDeleteOperator(unittest.TestCase):
             job_name=JOB_NAME, project_id=GCP_PROJECT_ID
         )
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -465,7 +465,7 @@ class TestGpcStorageTransferOperationsGetOperator(unittest.TestCase):
         mock_hook.return_value.get_transfer_operation.assert_called_once_with(operation_name=OPERATION_NAME)
         assert result == VALID_OPERATION
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -514,7 +514,7 @@ class TestGcpStorageTransferOperationListOperator(unittest.TestCase):
         mock_hook.return_value.list_transfer_operations.assert_called_once_with(request_filter=TEST_FILTER)
         assert result == [VALID_TRANSFER_JOB_GCS]
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -558,7 +558,7 @@ class TestGcpStorageTransferOperationsPauseOperator(unittest.TestCase):
         )
         mock_hook.return_value.pause_transfer_operation.assert_called_once_with(operation_name=OPERATION_NAME)
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -614,7 +614,7 @@ class TestGcpStorageTransferOperationsResumeOperator(unittest.TestCase):
         )
         assert result is None
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -670,7 +670,7 @@ class TestGcpStorageTransferOperationsCancelOperator(unittest.TestCase):
         )
         assert result is None
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -723,7 +723,7 @@ class TestS3ToGoogleCloudStorageTransferOperator(unittest.TestCase):
         assert operator.description == DESCRIPTION
         assert operator.schedule == SCHEDULE_DICT
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(
@@ -882,7 +882,7 @@ class TestGoogleCloudStorageToGoogleCloudStorageTransferOperator(unittest.TestCa
         assert operator.description == DESCRIPTION
         assert operator.schedule == SCHEDULE_DICT
 
-    # Setting all of the operator's input parameters as templated dag_ids
+    # Setting all the operator's input parameters as templated dag_ids
     # (could be anything else) just to test if the templating works for all
     # fields
     @mock.patch(

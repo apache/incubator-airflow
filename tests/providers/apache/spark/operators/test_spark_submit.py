@@ -63,7 +63,7 @@ class TestSparkSubmitOperator(unittest.TestCase):
             '--end',
             '{{ ds }}',
             '--with-spaces',
-            'args should keep embdedded spaces',
+            'args should keep embedded spaces',
         ],
     }
 
@@ -113,7 +113,7 @@ class TestSparkSubmitOperator(unittest.TestCase):
                 '--end',
                 '{{ ds }}',
                 '--with-spaces',
-                'args should keep embdedded spaces',
+                'args should keep embedded spaces',
             ],
             'spark_binary': 'sparky',
         }
@@ -163,7 +163,7 @@ class TestSparkSubmitOperator(unittest.TestCase):
             '--end',
             DEFAULT_DATE.strftime("%Y-%m-%d"),
             '--with-spaces',
-            'args should keep embdedded spaces',
+            'args should keep embedded spaces',
         ]
         expected_name = 'spark_submit_job'
         assert expected_application_args == getattr(operator, '_application_args')

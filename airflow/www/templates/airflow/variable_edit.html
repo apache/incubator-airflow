@@ -24,9 +24,5 @@
   <style>
     #val { font-family: monospace; }
   </style>
-  <script>
-    const val = document.getElementById('val');
-    const height = Math.min(window.innerHeight * 0.5, val.scrollHeight);
-    val.style.height = `${height}px`;
-  </script>
+  <script src="{{ url_for_asset('variableEdit.js') }}"></script>
 {% endblock %}

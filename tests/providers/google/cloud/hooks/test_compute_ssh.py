@@ -23,7 +23,7 @@ from airflow.providers.google.cloud.hooks.compute_ssh import ComputeEngineSSHHoo
 
 TEST_PROJECT_ID = "test-project-id"
 
-TEST_INSTANCE_NAME = "test-instnace"
+TEST_INSTANCE_NAME = "test-instance"
 TEST_ZONE = "test-zone-42"
 INTERNAL_IP = "192.9.9.9"
 EXTERNAL_IP = "192.3.3.3"

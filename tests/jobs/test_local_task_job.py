@@ -34,7 +34,7 @@ from airflow.jobs.local_task_job import LocalTaskJob
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.models.taskinstance import TaskInstance
-from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.task.task_runner.standard_task_runner import StandardTaskRunner
 from airflow.utils import timezone
@@ -170,7 +170,7 @@ class TestLocalTaskJob(unittest.TestCase):
                 time2 = heartbeat_records[i]
                 # Assert that difference small enough
                 delta = (time2 - time1).total_seconds()
-                assert abs(delta - job.heartrate) < 0.05
+                assert abs(delta - job.heartrate) < 0.5
 
     @pytest.mark.quarantined
     def test_mark_success_no_kill(self):
@@ -355,7 +355,7 @@ class TestLocalTaskJob(unittest.TestCase):
         job1 = LocalTaskJob(task_instance=ti, ignore_ti_state=True, executor=SequentialExecutor())
         with timeout(30):
             # This should be _much_ shorter to run.
-            # If you change this limit, make the timeout in the callbable above bigger
+            # If you change this limit, make the timeout in the callable above bigger
             job1.run()
 
         ti.refresh_from_db()
@@ -422,7 +422,7 @@ class TestLocalTaskJob(unittest.TestCase):
 
         with timeout(10):
             # This should be _much_ shorter to run.
-            # If you change this limit, make the timeout in the callbable above bigger
+            # If you change this limit, make the timeout in the callable above bigger
             job1.run()
 
         ti.refresh_from_db()
@@ -431,7 +431,7 @@ class TestLocalTaskJob(unittest.TestCase):
 
     def test_mark_success_on_success_callback(self):
         """
-        Test that ensures that where a task is marked suceess in the UI
+        Test that ensures that where a task is marked success in the UI
         on_success_callback gets executed
         """
         # use shared memory value so we can properly track value change even if

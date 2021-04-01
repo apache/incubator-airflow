@@ -1104,7 +1104,7 @@ class MLEngineStartTrainingJobOperator(BaseOperator):
         provided, master_type must be set as well. If a custom image is
         specified, this is mutually exclusive with package_uris and
         training_python_module. (templated)
-    :type master_type: dict
+    :type master_config: dict
     :param runtime_version: The Google Cloud ML runtime version to use for
         training. (templated)
     :type runtime_version: str

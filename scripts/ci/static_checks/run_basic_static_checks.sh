@@ -35,8 +35,10 @@ fi
 COMMIT_SHA="${1}"
 shift
 
-python -m pip install pre-commit \
-    --constraint "https://raw.githubusercontent.com/apache/airflow/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+python -m pip install --user pre-commit \
+    --constraint "https://raw.githubusercontent.com/${CONSTRAINTS_GITHUB_REPOSITORY}/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+
+export PATH=~/.local/bin:${PATH}
 
 if [[ $# == "0" ]]; then
     pre-commit run --all-files --show-diff-on-failure --color always \

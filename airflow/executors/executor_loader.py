@@ -88,7 +88,7 @@ class ExecutorLoader:
                 "executor from a plugin",
                 executor_name,
             )
-            with suppress(ImportError), suppress(AttributeError):
+            with suppress(ImportError, AttributeError):
                 # Load plugins here for executors as at that time the plugins might not have been
                 # initialized yet
                 from airflow import plugins_manager

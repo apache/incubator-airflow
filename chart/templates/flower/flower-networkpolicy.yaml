@@ -18,6 +18,7 @@
 ################################
 ## Airflow Flower NetworkPolicy
 #################################
+{{- if .Values.flower.enabled }}
 {{- $celery_executors := list "CeleryExecutor" "CeleryKubernetesExecutor"}}
 {{- if and .Values.networkPolicies.enabled (has .Values.executor $celery_executors) }}
 apiVersion: networking.k8s.io/v1
@@ -48,5 +49,6 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.ports.flowerUI }}
+{{- end }}
 {{- end }}
 {{- end }}

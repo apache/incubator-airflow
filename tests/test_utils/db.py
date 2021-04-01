@@ -60,11 +60,6 @@ def clear_db_sla_miss():
         session.query(SlaMiss).delete()
 
 
-def clear_db_errors():
-    with create_session() as session:
-        session.query(errors.ImportError).delete()
-
-
 def clear_db_pools():
     with create_session() as session:
         session.query(Pool).delete()

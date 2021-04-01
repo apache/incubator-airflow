@@ -58,7 +58,7 @@ Package apache-airflow-providers-cncf-kubernetes
 `Kubernetes <https://kubernetes.io/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -111,6 +111,15 @@ PIP package       Version required
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Allow pod name override in KubernetesPodOperator if pod_template is used. (#14186)``
+* ``Allow users of the KPO to *actually* template environment variables (#14083)``
 
 1.0.1
 .....

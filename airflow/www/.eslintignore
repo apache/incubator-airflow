@@ -1,7 +1,6 @@
 **/*{.,-}min.js
 **/*.sh
 **/*.py
-gantt-chart-d3v2.js
 jqClock.min.js
 coverage/**
 static/dist/*

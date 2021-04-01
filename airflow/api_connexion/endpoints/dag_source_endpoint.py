@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import logging
 
 from flask import Response, current_app, request
 from itsdangerous import BadSignature, URLSafeSerializer
@@ -24,8 +23,6 @@ from airflow.api_connexion.exceptions import NotFound
 from airflow.api_connexion.schemas.dag_source_schema import dag_source_schema
 from airflow.models.dagcode import DagCode
 from airflow.security import permissions
-
-log = logging.getLogger(__name__)
 
 
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_CODE)])

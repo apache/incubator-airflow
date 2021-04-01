@@ -24,6 +24,11 @@ import sys
 
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader  # type: ignore[no-redef]
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -34,7 +39,7 @@ def main() -> int:
     retval = 0
 
     with open('.pre-commit-config.yaml', 'rb') as f:
-        content = yaml.safe_load(f)
+        content = yaml.load(f, SafeLoader)
         errors = get_errors(content, max_length)
     if errors:
         retval = 1

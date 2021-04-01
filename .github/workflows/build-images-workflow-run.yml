@@ -24,16 +24,19 @@ on:  # yamllint disable-line rule:truthy
 env:
   MOUNT_SELECTED_LOCAL_SOURCES: "false"
   FORCE_ANSWER_TO_QUESTIONS: "yes"
-  FORCE_PULL_IMAGES: "true"
+  FORCE_PULL_IMAGES: "false"
   CHECK_IMAGE_FOR_REBUILD: "true"
   SKIP_CHECK_REMOTE_IMAGE: "true"
   DB_RESET: "true"
   VERBOSE: "true"
   USE_GITHUB_REGISTRY: "true"
-  # Might be either 'ghcr.io' or 'docker.pkg.github.com'
-  GITHUB_REGISTRY: "docker.pkg.github.com"
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_USERNAME: ${{ github.actor }}
+  # You can override CONSTRAINTS_GITHUB_REPOSITORY by setting secret in your repo but by default the
+  # Airflow one is going to be used
+  CONSTRAINTS_GITHUB_REPOSITORY: >-
+    ${{ secrets.CONSTRAINTS_GITHUB_REPOSITORY != '' &&
+        secrets.CONSTRAINTS_GITHUB_REPOSITORY || github.repository }}
   # This token is WRITE one - workflow_run type of events always have the WRITE token
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # This token should not be empty in workflow_run type of event.
@@ -42,13 +45,14 @@ env:
   GITHUB_REGISTRY_WAIT_FOR_IMAGE: "false"
   BUILD_IMAGES: ${{ secrets.AIRFLOW_GITHUB_REGISTRY_WAIT_FOR_IMAGE != 'false' }}
   INSTALL_PROVIDERS_FROM_SOURCES: "true"
+  GITHUB_REGISTRY: ${{ secrets.OVERRIDE_GITHUB_REGISTRY }}
 
 jobs:
 
   cancel-workflow-runs:
     timeout-minutes: 10
     name: "Cancel workflow runs"
-    runs-on: [self-hosted]
+    runs-on: ${{ github.repository == 'apache/airflow' && 'self-hosted' || 'ubuntu-20.04' }}
     outputs:
       sourceHeadRepo: ${{ steps.source-run-info.outputs.sourceHeadRepo }}
       sourceHeadBranch: ${{ steps.source-run-info.outputs.sourceHeadBranch }}
@@ -61,7 +65,7 @@ jobs:
       sourceEvent: ${{ steps.source-run-info.outputs.sourceEvent }}
       cacheDirective: ${{ steps.cache-directive.outputs.docker-cache }}
       buildImages: ${{ steps.build-images.outputs.buildImages }}
-      runsOn: '["self-hosted"]'
+      runsOn: ${{ github.repository == 'apache/airflow' && '["self-hosted"]' || '["ubuntu-20.04"]' }}
     steps:
       - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
         uses: actions/checkout@v2
@@ -116,7 +120,7 @@ jobs:
           sourceRunId: ${{ github.event.workflow_run.id }}
           notifyPRCancel: true
           jobNameRegexps: >
-            ["^Pylint$", "^Static checks", "^Build docs$", "^Spell check docs$", "^Backport packages$",
+            ["^Pylint$", "^Static checks", "^Build docs$", "^Spell check docs$",
              "^Provider packages", "^Checks: Helm tests$", "^Test OpenAPI*"]
       - name: "Extract canceled failed runs"
         # We use this step to build regexp that will be used to match the Source Run id in
@@ -268,12 +272,15 @@ jobs:
       needs.build-info.outputs.image-build == 'true' &&
       needs.cancel-workflow-runs.outputs.buildImages == 'true'
     env:
+      RUNS_ON: ${{ fromJson(needs.cancel-workflow-runs.outputs.runsOn)[0] }}
       BACKEND: postgres
       PYTHON_MAJOR_MINOR_VERSION: ${{ matrix.python-version }}
       GITHUB_REGISTRY_PUSH_IMAGE_TAG: ${{ github.event.workflow_run.id }}
       UPGRADE_TO_NEWER_DEPENDENCIES: ${{ needs.build-info.outputs.upgradeToNewerDependencies }}
       CONTINUE_ON_PIP_CHECK_FAILURE: "true"
       DOCKER_CACHE: ${{ needs.cancel-workflow-runs.outputs.cacheDirective }}
+      FORCE_PULL_BASE_PYTHON_IMAGE: >
+        ${{ needs.cancel-workflow-runs.sourceEvent == 'schedule' && 'true' || 'false' }}
     steps:
       - name: >
           Checkout [${{ needs.cancel-workflow-runs.outputs.sourceEvent }}]
@@ -355,9 +362,7 @@ jobs:
         if: steps.defaults.outputs.proceed == 'true'
       - name: "Free space"
         run: ./scripts/ci/tools/ci_free_space_on_ci.sh
-        if: |
-          !contains(needs.build-info.outputs.runsOn, 'self-hosted') &&
-          steps.defaults.outputs.proceed == 'true'
+        if: steps.defaults.outputs.proceed == 'true'
       - name: "Build CI images ${{ matrix.python-version }}:${{ github.event.workflow_run.id }}"
         run: ./scripts/ci/images/ci_prepare_ci_image_on_ci.sh
         if: steps.defaults.outputs.proceed == 'true'
@@ -395,12 +400,15 @@ jobs:
       needs.build-info.outputs.image-build == 'true' &&
       needs.cancel-workflow-runs.outputs.buildImages == 'true'
     env:
+      RUNS_ON: ${{ fromJson(needs.cancel-workflow-runs.outputs.runsOn)[0] }}
       BACKEND: postgres
       PYTHON_MAJOR_MINOR_VERSION: ${{ matrix.python-version }}
       GITHUB_REGISTRY_PUSH_IMAGE_TAG: ${{ github.event.workflow_run.id }}
       GITHUB_REGISTRY_PULL_IMAGE_TAG: ${{ github.event.workflow_run.id }}
       UPGRADE_TO_NEWER_DEPENDENCIES: ${{ needs.build-info.outputs.upgradeToNewerDependencies }}
       DOCKER_CACHE: ${{ needs.cancel-workflow-runs.outputs.cacheDirective }}
+      FORCE_PULL_BASE_PYTHON_IMAGE: >
+        ${{ needs.cancel-workflow-runs.sourceEvent == 'schedule' && 'true' || 'false' }}
       VERSION_SUFFIX_FOR_PYPI: "dev"
       VERSION_SUFFIX_FOR_SVN: "dev"
     steps:
@@ -483,9 +491,7 @@ jobs:
         if: steps.defaults.outputs.proceed == 'true'
       - name: "Free space"
         run: ./scripts/ci/tools/ci_free_space_on_ci.sh
-        if: |
-          !contains(needs.build-info.outputs.runsOn, 'self-hosted') &&
-          steps.defaults.outputs.proceed == 'true'
+        if: steps.defaults.outputs.proceed == 'true'
       - name: "Build CI images ${{ matrix.python-version }}:${{ github.event.workflow_run.id }}"
         run: ./scripts/ci/images/ci_prepare_ci_image_on_ci.sh
         # Pull images built in the previous step
@@ -552,5 +558,5 @@ jobs:
           cancelMode: self
           notifyPRCancel: true
           notifyPRCancelMessage: |
-            Building images for the PR has failed. Follow the the workflow link to check the reason.
+            Building images for the PR has failed. Follow the workflow link to check the reason.
           sourceRunId: ${{ github.event.workflow_run.id }}

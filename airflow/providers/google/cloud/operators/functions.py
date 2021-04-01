@@ -397,6 +397,7 @@ class CloudFunctionDeleteFunctionOperator(BaseOperator):
             status = e.resp.status
             if status == 404:
                 self.log.info('The function does not exist in this project')
+                return None
             else:
                 self.log.error('An error occurred. Exiting.')
                 raise e

@@ -67,7 +67,7 @@ spec:
           args:
             - "bash"
             - "-c"
-            # Support running against 1.10.x and 2.0.0dev/master
+            # Support running against 1.10.x and 2.x
             - 'airflow users create "$@" || airflow create_user "$@"'
             - --
             - "-r"
@@ -81,7 +81,7 @@ spec:
             - "-l"
             - {{ .Values.webserver.defaultUser.lastName }}
             - "-p"
-            - {{ .Values.webserver.defaultUser.password }}
+            - "{{ .Values.webserver.defaultUser.password }}"
           envFrom:
           {{- include "custom_airflow_environment_from" . | default "\n  []" | indent 10 }}
           env:

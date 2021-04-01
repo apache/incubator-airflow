@@ -20,7 +20,11 @@
 from typing import Optional
 
 import boto3
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from airflow.secrets import BaseSecretsBackend
 from airflow.utils.log.logging_mixin import LoggingMixin
@@ -55,7 +59,7 @@ class SecretsManagerBackend(BaseSecretsBackend, LoggingMixin):
     :param variables_prefix: Specifies the prefix of the secret to read to get Variables.
         If set to None (null), requests for variables will not be sent to AWS Secrets Manager
     :type variables_prefix: str
-    :param config_prefix: Specifies the prefix of the secret to read to get Variables.
+    :param config_prefix: Specifies the prefix of the secret to read to get Configurations.
         If set to None (null), requests for configurations will not be sent to AWS Secrets Manager
     :type config_prefix: str
     :param profile_name: The name of a profile to use. If not given, then the default profile is used.

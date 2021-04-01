@@ -36,7 +36,7 @@ Prerequisite Tasks
 Manage GKE cluster
 ^^^^^^^^^^^^^^^^^^
 
-A cluster is the foundation of GKE - all workloads run on on top of the cluster. It is made up on a cluster master
+A cluster is the foundation of GKE - all workloads run on top of the cluster. It is made up on a cluster master
 and worker nodes. The lifecycle of the master is managed by GKE when creating or deleting a cluster.
 The worker nodes are represented as Compute Engine VM instances that GKE creates on your behalf when creating a cluster.
 

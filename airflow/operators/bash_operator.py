@@ -20,7 +20,7 @@
 import warnings
 
 # pylint: disable=unused-import
-from airflow.operators.bash import STDOUT, BashOperator, Popen, gettempdir  # noqa
+from airflow.operators.bash import BashOperator  # noqa
 
 warnings.warn(
     "This module is deprecated. Please use `airflow.operators.bash`.", DeprecationWarning, stacklevel=2

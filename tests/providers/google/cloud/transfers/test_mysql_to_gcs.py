@@ -22,7 +22,7 @@ import unittest
 from unittest import mock
 
 import pytest
-from _mysql_exceptions import ProgrammingError
+from MySQLdb import ProgrammingError  # pylint: disable=no-name-in-module
 from parameterized import parameterized
 
 from airflow.providers.google.cloud.transfers.mysql_to_gcs import MySQLToGCSOperator

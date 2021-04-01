@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import unittest
+from contextlib import closing
 
 import pytest
 from parameterized import parameterized
@@ -41,9 +42,10 @@ class TestMySql(unittest.TestCase):
 
     def tearDown(self):
         drop_tables = {'test_mysql_to_mysql', 'test_airflow'}
-        with MySqlHook().get_conn() as conn:
-            for table in drop_tables:
-                conn.execute(f"DROP TABLE IF EXISTS {table}")
+        with closing(MySqlHook().get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for table in drop_tables:
+                    cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
     @parameterized.expand(
         [
@@ -100,7 +102,7 @@ class TestMySql(unittest.TestCase):
                 database="foobar",
             )
 
-            from _mysql_exceptions import OperationalError
+            from MySQLdb import OperationalError  # pylint: disable=no-name-in-module
 
             try:
                 op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)

@@ -17,11 +17,3 @@
 # under the License.
 #
 """This package is deprecated. Please use `airflow.operators` or `airflow.providers.*.operators`."""
-
-import warnings
-
-warnings.warn(
-    "This package is deprecated. Please use `airflow.operators` or `airflow.providers.*.operators`.",
-    DeprecationWarning,
-    stacklevel=2,
-)

@@ -28,7 +28,7 @@ downstream tasks.
 ExternalTaskSensor will keep poking for the status of remote ExternalTaskMarker task at a regular
 interval till one of the following will happen:
 1. ExternalTaskMarker reaches the states mentioned in the allowed_states list
-    In this case, ExternalTaskSensor will exit with a succes status code
+    In this case, ExternalTaskSensor will exit with a success status code
 2. ExternalTaskMarker reaches the states mentioned in the failed_states list
     In this case, ExternalTaskSensor will raise an AirflowException and user need to handle this
     with multiple downstream tasks

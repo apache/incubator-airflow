@@ -39,7 +39,7 @@ class AwsGlueJobOperator(BaseOperator):
     :type job_desc: Optional[str]
     :param concurrent_run_limit: The maximum number of concurrent runs allowed for a job
     :type concurrent_run_limit: Optional[int]
-    :param script_args: etl script arguments and AWS Glue arguments
+    :param script_args: etl script arguments and AWS Glue arguments (templated)
     :type script_args: dict
     :param retry_limit: The maximum number of times to retry this job if it fails
     :type retry_limit: Optional[int]
@@ -51,9 +51,11 @@ class AwsGlueJobOperator(BaseOperator):
     :type s3_bucket: Optional[str]
     :param iam_role_name: AWS IAM Role for Glue Job Execution
     :type iam_role_name: Optional[str]
+    :param create_job_kwargs: Extra arguments for Glue Job Creation
+    :type create_job_kwargs: Optional[dict]
     """
 
-    template_fields = ()
+    template_fields = ('script_args',)
     template_ext = ()
     ui_color = '#ededed'
 
@@ -72,6 +74,7 @@ class AwsGlueJobOperator(BaseOperator):
         region_name: Optional[str] = None,
         s3_bucket: Optional[str] = None,
         iam_role_name: Optional[str] = None,
+        create_job_kwargs: Optional[dict] = None,
         **kwargs,
     ):  # pylint: disable=too-many-arguments
         super().__init__(**kwargs)
@@ -88,6 +91,7 @@ class AwsGlueJobOperator(BaseOperator):
         self.iam_role_name = iam_role_name
         self.s3_protocol = "s3://"
         self.s3_artifacts_prefix = 'artifacts/glue-scripts/'
+        self.create_job_kwargs = create_job_kwargs
 
     def execute(self, context):
         """
@@ -110,6 +114,7 @@ class AwsGlueJobOperator(BaseOperator):
             region_name=self.region_name,
             s3_bucket=self.s3_bucket,
             iam_role_name=self.iam_role_name,
+            create_job_kwargs=self.create_job_kwargs,
         )
         self.log.info("Initializing AWS Glue Job: %s", self.job_name)
         glue_job_run = glue_job.initialize_job(self.script_args)

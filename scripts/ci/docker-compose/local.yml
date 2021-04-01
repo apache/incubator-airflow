@@ -47,6 +47,7 @@ services:
       - ../../../hooks:/opt/airflow/hooks:cached
       - ../../../logs:/root/airflow/logs:cached
       - ../../../pylintrc:/opt/airflow/pylintrc:cached
+      - ../../../pylintrc-tests:/opt/airflow/pylintrc-tests:cached
       - ../../../pyproject.toml:/opt/airflow/pyproject.toml:cached
       - ../../../pytest.ini:/opt/airflow/pytest.ini:cached
       - ../../../scripts:/opt/airflow/scripts:cached

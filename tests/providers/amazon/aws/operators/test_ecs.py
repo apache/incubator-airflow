@@ -26,7 +26,8 @@ import pytest
 from parameterized import parameterized
 
 from airflow.exceptions import AirflowException
-from airflow.providers.amazon.aws.operators.ecs import ECSOperator
+from airflow.providers.amazon.aws.exceptions import ECSOperatorError
+from airflow.providers.amazon.aws.operators.ecs import ECSOperator, should_retry
 
 # fmt: off
 RESPONSE_WITHOUT_FAILURES = {
@@ -145,7 +146,7 @@ class TestECSOperator(unittest.TestCase):
         resp_failures['failures'].append('dummy error')
         client_mock.run_task.return_value = resp_failures
 
-        with pytest.raises(AirflowException):
+        with pytest.raises(ECSOperatorError):
             self.ecs.execute(None)
 
         self.aws_hook_mock.return_value.get_conn.assert_called_once()
@@ -326,3 +327,11 @@ class TestECSOperator(unittest.TestCase):
     def test_execute_xcom_disabled(self, mock_cloudwatch_log_message):
         self.ecs.do_xcom_push = False
         assert self.ecs.execute(None) is None
+
+
+class TestShouldRetry(unittest.TestCase):
+    def test_return_true_on_valid_reason(self):
+        self.assertTrue(should_retry(ECSOperatorError([{'reason': 'RESOURCE:MEMORY'}], 'Foo')))
+
+    def test_return_false_on_invalid_reason(self):
+        self.assertFalse(should_retry(ECSOperatorError([{'reason': 'CLUSTER_NOT_FOUND'}], 'Foo')))

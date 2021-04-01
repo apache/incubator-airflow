@@ -23,7 +23,7 @@ import subprocess
 import time
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Any, Dict, List, Optional, Text, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas
 import unicodecsv as csv
@@ -179,7 +179,7 @@ class HiveCliHook(BaseHook):
 
     def run_cli(
         self,
-        hql: Union[str, Text],
+        hql: Union[str, str],
         schema: Optional[str] = None,
         verbose: bool = True,
         hive_conf: Optional[Dict[Any, Any]] = None,
@@ -261,7 +261,7 @@ class HiveCliHook(BaseHook):
 
                 return stdout
 
-    def test_hql(self, hql: Union[str, Text]) -> None:
+    def test_hql(self, hql: Union[str, str]) -> None:
         """Test an hql statement using the hive cli and EXPLAIN"""
         create, insert, other = [], [], []
         for query in hql.split(';'):  # naive
@@ -426,7 +426,7 @@ class HiveCliHook(BaseHook):
         if create or recreate:
             if field_dict is None:
                 raise ValueError("Must provide a field dict when creating a table")
-            fields = ",\n    ".join(['`{k}` {v}'.format(k=k.strip('`'), v=v) for k, v in field_dict.items()])
+            fields = ",\n    ".join([f"`{k.strip('`')}` {v}" for k, v in field_dict.items()])
             hql += f"CREATE TABLE IF NOT EXISTS {table} (\n{fields})\n"
             if partition:
                 pfields = ",\n    ".join([p + " STRING" for p in partition])
@@ -457,7 +457,7 @@ class HiveCliHook(BaseHook):
 
     def kill(self) -> None:
         """Kill Hive cli command"""
-        if hasattr(self, 'sp'):
+        if hasattr(self, 'sub_process'):
             if self.sub_process.poll() is None:
                 print("Killing the Hive job")
                 self.sub_process.terminate()
@@ -863,7 +863,7 @@ class HiveServer2Hook(DbApiHook):
 
     def _get_results(
         self,
-        hql: Union[str, Text, List[str]],
+        hql: Union[str, str, List[str]],
         schema: str = 'default',
         fetch_size: Optional[int] = None,
         hive_conf: Optional[Dict[Any, Any]] = None,
@@ -919,7 +919,7 @@ class HiveServer2Hook(DbApiHook):
 
     def get_results(
         self,
-        hql: Union[str, Text],
+        hql: Union[str, str],
         schema: str = 'default',
         fetch_size: Optional[int] = None,
         hive_conf: Optional[Dict[Any, Any]] = None,
@@ -945,7 +945,7 @@ class HiveServer2Hook(DbApiHook):
 
     def to_csv(
         self,
-        hql: Union[str, Text],
+        hql: Union[str, str],
         csv_filepath: str,
         schema: str = 'default',
         delimiter: str = ',',
@@ -1002,7 +1002,7 @@ class HiveServer2Hook(DbApiHook):
         self.log.info("Done. Loaded a total of %s rows.", i)
 
     def get_records(
-        self, hql: Union[str, Text], schema: str = 'default', hive_conf: Optional[Dict[Any, Any]] = None
+        self, hql: Union[str, str], schema: str = 'default', hive_conf: Optional[Dict[Any, Any]] = None
     ) -> Any:
         """
         Get a set of records from a Hive query.
@@ -1025,7 +1025,7 @@ class HiveServer2Hook(DbApiHook):
 
     def get_pandas_df(  # type: ignore
         self,
-        hql: Union[str, Text],
+        hql: Union[str, str],
         schema: str = 'default',
         hive_conf: Optional[Dict[Any, Any]] = None,
         **kwargs,

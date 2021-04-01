@@ -16,17 +16,40 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-from typing import Iterable, Optional, Union
+from typing import Callable, Iterable, Optional, Union
 
 from airflow.exceptions import AirflowException
-from airflow.operators.check_operator import CheckOperator, ValueCheckOperator
-from airflow.providers.qubole.hooks.qubole import QuboleHook
+from airflow.operators.sql import SQLCheckOperator, SQLValueCheckOperator
 from airflow.providers.qubole.hooks.qubole_check import QuboleCheckHook
 from airflow.providers.qubole.operators.qubole import QuboleOperator
 from airflow.utils.decorators import apply_defaults
 
 
-class QuboleCheckOperator(CheckOperator, QuboleOperator):
+class _QuboleCheckOperatorMixin:
+    """This is a Mixin for Qubole related check operators"""
+
+    def execute(self, context=None) -> None:
+        """Execute a check operation against Qubole"""
+        try:
+            self._hook_context = context
+            super().execute(context=context)
+        except AirflowException as e:
+            handle_airflow_exception(e, self.get_hook())
+
+    def get_db_hook(self) -> QuboleCheckHook:
+        """Get QuboleCheckHook"""
+        return self.get_hook()
+
+    # this overwrite the original QuboleOperator.get_hook() which returns a QuboleHook.
+    def get_hook(self) -> QuboleCheckHook:
+        """Reinitialising the hook, as some template fields might have changed"""
+        return QuboleCheckHook(
+            context=self._hook_context, results_parser_callable=self.results_parser_callable, **self.kwargs
+        )
+
+
+# pylint: disable=too-many-ancestors
+class QuboleCheckOperator(_QuboleCheckOperatorMixin, SQLCheckOperator, QuboleOperator):
     """
     Performs checks against Qubole Commands. ``QuboleCheckOperator`` expects
     a command that will be executed on QDS.
@@ -71,54 +94,32 @@ class QuboleCheckOperator(CheckOperator, QuboleOperator):
             which the checks have to be performed.
 
     .. note:: All fields in common with template fields of
-        QuboleOperator and CheckOperator are template-supported.
+        QuboleOperator and SQLCheckOperator are template-supported.
 
     """
 
-    template_fields: Iterable[str] = set(QuboleOperator.template_fields) | set(CheckOperator.template_fields)
+    template_fields: Iterable[str] = set(QuboleOperator.template_fields) | set(
+        SQLCheckOperator.template_fields
+    )
     template_ext = QuboleOperator.template_ext
     ui_fgcolor = '#000'
 
     @apply_defaults
-    def __init__(self, *, qubole_conn_id: str = "qubole_default", **kwargs) -> None:
+    def __init__(
+        self, *, qubole_conn_id: str = "qubole_default", results_parser_callable: Callable = None, **kwargs
+    ) -> None:
         sql = get_sql_from_qbol_cmd(kwargs)
+        kwargs.pop('sql', None)
         super().__init__(qubole_conn_id=qubole_conn_id, sql=sql, **kwargs)
+        self.results_parser_callable = results_parser_callable
         self.on_failure_callback = QuboleCheckHook.handle_failure_retry
         self.on_retry_callback = QuboleCheckHook.handle_failure_retry
-
-    def execute(self, context=None) -> None:
-        try:
-            self.hook = self.get_hook(context=context)
-            super().execute(context=context)
-        except AirflowException as e:
-            handle_airflow_exception(e, self.get_hook())
-
-    def get_db_hook(self) -> QuboleHook:
-        return self.get_hook()
-
-    def get_hook(self, context=None) -> QuboleHook:
-        if hasattr(self, 'hook') and (self.hook is not None):
-            return self.hook
-        else:
-            return QuboleCheckHook(context=context, **self.kwargs)
-
-    def __getattribute__(self, name: str) -> str:
-        if name in QuboleCheckOperator.template_fields:
-            if name in self.kwargs:
-                return self.kwargs[name]
-            else:
-                return ''
-        else:
-            return object.__getattribute__(self, name)
-
-    def __setattr__(self, name: str, value: str) -> None:
-        if name in QuboleCheckOperator.template_fields:
-            self.kwargs[name] = value
-        else:
-            object.__setattr__(self, name, value)
+        self._hook_context = None
 
 
-class QuboleValueCheckOperator(ValueCheckOperator, QuboleOperator):
+# TODO(xinbinhuang): refactor to reduce levels of inheritance
+# pylint: disable=too-many-ancestors
+class QuboleValueCheckOperator(_QuboleCheckOperatorMixin, SQLValueCheckOperator, QuboleOperator):
     """
     Performs a simple value check using Qubole command.
     By default, each value on the first row of this
@@ -153,10 +154,10 @@ class QuboleValueCheckOperator(ValueCheckOperator, QuboleOperator):
 
 
     .. note:: All fields in common with template fields of
-            QuboleOperator and ValueCheckOperator are template-supported.
+            QuboleOperator and SQLValueCheckOperator are template-supported.
     """
 
-    template_fields = set(QuboleOperator.template_fields) | set(ValueCheckOperator.template_fields)
+    template_fields = set(QuboleOperator.template_fields) | set(SQLValueCheckOperator.template_fields)
     template_ext = QuboleOperator.template_ext
     ui_fgcolor = '#000'
 
@@ -166,52 +167,19 @@ class QuboleValueCheckOperator(ValueCheckOperator, QuboleOperator):
         *,
         pass_value: Union[str, int, float],
         tolerance: Optional[Union[int, float]] = None,
-        results_parser_callable=None,
+        results_parser_callable: Callable = None,
         qubole_conn_id: str = "qubole_default",
         **kwargs,
     ) -> None:
-
         sql = get_sql_from_qbol_cmd(kwargs)
+        kwargs.pop('sql', None)
         super().__init__(
             qubole_conn_id=qubole_conn_id, sql=sql, pass_value=pass_value, tolerance=tolerance, **kwargs
         )
-
         self.results_parser_callable = results_parser_callable
         self.on_failure_callback = QuboleCheckHook.handle_failure_retry
         self.on_retry_callback = QuboleCheckHook.handle_failure_retry
-
-    def execute(self, context=None) -> None:
-        try:
-            self.hook = self.get_hook(context=context)
-            super().execute(context=context)
-        except AirflowException as e:
-            handle_airflow_exception(e, self.get_hook())
-
-    def get_db_hook(self) -> QuboleHook:
-        return self.get_hook()
-
-    def get_hook(self, context=None) -> QuboleHook:
-        if hasattr(self, 'hook') and (self.hook is not None):
-            return self.hook
-        else:
-            return QuboleCheckHook(
-                context=context, results_parser_callable=self.results_parser_callable, **self.kwargs
-            )
-
-    def __getattribute__(self, name: str) -> str:
-        if name in QuboleValueCheckOperator.template_fields:
-            if name in self.kwargs:
-                return self.kwargs[name]
-            else:
-                return ''
-        else:
-            return object.__getattribute__(self, name)
-
-    def __setattr__(self, name: str, value: str) -> None:
-        if name in QuboleValueCheckOperator.template_fields:
-            self.kwargs[name] = value
-        else:
-            object.__setattr__(self, name, value)
+        self._hook_context = None
 
 
 def get_sql_from_qbol_cmd(params) -> str:
@@ -224,7 +192,7 @@ def get_sql_from_qbol_cmd(params) -> str:
     return sql
 
 
-def handle_airflow_exception(airflow_exception, hook):
+def handle_airflow_exception(airflow_exception, hook: QuboleCheckHook):
     """Qubole check handle Airflow exception"""
     cmd = hook.cmd
     if cmd is not None:

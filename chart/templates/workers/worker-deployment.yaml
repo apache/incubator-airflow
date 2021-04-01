@@ -75,6 +75,10 @@ spec:
 {{ toYaml $affinity | indent 8 }}
       tolerations:
 {{ toYaml $tolerations | indent 8 }}
+{{- if .Values.workers.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.workers.hostAliases | indent 8 }}
+{{- end }}
       terminationGracePeriodSeconds: {{ .Values.workers.terminationGracePeriodSeconds }}
       restartPolicy: Always
       serviceAccountName: {{ .Release.Name }}-worker
@@ -179,7 +183,7 @@ spec:
           imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
           args: ["kerberos"]
           resources:
-          {{ toYaml .Values.workers.resources | indent 12 }}
+{{ toYaml .Values.workers.kerberosSidecar.resources | indent 12 }}
           volumeMounts:
             - name: logs
               mountPath: {{ template "airflow_logs" . }}
@@ -214,6 +218,9 @@ spec:
           {{- include "custom_airflow_environment" . | indent 10 }}
           {{- include "standard_airflow_environment" . | indent 10 }}
         {{- end }}
+{{- if .Values.workers.extraContainers }}
+{{- toYaml .Values.workers.extraContainers | nindent 8 }}
+{{- end }}
       volumes:
 {{- if .Values.workers.extraVolumes }}
 {{ toYaml .Values.workers.extraVolumes | indent 8 }}

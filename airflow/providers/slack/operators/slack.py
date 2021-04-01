@@ -28,7 +28,7 @@ class SlackAPIOperator(BaseOperator):
     """
     Base Slack Operator
     The SlackAPIPostOperator is derived from this operator.
-    In the future additional Slack API Operators will be derived from this class as well
+    In the future additional Slack API Operators will be derived from this class as well.
     Only one of `slack_conn_id` and `token` is required.
 
     :param slack_conn_id: Slack connection ID which its password is Slack API token. Optional
@@ -40,7 +40,7 @@ class SlackAPIOperator(BaseOperator):
     :param api_params: API Method call parameters (https://api.slack.com/methods). Optional
     :type api_params: dict
     :param client_args: Slack Hook parameters. Optional. Check airflow.providers.slack.hooks.SlackHook
-    :type api_params: dict
+    :type client_args: dict
     """
 
     @apply_defaults

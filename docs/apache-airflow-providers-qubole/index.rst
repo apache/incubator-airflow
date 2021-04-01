@@ -51,7 +51,7 @@ Package apache-airflow-providers-qubole
 `Qubole <https://www.qubole.com/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -103,6 +103,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Features
+~~~~~~~~
+
+*  ``Refactor SQL/BigQuery/Qubole/Druid Check operators (#12677)``
 
 1.0.1
 .....

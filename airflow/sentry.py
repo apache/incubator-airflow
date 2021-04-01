@@ -21,7 +21,7 @@ import logging
 from functools import wraps
 
 from airflow.configuration import conf
-from airflow.utils.session import provide_session
+from airflow.utils.session import find_session_idx, provide_session
 from airflow.utils.state import State
 
 log = logging.getLogger(__name__)
@@ -149,14 +149,21 @@ if conf.getboolean("sentry", 'sentry_on', fallback=False):
 
         def enrich_errors(self, func):
             """Wrap TaskInstance._run_raw_task to support task specific tags and breadcrumbs."""
+            session_args_idx = find_session_idx(func)
 
             @wraps(func)
-            def wrapper(task_instance, *args, session=None, **kwargs):
+            def wrapper(task_instance, *args, **kwargs):
                 # Wrapping the _run_raw_task function with push_scope to contain
                 # tags and breadcrumbs to a specific Task Instance
+
+                try:
+                    session = kwargs.get('session', args[session_args_idx])
+                except IndexError:
+                    session = None
+
                 with sentry_sdk.push_scope():
                     try:
-                        return func(task_instance, *args, session=session, **kwargs)
+                        return func(task_instance, *args, **kwargs)
                     except Exception as e:
                         self.add_tagging(task_instance)
                         self.add_breadcrumbs(task_instance, session=session)

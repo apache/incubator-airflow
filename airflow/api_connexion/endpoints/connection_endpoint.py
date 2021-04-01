@@ -22,7 +22,7 @@ from sqlalchemy import func
 
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import AlreadyExists, BadRequest, NotFound
-from airflow.api_connexion.parameters import check_limit, format_parameters
+from airflow.api_connexion.parameters import apply_sorting, check_limit, format_parameters
 from airflow.api_connexion.schemas.connection_schema import (
     ConnectionCollection,
     connection_collection_schema,
@@ -63,11 +63,15 @@ def get_connection(connection_id, session):
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_CONNECTION)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_connections(session, limit, offset=0):
+def get_connections(session, limit, offset=0, order_by="id"):
     """Get all connection entries"""
+    to_replace = {"connection_id": "conn_id"}
+    allowed_filter_attrs = ['connection_id', 'conn_type', 'description', 'host', 'port', 'id']
+
     total_entries = session.query(func.count(Connection.id)).scalar()
     query = session.query(Connection)
-    connections = query.order_by(Connection.id).offset(offset).limit(limit).all()
+    query = apply_sorting(query, order_by, to_replace, allowed_filter_attrs)
+    connections = query.offset(offset).limit(limit).all()
     return connection_collection_schema.dump(
         ConnectionCollection(connections=connections, total_entries=total_entries)
     )

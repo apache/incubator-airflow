@@ -24,7 +24,7 @@ class DagUnpausedDep(BaseTIDep):
     """Determines whether a task's DAG is not paused."""
 
     NAME = "Dag Not Paused"
-    IGNOREABLE = True
+    IGNORABLE = True
 
     @provide_session
     def _get_dep_statuses(self, ti, session, dep_context):

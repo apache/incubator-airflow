@@ -55,7 +55,7 @@ class PodTemplateFileTest(unittest.TestCase):
                     "gitSync": {
                         "repository": "test-registry/test-repo",
                         "tag": "test-tag",
-                        "pullPolicy": "Allways",
+                        "pullPolicy": "Always",
                     }
                 },
                 "dags": {
@@ -85,7 +85,7 @@ class PodTemplateFileTest(unittest.TestCase):
             "name": "git-sync-test",
             "securityContext": {"runAsUser": 65533},
             "image": "test-registry/test-repo:test-tag",
-            "imagePullPolicy": "Allways",
+            "imagePullPolicy": "Always",
             "env": [
                 {"name": "GIT_SYNC_REV", "value": "HEAD"},
                 {"name": "GIT_SYNC_BRANCH", "value": "test-branch"},
@@ -258,5 +258,33 @@ class PodTemplateFileTest(unittest.TestCase):
         )
         assert "dynamic-pods" == jmespath.search(
             "spec.tolerations[0].key",
+            docs[0],
+        )
+
+    def test_should_add_fsgroup_to_the_pod_template(self):
+        docs = render_chart(
+            values={"gid": 5000},
+            show_only=["templates/pod-template-file.yaml"],
+        )
+
+        self.assertEqual(5000, jmespath.search("spec.securityContext.fsGroup", docs[0]))
+
+    def test_should_create_valid_volume_mount_and_volume(self):
+        docs = render_chart(
+            values={
+                "workers": {
+                    "extraVolumes": [{"name": "test-volume", "emptyDir": {}}],
+                    "extraVolumeMounts": [{"name": "test-volume", "mountPath": "/opt/test"}],
+                }
+            },
+            show_only=["templates/pod-template-file.yaml"],
+        )
+
+        assert "test-volume" == jmespath.search(
+            "spec.volumes[2].name",
+            docs[0],
+        )
+        assert "test-volume" == jmespath.search(
+            "spec.containers[0].volumeMounts[2].name",
             docs[0],
         )

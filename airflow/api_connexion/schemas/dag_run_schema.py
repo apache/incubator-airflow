@@ -101,6 +101,7 @@ class DagRunsBatchFormSchema(Schema):
         datetimeformat = 'iso'
         strict = True
 
+    order_by = fields.String()
     page_offset = fields.Int(missing=0, min=0)
     page_limit = fields.Int(missing=100, min=1)
     dag_ids = fields.List(fields.Str(), missing=None)

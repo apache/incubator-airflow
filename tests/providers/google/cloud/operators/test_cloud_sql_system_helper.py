@@ -586,7 +586,7 @@ if __name__ == '__main__':
 
     helper = CloudSqlQueryTestHelper()
     gcp_authenticator = GcpAuthenticator(GCP_CLOUDSQL_KEY)
-    helper.log.info(f'Starting action: {action}')
+    helper.log.info("Starting action: %s", action)
 
     gcp_authenticator.gcp_store_authentication()
     try:
@@ -631,4 +631,4 @@ if __name__ == '__main__':
             raise Exception(f"Unknown action: {action}")
     finally:
         gcp_authenticator.gcp_restore_authentication()
-    helper.log.info(f'Finishing action: {action}')
+    helper.log.info("Finishing action: %s", action)

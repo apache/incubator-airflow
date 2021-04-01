@@ -40,12 +40,10 @@ def parse_time_delta(time_str: str):
     """
     parts = RE_TIME_DELTA.match(time_str)
 
-    # pylint: disable=do-not-use-asserts
     assert parts is not None, (
         f"Could not parse any time information from '{time_str}'. "
         f"Examples of valid strings: '8h', '2d8h5m20s', '2m4s'"
     )
-    # pylint: enable=do-not-use-asserts
 
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
     return timedelta(**time_params)  # type: ignore
@@ -173,6 +171,7 @@ for dag_no in range(1, DAG_COUNT + 1):
             "__".join(
                 [
                     DAG_PREFIX,
+                    # pylint: disable=no-member
                     f"SHAPE={SHAPE.name.lower()}",
                     f"DAGS_COUNT={dag_no}_of_{DAG_COUNT}",
                     f"TASKS_COUNT=${TASKS_COUNT}",

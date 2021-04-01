@@ -57,6 +57,7 @@ class State:
         NONE,
         SCHEDULED,
         SENSING,
+        REMOVED,
     )
 
     dag_states = (

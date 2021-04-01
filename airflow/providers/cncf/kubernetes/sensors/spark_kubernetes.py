@@ -41,6 +41,10 @@ class SparkKubernetesSensor(BaseSensorOperator):
     :type kubernetes_conn_id: str
     :param attach_log: determines whether logs for driver pod should be appended to the sensor log
     :type attach_log: bool
+    :param api_group: kubernetes api group of sparkApplication
+    :type api_group: str
+    :param api_version: kubernetes api version of sparkApplication
+    :type api_version: str
     """
 
     template_fields = ("application_name", "namespace")
@@ -55,6 +59,8 @@ class SparkKubernetesSensor(BaseSensorOperator):
         attach_log: bool = False,
         namespace: Optional[str] = None,
         kubernetes_conn_id: str = "kubernetes_default",
+        api_group: str = 'sparkoperator.k8s.io',
+        api_version: str = 'v1beta2',
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -63,6 +69,8 @@ class SparkKubernetesSensor(BaseSensorOperator):
         self.namespace = namespace
         self.kubernetes_conn_id = kubernetes_conn_id
         self.hook = KubernetesHook(conn_id=self.kubernetes_conn_id)
+        self.api_group = api_group
+        self.api_version = api_version
 
     def _log_driver(self, application_state: str, response: dict) -> None:
         if not self.attach_log:
@@ -93,8 +101,8 @@ class SparkKubernetesSensor(BaseSensorOperator):
     def poke(self, context: Dict) -> bool:
         self.log.info("Poking: %s", self.application_name)
         response = self.hook.get_custom_object(
-            group="sparkoperator.k8s.io",
-            version="v1beta2",
+            group=self.api_group,
+            version=self.api_version,
             plural="sparkapplications",
             name=self.application_name,
             namespace=self.namespace,
