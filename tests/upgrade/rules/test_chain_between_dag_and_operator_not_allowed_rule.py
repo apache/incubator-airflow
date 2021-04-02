@@ -68,6 +68,28 @@ class TestChainBetweenDAGAndOperatorNotAllowedRule(TestCase):
             expected_messages = [self.msg_template.format(rule.title, temp_file.name, 3)]
             assert expected_messages == msgs
 
+    def test_invalid_check_with_models_import(self, mock_list_files):
+        lines = ["my_dag1 = models.DAG(dag_name)",
+                 "dummy = operators.dummy_operator.DummyOperator(task_id='test1')",
+                 "my_dag1 >> dummy"]
+
+        with create_temp_file(mock_list_files, lines) as temp_file:
+            rule = ChainBetweenDAGAndOperatorNotAllowedRule()
+            msgs = rule.check()
+            expected_messages = [self.msg_template.format(rule.title, temp_file.name, 3)]
+            assert expected_messages == msgs
+
+    def test_invalid_check_with_airflow_import(self, mock_list_files):
+        lines = ["my_dag1 = airflow.models.DAG(dag_name)",
+                 "dummy = airflow.operators.dummy_operator.DummyOperator(task_id='test1')",
+                 "my_dag1 >> dummy"]
+
+        with create_temp_file(mock_list_files, lines) as temp_file:
+            rule = ChainBetweenDAGAndOperatorNotAllowedRule()
+            msgs = rule.check()
+            expected_messages = [self.msg_template.format(rule.title, temp_file.name, 3)]
+            assert expected_messages == msgs
+
     def test_invalid_check_no_var_rshift(self, mock_list_files):
         lines = ["DAG('my_dag') >> DummyOperator(task_id='dummy')"]
 
@@ -80,6 +102,26 @@ class TestChainBetweenDAGAndOperatorNotAllowedRule(TestCase):
     def test_invalid_check_no_var_lshift(self, mock_list_files):
         lines = ["DummyOperator(",
                  "task_id='dummy') << DAG('my_dag')"]
+
+        with create_temp_file(mock_list_files, lines) as temp_file:
+            rule = ChainBetweenDAGAndOperatorNotAllowedRule()
+            msgs = rule.check()
+            expected_messages = [self.msg_template.format(rule.title, temp_file.name, 2)]
+            assert expected_messages == msgs
+
+    def test_invalid_check_no_var_with_models_import(self, mock_list_files):
+        lines = ["DummyOperator(",
+                 "task_id='dummy') << models.DAG('my_dag')"]
+
+        with create_temp_file(mock_list_files, lines) as temp_file:
+            rule = ChainBetweenDAGAndOperatorNotAllowedRule()
+            msgs = rule.check()
+            expected_messages = [self.msg_template.format(rule.title, temp_file.name, 2)]
+            assert expected_messages == msgs
+
+    def test_invalid_check_no_var_with_airflow_import(self, mock_list_files):
+        lines = ["DummyOperator(",
+                 "task_id='dummy') << airflow.models.DAG('my_dag')"]
 
         with create_temp_file(mock_list_files, lines) as temp_file:
             rule = ChainBetweenDAGAndOperatorNotAllowedRule()
@@ -133,7 +175,6 @@ class TestChainBetweenDAGAndOperatorNotAllowedRule(TestCase):
         reason="Test is irrelevant in Python 2.7 because of unicode differences"
     )
     def test_decode_errors_are_handled(self, mock_list_files):
-
         with NamedTemporaryFile("wb+", suffix=".py") as temp_file:
             mock_list_files.return_value = [temp_file.name]
             temp_file.write(b"    DAG('my_dag') \x03\x96")

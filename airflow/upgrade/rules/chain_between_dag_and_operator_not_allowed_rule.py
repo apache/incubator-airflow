@@ -24,7 +24,6 @@ from airflow.utils.dag_processing import list_py_file_paths
 
 
 class ChainBetweenDAGAndOperatorNotAllowedRule(BaseRule):
-
     title = "Chain between DAG and operator not allowed."
 
     description = "Assigning task to a DAG using bitwise shift (bit-shift) operators are no longer supported."
@@ -41,9 +40,11 @@ class ChainBetweenDAGAndOperatorNotAllowedRule(BaseRule):
                 lines = file_pointer.readlines()
 
                 python_space = r"\s*\\?\s*\n?\s*"
+                likely_dag_class_names = r"(?:DAG|models\.DAG|airflow\.models\.DAG)"
                 # Find all the dag variable names.
-                dag_vars = re.findall(r"([A-Za-z0-9_]+){}={}DAG\(".format(python_space, python_space),
-                                      "".join(lines))
+                dag_vars = re.findall(
+                    r"([A-Za-z0-9_]+){}={}{}\(".format(python_space, python_space, likely_dag_class_names),
+                    "".join(lines))
                 history = ""
                 for line_number, line in enumerate(lines, 1):
                     # Someone could have put the bitshift operator on a different line than the dag they
@@ -52,7 +53,7 @@ class ChainBetweenDAGAndOperatorNotAllowedRule(BaseRule):
                     history += line
                     matches = [
                         re.search(r"DAG\([^\)]+\){}>>".format(python_space), history),
-                        re.search(r"<<{}DAG\(".format(python_space), history)
+                        re.search(r"<<{}{}\(".format(python_space, likely_dag_class_names), history)
                     ]
                     for dag_var in dag_vars:
                         matches.extend([
