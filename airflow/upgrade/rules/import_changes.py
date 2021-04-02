@@ -24,7 +24,7 @@ from packaging.version import Version
 from airflow import conf
 from airflow.upgrade.rules.base_rule import BaseRule
 from airflow.upgrade.rules.renamed_classes import ALL
-from airflow.utils.dag_processing import list_py_file_paths
+from airflow.utils.dag_processing import list_py_file_paths, correct_maybe_zipped
 
 try:
     from importlib_metadata import PackageNotFoundError, distribution
@@ -145,8 +145,9 @@ class ImportChangesRule(BaseRule):
                 yield "Please install `{}`".format(dist_name)
 
     def check(self):
-        dag_folder = conf.get("core", "dags_folder")
-        files = list_py_file_paths(directory=dag_folder, include_examples=False)
+        dags_folder = conf.get("core", "dags_folder")
+        dags_folder = correct_maybe_zipped(dags_folder)
+        files = list_py_file_paths(directory=dags_folder, include_examples=False)
         files = [file for file in files if os.path.splitext(file)[1] == ".py"]
         problems = []
         providers = set()
