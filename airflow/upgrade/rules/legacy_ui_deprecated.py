@@ -28,8 +28,8 @@ class LegacyUIDeprecated(BaseRule):
 
     def check(self):
         if conf.has_option("webserver", "rbac"):
-            rbac = conf.get("webserver", "rbac")
-            if rbac == "false":
+            rbac = conf.get("webserver", "rbac").strip().lower()
+            if rbac in ("f", "false", "0"):
                 return (
                     "rbac in airflow.cfg must be explicitly set empty as"
                     " RBAC mechanism is enabled by default."

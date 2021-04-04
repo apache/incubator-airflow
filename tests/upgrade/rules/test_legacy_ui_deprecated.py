@@ -15,14 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 from unittest import TestCase
+from unittest.mock import patch
 
 from airflow.upgrade.rules.legacy_ui_deprecated import LegacyUIDeprecated
 from tests.test_utils.config import conf_vars
 
 
 class TestLegacyUIDeprecated(TestCase):
-    @conf_vars({("webserver", "rbac"): "false"})
-    def test_invalid_check(self):
+    @patch('airflow.configuration.conf.get')
+    def test_invalid_check(self, conf_get):
         rule = LegacyUIDeprecated()
 
         assert isinstance(rule.description, str)
@@ -32,8 +33,10 @@ class TestLegacyUIDeprecated(TestCase):
             "rbac in airflow.cfg must be explicitly set empty as"
             " RBAC mechanism is enabled by default."
         )
-        response = rule.check()
-        assert response == msg
+        for false_value in ("False", "false", "f", "0"):
+            conf_get.return_value = false_value
+            response = rule.check()
+            assert response == msg
 
     @conf_vars({("webserver", "rbac"): ""})
     def test_valid_check(self):
