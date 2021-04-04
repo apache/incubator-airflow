@@ -39,7 +39,7 @@ class AsanaCreateTaskOperator(BaseOperator):
     :param task_parameters: Any of the optional task creation parameters.
         See https://developers.asana.com/docs/create-a-task for a complete list.
         You must specify at least one of 'workspace', 'parent', or 'projects'
-        either here or in the connection extras.
+        either here or in the connection.
     :type task_parameters: dict
     """
 
@@ -152,7 +152,7 @@ class AsanaFindTaskOperator(BaseOperator):
     :type conn_id: str
     :param search_parameters: The parameters used to find relevant tasks. You must
         specify at least one of `project`, `section`, `tag`, `user_task_list`, or both
-        `assignee` and `workspace` either here or through the connection extras.
+        `assignee` and `workspace` either here or in the connection.
     :type search_parameters: dict
     """
 

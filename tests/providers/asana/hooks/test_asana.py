@@ -114,7 +114,7 @@ class TestAsanaHook(unittest.TestCase):
         conn = Connection(
             conn_type="asana",
             password="test",
-            extra='{"extra__asana__workspace": "1", "extra__asana__project": "1"}',
+            extra='{"extra__asana__workspace": "1"}',
         )
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
@@ -190,13 +190,14 @@ class TestAsanaHook(unittest.TestCase):
 
     def test_merge_find_task_parameters_specified_project_overrides_workspace(self):
         """
-        Test that merge_find_task_parameters uses the method parameter project over the default workspace if it is available
+        Test that merge_find_task_parameters uses the method parameter project over the default workspace
+        if it is available
         :return: None
         """
         conn = Connection(
             conn_type="asana",
             password="test",
-            extra='{"extra__asana__workspace": "1", "extra__asana__project": "1"}',
+            extra='{"extra__asana__workspace": "1"}',
         )
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
@@ -205,7 +206,7 @@ class TestAsanaHook(unittest.TestCase):
 
     def test_merge_project_parameters(self):
         """
-        Tests that default parameters are used if not overridden
+        Tests that default workspace is used if not overridden
         :return:
         """
         conn = Connection(conn_type="asana", password="test", extra='{"extra__asana__workspace": "1"}')
@@ -216,7 +217,7 @@ class TestAsanaHook(unittest.TestCase):
 
     def test_merge_project_parameters_override(self):
         """
-        Tests that default parameters are successfully overridden
+        Tests that default workspace is successfully overridden
         :return:
         """
         conn = Connection(conn_type='asana', password='test', extra='{"extra__asana__workspace": "1"}')

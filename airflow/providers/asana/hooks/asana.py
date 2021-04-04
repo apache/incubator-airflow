@@ -95,11 +95,11 @@ class AsanaHook(BaseHook):
     def _merge_create_task_parameters(self, task_name: str, task_params: dict) -> dict:
         """Merge create_task parameters with default params from the connection."""
         merged_params = {"name": task_name}
-        if self.project is not None:
+        if self.project:
             merged_params["projects"] = [self.project]
-        elif self.workspace is not None:
+        elif self.workspace and not (task_params and ("projects" in task_params)):
             merged_params["workspace"] = self.workspace
-        if task_params is not None:
+        if task_params:
             merged_params.update(task_params)
         return merged_params
 
@@ -108,7 +108,9 @@ class AsanaHook(BaseHook):
         """Check that user provided minimal create parameters."""
         required_parameters = {"workspace", "projects", "parent"}
         if required_parameters.isdisjoint(params):
-            raise ValueError(f"You must specify at least one of {required_parameters} in the task parameters")
+            raise ValueError(
+                f"You must specify at least one of {required_parameters} in the create_task parameters"
+            )
 
     def delete_task(self, task_id: str) -> dict:
         """Deletes an Asana task."""
@@ -128,9 +130,9 @@ class AsanaHook(BaseHook):
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
         """Merge find_task parameters with default params from the connection."""
         merged_params = {}
-        if self.project is not None:
+        if self.project:
             merged_params["project"] = self.project
-        elif self.workspace is not None:
+        elif self.workspace and not (search_parameters and ("project" in search_parameters)):
             merged_params["workspace"] = self.workspace
         if search_parameters:
             merged_params.update(search_parameters)
@@ -146,7 +148,7 @@ class AsanaHook(BaseHook):
         if not (contains_both or contains_one):
             raise ValueError(
                 f"You must specify at least one of {one_of_list} "
-                f"or both of {both_of_list} in the find_task search_parameters."
+                f"or both of {both_of_list} in the find_task parameters."
             )
 
     def update_task(self, task_id: str, params: dict) -> dict:
