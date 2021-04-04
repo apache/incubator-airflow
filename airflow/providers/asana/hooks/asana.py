@@ -18,7 +18,7 @@
 
 """Connect to Asana."""
 
-import copy
+from typing import Any, Dict
 
 from asana import Client
 from cached_property import cached_property
@@ -37,11 +37,39 @@ class AsanaHook(BaseHook):
     def __init__(self, conn_id: str = default_conn_name, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.connection = self.get_connection(conn_id)
-        self.default_params = self.connection.extra_dejson
-        self._clean_default_parameters()
+        extras = self.connection.extra_dejson
+        default_workspace = extras.get("extra__asana__workspace")
+        self.workspace = None if default_workspace == "" else default_workspace
+        default_project = extras.get("extra__asana__project")
+        self.project = None if default_project == "" else default_project
 
     def get_conn(self) -> Client:
         return self.client
+
+    @staticmethod
+    def get_connection_form_widgets() -> Dict[str, Any]:
+        """Returns connection widgets to add to connection form"""
+        from flask_appbuilder.fieldwidgets import BS3TextFieldWidget
+        from flask_babel import lazy_gettext
+        from wtforms import StringField
+
+        return {
+            "extra__asana__workspace": StringField(lazy_gettext("Workspace"), widget=BS3TextFieldWidget()),
+            "extra__asana__project": StringField(lazy_gettext("Project"), widget=BS3TextFieldWidget()),
+        }
+
+    @staticmethod
+    def get_ui_field_behaviour() -> Dict:
+        """Returns custom field behaviour"""
+        return {
+            "hidden_fields": ["port", "host", "login", "schema"],
+            "relabeling": {},
+            "placeholders": {
+                "password": "Asana personal access token",
+                "extra__asana__workspace": "Asana workspace gid",
+                "extra__asana__project": "Asana project gid",
+            },
+        }
 
     @cached_property
     def client(self) -> Client:
@@ -53,17 +81,6 @@ class AsanaHook(BaseHook):
             )
 
         return Client.access_token(self.connection.password)
-
-    def _clean_default_parameters(self):
-        """
-        Lowercase the parameter keys, check whether the user specified both 'projects' and
-        'project', and rename the 'projects' key to 'project' if present.
-        """
-        self.default_params = {k.lower(): v for k, v in self.default_params.items()}
-        if "project" in self.default_params:
-            if "projects" in self.default_params:
-                raise ValueError("You cannot specify both 'projects' and 'project' in default_params.")
-            self.default_params["projects"] = self.default_params.pop("project")
 
     def create_task(self, task_name: str, params: dict) -> dict:
         """
@@ -78,7 +95,10 @@ class AsanaHook(BaseHook):
     def _merge_create_task_parameters(self, task_name: str, task_params: dict) -> dict:
         """Merge create_task parameters with default params from the connection."""
         merged_params = {"name": task_name}
-        merged_params.update(self.default_params)
+        if self.project is not None:
+            merged_params["projects"] = [self.project]
+        elif self.workspace is not None:
+            merged_params["workspace"] = self.workspace
         if task_params is not None:
             merged_params.update(task_params)
         return merged_params
@@ -107,20 +127,11 @@ class AsanaHook(BaseHook):
 
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
         """Merge find_task parameters with default params from the connection."""
-        merged_params = {k: v for k, v in self.default_params.items() if k != "projects"}
-        # The Asana API takes a 'project' parameter for find_task,
-        # so rename the 'projects' key if it appears in default_params
-        if "projects" in self.default_params and (
-            not search_parameters or "project" not in search_parameters
-        ):
-            if type(self.default_params["projects"] == list):
-                if len(self.default_params["projects"]) > 1:
-                    raise ValueError("find_task can accept only one project.")
-                else:
-                    merged_params["project"] = self.default_params["projects"][0]
-            else:
-                merged_params["project"] = self.default_params["projects"]
-
+        merged_params = {}
+        if self.project is not None:
+            merged_params["project"] = self.project
+        elif self.workspace is not None:
+            merged_params["workspace"] = self.workspace
         if search_parameters:
             merged_params.update(search_parameters)
         return merged_params
@@ -169,7 +180,7 @@ class AsanaHook(BaseHook):
 
     def _merge_project_parameters(self, params: dict) -> dict:
         """Merge parameters passed in to a project method with default params from the connection."""
-        merged_params = copy.deepcopy(self.default_params)
+        merged_params = {} if self.workspace is None else {"workspace": self.workspace}
         merged_params.update(params)
         return merged_params
 
