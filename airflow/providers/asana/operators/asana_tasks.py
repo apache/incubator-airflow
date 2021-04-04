@@ -32,8 +32,8 @@ class AsanaCreateTaskOperator(BaseOperator):
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:AsanaCreateTaskOperator`
 
-    :param asana_conn_id: The Asana connection to use.
-    :type asana_conn_id: str
+    :param conn_id: The Asana connection to use.
+    :type conn_id: str
     :param name: Name of the task.
     :type name: str
     :param task_parameters: Any of the optional task creation parameters.
@@ -47,19 +47,19 @@ class AsanaCreateTaskOperator(BaseOperator):
     def __init__(
         self,
         *,
-        asana_conn_id: str,
+        conn_id: str,
         name: str,
         task_parameters: Optional[dict] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.asana_conn_id = asana_conn_id
+        self.conn_id = conn_id
         self.name = name
         self.task_parameters = task_parameters
 
     def execute(self, context: Dict) -> str:
-        hook = AsanaHook(conn_id=self.asana_conn_id)
+        hook = AsanaHook(conn_id=self.conn_id)
         response = hook.create_task(self.name, self.task_parameters)
         self.log.info(response)
         return response["gid"]
@@ -75,8 +75,8 @@ class AsanaUpdateTaskOperator(BaseOperator):
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:AsanaUpdateTaskOperator`
 
-    :param asana_conn_id: The Asana connection to use.
-    :type asana_conn_id: str
+    :param conn_id: The Asana connection to use.
+    :type conn_id: str
     :param asana_task_gid: Asana task ID to update
     :type asana_task_gid: str
     :param task_parameters: Any task parameters that should be updated.
@@ -88,19 +88,19 @@ class AsanaUpdateTaskOperator(BaseOperator):
     def __init__(
         self,
         *,
-        asana_conn_id: str,
+        conn_id: str,
         asana_task_gid: str,
         task_parameters: dict,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.asana_conn_id = asana_conn_id
+        self.conn_id = conn_id
         self.asana_task_gid = asana_task_gid
         self.task_parameters = task_parameters
 
     def execute(self, context: Dict) -> None:
-        hook = AsanaHook(conn_id=self.asana_conn_id)
+        hook = AsanaHook(conn_id=self.conn_id)
         response = hook.update_task(self.asana_task_gid, self.task_parameters)
         self.log.info(response)
 
@@ -113,8 +113,8 @@ class AsanaDeleteTaskOperator(BaseOperator):
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:AsanaDeleteTaskOperator`
 
-    :param asana_conn_id: The Asana connection to use.
-    :type asana_conn_id: str
+    :param conn_id: The Asana connection to use.
+    :type conn_id: str
     :param asana_task_gid: Asana Task ID to delete.
     :type asana_task_gid: str
     """
@@ -123,17 +123,17 @@ class AsanaDeleteTaskOperator(BaseOperator):
     def __init__(
         self,
         *,
-        asana_conn_id: str,
+        conn_id: str,
         asana_task_gid: str,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.asana_conn_id = asana_conn_id
+        self.conn_id = conn_id
         self.asana_task_gid = asana_task_gid
 
     def execute(self, context: Dict) -> None:
-        hook = AsanaHook(conn_id=self.asana_conn_id)
+        hook = AsanaHook(conn_id=self.conn_id)
         response = hook.delete_task(self.asana_task_gid)
         self.log.info(response)
 
@@ -148,8 +148,8 @@ class AsanaFindTaskOperator(BaseOperator):
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:AsanaFindTaskOperator`
 
-    :param asana_conn_id: The Asana connection to use.
-    :type asana_conn_id: str
+    :param conn_id: The Asana connection to use.
+    :type conn_id: str
     :param search_parameters: The parameters used to find relevant tasks. You must
         specify at least one of `project`, `section`, `tag`, `user_task_list`, or both
         `assignee` and `workspace` either here or through the connection extras.
@@ -160,17 +160,17 @@ class AsanaFindTaskOperator(BaseOperator):
     def __init__(
         self,
         *,
-        asana_conn_id: str,
+        conn_id: str,
         search_parameters: Optional[dict] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.asana_conn_id = asana_conn_id
+        self.conn_id = conn_id
         self.search_parameters = search_parameters
 
     def execute(self, context: Dict) -> list:
-        hook = AsanaHook(conn_id=self.asana_conn_id)
+        hook = AsanaHook(conn_id=self.conn_id)
         response = hook.find_task(self.search_parameters)
         self.log.info(response)
         return response

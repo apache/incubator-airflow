@@ -65,43 +65,49 @@ class AsanaHook(BaseHook):
                 raise ValueError("You cannot specify both 'projects' and 'project' in default_params.")
             self.default_params["projects"] = self.default_params.pop("project")
 
-    def create_task(self, task_name: str, task_parameters: dict) -> dict:
-        """Creates an Asana task."""
-        params = self._merge_create_task_parameters(task_name, task_parameters)
-        self._validate_create_task_parameters(params)
-        response = self.client.tasks.create(params=params)  # pylint: disable=no-member
+    def create_task(self, task_name: str, params: dict) -> dict:
+        """
+        Creates an Asana task. For a complete list of possible parameters, see
+        https://developers.asana.com/docs/create-a-task
+        """
+        merged_params = self._merge_create_task_parameters(task_name, params)
+        self._validate_create_task_parameters(merged_params)
+        response = self.client.tasks.create(params=merged_params)  # pylint: disable=no-member
         return response
 
-    def _merge_create_task_parameters(self, task_name: str, task_parameters: dict) -> dict:
+    def _merge_create_task_parameters(self, task_name: str, task_params: dict) -> dict:
         """Merge create_task parameters with default params from the connection."""
-        params = {"name": task_name}
-        params.update(self.default_params)
-        if task_parameters is not None:
-            params.update(task_parameters)
-        return params
+        merged_params = {"name": task_name}
+        merged_params.update(self.default_params)
+        if task_params is not None:
+            merged_params.update(task_params)
+        return merged_params
 
     @staticmethod
-    def _validate_create_task_parameters(task_parameters: dict) -> None:
+    def _validate_create_task_parameters(params: dict) -> None:
         """Check that user provided minimal create parameters."""
         required_parameters = {"workspace", "projects", "parent"}
-        if required_parameters.isdisjoint(task_parameters):
-            raise ValueError(f"You must specify at least one of {required_parameters} in the task_parameters")
+        if required_parameters.isdisjoint(params):
+            raise ValueError(f"You must specify at least one of {required_parameters} in the task parameters")
 
     def delete_task(self, task_id: str) -> dict:
         """Deletes an Asana task."""
         response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
         return response
 
-    def find_task(self, search_parameters: dict) -> list:
-        """Retrieves a list of Asana tasks that match search criteria."""
-        params = self._merge_find_task_parameters(search_parameters)
-        self._validate_find_task_parameters(params)
-        response = self.client.tasks.find_all(params=params)  # pylint: disable=no-member
+    def find_task(self, params: dict) -> list:
+        """
+        Retrieves a list of Asana tasks that match search parameters. For a complete list of parameters,
+        see https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L182
+        """
+        merged_params = self._merge_find_task_parameters(params)
+        self._validate_find_task_parameters(merged_params)
+        response = self.client.tasks.find_all(params=merged_params)  # pylint: disable=no-member
         return list(response)
 
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
         """Merge find_task parameters with default params from the connection."""
-        params = {k: v for k, v in self.default_params.items() if k != "projects"}
+        merged_params = {k: v for k, v in self.default_params.items() if k != "projects"}
         # The Asana API takes a 'project' parameter for find_task,
         # so rename the 'projects' key if it appears in default_params
         if "projects" in self.default_params and (
@@ -111,76 +117,79 @@ class AsanaHook(BaseHook):
                 if len(self.default_params["projects"]) > 1:
                     raise ValueError("find_task can accept only one project.")
                 else:
-                    params["project"] = self.default_params["projects"][0]
+                    merged_params["project"] = self.default_params["projects"][0]
             else:
-                params["project"] = self.default_params["projects"]
+                merged_params["project"] = self.default_params["projects"]
 
         if search_parameters:
-            params.update(search_parameters)
-        return params
+            merged_params.update(search_parameters)
+        return merged_params
 
     @staticmethod
-    def _validate_find_task_parameters(search_parameters: dict) -> None:
+    def _validate_find_task_parameters(params: dict) -> None:
         """Check that user provided minimal search parameters."""
         one_of_list = {"project", "section", "tag", "user_task_list"}
         both_of_list = {"assignee", "workspace"}
-        contains_both = both_of_list.issubset(search_parameters)
-        contains_one = not one_of_list.isdisjoint(search_parameters)
+        contains_both = both_of_list.issubset(params)
+        contains_one = not one_of_list.isdisjoint(params)
         if not (contains_both or contains_one):
             raise ValueError(
                 f"You must specify at least one of {one_of_list} "
-                f"or both of {both_of_list} in the search_parameters."
+                f"or both of {both_of_list} in the find_task search_parameters."
             )
 
-    def update_task(self, task_id: str, task_parameters: dict) -> dict:
-        """Updates an existing Asana task."""
-        response = self.client.tasks.update(task_id, task_parameters)  # pylint: disable=no-member
+    def update_task(self, task_id: str, params: dict) -> dict:
+        """
+        Updates an existing Asana task. For a complete list of possible parameters, see
+        https://developers.asana.com/docs/update-a-task
+        """
+        response = self.client.tasks.update(task_id, params)  # pylint: disable=no-member
         return response
 
-    def create_project(self, project_parameters: dict) -> dict:
+    def create_project(self, params: dict) -> dict:
         """
         Creates a new project. See
         https://developers.asana.com/docs/create-a-project#create-a-project-parameters
         for a list of possible parameters; you must specify at least one of
         'workspace' and 'team'.
         """
-        merged_params = self._merge_project_parameters(project_parameters)
+        merged_params = self._merge_project_parameters(params)
         self._validate_create_project_parameters(merged_params)
         response = self.client.projects.create(merged_params)  # pylint: disable=no-member
         return response
 
     @staticmethod
-    def _validate_create_project_parameters(project_parameters: dict) -> None:
+    def _validate_create_project_parameters(params: dict) -> None:
         """Check that user provided minimal create parameters."""
         required_parameters = {"workspace", "team"}
-        if required_parameters.isdisjoint(project_parameters):
+        if required_parameters.isdisjoint(params):
             raise ValueError(
                 f"You must specify at least one of {required_parameters} in the create_project parameters"
             )
 
-    def _merge_project_parameters(self, project_parameters: dict) -> dict:
+    def _merge_project_parameters(self, params: dict) -> dict:
         """Merge parameters passed in to a project method with default params from the connection."""
         merged_params = copy.deepcopy(self.default_params)
-        merged_params.update(project_parameters)
+        merged_params.update(params)
         return merged_params
 
-    def find_project(self, search_parameters: dict) -> list:
+    def find_project(self, params: dict) -> list:
         """
         Searches for projects matching criteria. See
         https://github.com/Asana/python-asana/blob/40c42dd49c85086c0546129c8bef334817aaa2b5/asana/resources/projects.py#L121
         for a list of possible parameters.
         """
-        merged_params = self._merge_project_parameters(search_parameters)
+        merged_params = self._merge_project_parameters(params)
         response = self.client.projects.find_all(merged_params)  # pylint: disable=no-member
         return list(response)
 
-    def update_project(self, project_id: str, project_parameters: dict) -> dict:
+    def update_project(self, project_id: str, params: dict) -> dict:
         """
         Updates an existing project. See
         https://developers.asana.com/docs/update-a-project#update-a-project-parameters
         for a list of possible parameters
         """
-        response = self.client.projects.update(project_id, project_parameters)  # pylint: disable=no-member
+        response = self.client.projects.update(project_id, params)  # pylint: disable=no-member
         return response
 
     def delete_project(self, project_id: str) -> dict:

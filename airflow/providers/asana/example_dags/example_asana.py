@@ -38,13 +38,13 @@ with DAG(
     start_date=days_ago(1),
     tags=["example"],
 ) as dag:
-    asana_conn_id = "asana_test"
+    conn_id = "asana_test"
 
     # [START run_asana_create_task_operator]
     create = AsanaCreateTaskOperator(
         task_id="run_asana_create_task",
         task_parameters={"projects": "your_project"},
-        asana_conn_id=asana_conn_id,
+        conn_id=conn_id,
         name="Test Task Create",
     )
     # [END run_asana_create_task_operator]
@@ -53,7 +53,7 @@ with DAG(
     find = AsanaFindTaskOperator(
         task_id="run_asana_find_task",
         search_parameters={"project": "your_project"},
-        asana_conn_id=asana_conn_id,
+        conn_id=conn_id,
     )
     # [END run_asana_find_task_operator]
 
@@ -62,14 +62,14 @@ with DAG(
         task_id="run_asana_update_task",
         asana_task_gid="your_task_id",
         task_parameters={"notes": "This task was updated!", "completed": True},
-        asana_conn_id=asana_conn_id,
+        conn_id=conn_id,
     )
     # [END run_asana_update_task_operator]
 
     # [START run_asana_delete_task_operator]
     delete = AsanaDeleteTaskOperator(
         task_id="run_asana_delete_task",
-        asana_conn_id=asana_conn_id,
+        conn_id=conn_id,
         asana_task_gid="your_task_id",
     )
     # [END run_asana_delete_task_operator]

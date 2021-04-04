@@ -19,7 +19,7 @@
 
 Asana Connection
 ================
-The Asana connection type provides credentials for accessing the Asana API.
+The Asana connection provides credentials for accessing the Asana API.
 
 Configuring the Connection
 --------------------------
