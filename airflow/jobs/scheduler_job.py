@@ -924,6 +924,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             .filter(not_(DM.is_paused))
             .filter(TI.state == State.SCHEDULED)
             .options(selectinload('dag_model'))
+            .order_by(-TI.priority_weight,TI.execution_date)
         )
         starved_pools = [pool_name for pool_name, stats in pools.items() if stats['open'] <= 0]
         if starved_pools:
