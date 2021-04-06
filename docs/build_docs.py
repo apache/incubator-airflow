@@ -510,7 +510,7 @@ def main():
             docs_only=docs_only,
             spellcheck_only=spellcheck_only,
             for_production=for_production,
-            jobs=1,
+            jobs=jobs,
             verbose=args.verbose,
         )
         if package_build_errors:
