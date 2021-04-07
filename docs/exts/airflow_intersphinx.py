@@ -70,7 +70,7 @@ def _generate_provider_intersphinx_mapping():
 
         airflow_mapping[pkg_name] = (
             # base URI
-            f'/docs/{pkg_name}/{current_version}/',
+            f'/docs/{pkg_name}/latest/',
             (doc_inventory if os.path.exists(doc_inventory) else cache_inventory,),
         )
     for pkg_name in ['apache-airflow-providers', 'docker-stack']:
