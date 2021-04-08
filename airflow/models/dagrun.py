@@ -49,7 +49,7 @@ from airflow.utils import callback_requests, timezone
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.session import provide_session
 from airflow.utils.sqlalchemy import UtcDateTime, nulls_first, skip_locked, with_row_locks
-from airflow.utils.state import State
+from airflow.utils.state import State, TaskState
 from airflow.utils.types import DagRunType
 
 if TYPE_CHECKING:
@@ -303,7 +303,7 @@ class DagRun(Base, LoggingMixin):
         return f"{run_type}__{execution_date.isoformat()}"
 
     @provide_session
-    def get_task_instances(self, state=None, session=None) -> Iterable[TI]:
+    def get_task_instances(self, state: Optional[Iterable[TaskState]] = None, session=None) -> Iterable[TI]:
         """Returns the task instances for this dag run"""
         tis = session.query(TI).filter(
             TI.dag_id == self.dag_id,

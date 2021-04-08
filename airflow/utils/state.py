@@ -16,7 +16,49 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from enum import Enum
+from typing import Dict, FrozenSet, Tuple
+
 from airflow.settings import STATE_COLORS
+from airflow.utils.types import Optional
+
+
+class TaskState(str, Enum):
+    """
+    Enum that represents all possible states that a Task Instance can be in.
+
+    Note that None is also allowed, so always use this in a type hint with Optional.
+    """
+
+    # Set by the scheduler
+    # None - Task is created but should not run yet
+    REMOVED = "removed"  # Task vanished from DAG before it ran
+    SCHEDULED = "scheduled"  # Task should run and will be handed to executor soon
+
+    # Set by the task instance itself
+    QUEUED = "queued"  # Executor has enqueued the task
+    RUNNING = "running"  # Task is executing
+    SUCCESS = "success"  # Task completed
+    SHUTDOWN = "shutdown"  # External request to shut down
+    FAILED = "failed"  # Task errored out
+    UP_FOR_RETRY = "up_for_retry"  # Task failed but has retries left
+    UP_FOR_RESCHEDULE = "up_for_reschedule"  # A waiting `reschedule` sensor
+    UPSTREAM_FAILED = "upstream_failed"  # One or more upstream deps failed
+    SKIPPED = "skipped"  # Skipped by branching or some other mechanism
+    SENSING = "sensing"  # Smart sensor offloaded to the sensor DAG
+
+
+class DagState(str, Enum):
+    """
+    Enum that represents all possible states that a DagRun can be in.
+
+    These are "shared" with TaskState in some parts of the code, so make
+    sure they don't drift.
+    """
+
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class State:
@@ -25,61 +67,59 @@ class State:
     avoid hardcoding.
     """
 
-    # scheduler
-    NONE = None  # type: None
-    REMOVED = "removed"
-    SCHEDULED = "scheduled"
+    # Backwards-compat constants for code that does not yet use the enum
+    # These first three are shared by DagState and TaskState
+    SUCCESS = TaskState.SUCCESS
+    RUNNING = TaskState.RUNNING
+    FAILED = TaskState.FAILED
 
-    # set by the executor (t.b.d.)
-    # LAUNCHED = "launched"
+    # These are TaskState only
+    NONE = None
+    REMOVED = TaskState.REMOVED
+    SCHEDULED = TaskState.SCHEDULED
+    QUEUED = TaskState.QUEUED
+    SHUTDOWN = TaskState.SHUTDOWN
+    UP_FOR_RETRY = TaskState.UP_FOR_RETRY
+    UP_FOR_RESCHEDULE = TaskState.UP_FOR_RESCHEDULE
+    UPSTREAM_FAILED = TaskState.UPSTREAM_FAILED
+    SKIPPED = TaskState.SKIPPED
+    SENSING = TaskState.SENSING
 
-    # set by a task
-    QUEUED = "queued"
-    RUNNING = "running"
-    SUCCESS = "success"
-    SHUTDOWN = "shutdown"  # External request to shut down
-    FAILED = "failed"
-    UP_FOR_RETRY = "up_for_retry"
-    UP_FOR_RESCHEDULE = "up_for_reschedule"
-    UPSTREAM_FAILED = "upstream_failed"
-    SKIPPED = "skipped"
-    SENSING = "sensing"
-
-    task_states = (
-        SUCCESS,
-        RUNNING,
-        FAILED,
-        UPSTREAM_FAILED,
-        SKIPPED,
-        UP_FOR_RETRY,
-        UP_FOR_RESCHEDULE,
-        QUEUED,
-        NONE,
-        SCHEDULED,
-        SENSING,
-        REMOVED,
+    task_states: Tuple[Optional[TaskState], ...] = (
+        None,
+        TaskState.SUCCESS,
+        TaskState.RUNNING,
+        TaskState.FAILED,
+        TaskState.UPSTREAM_FAILED,
+        TaskState.SKIPPED,
+        TaskState.UP_FOR_RETRY,
+        TaskState.UP_FOR_RESCHEDULE,
+        TaskState.QUEUED,
+        TaskState.SCHEDULED,
+        TaskState.SENSING,
+        TaskState.REMOVED,
     )
 
-    dag_states = (
-        SUCCESS,
-        RUNNING,
-        FAILED,
+    dag_states: Tuple[DagState, ...] = (
+        DagState.SUCCESS,
+        DagState.RUNNING,
+        DagState.FAILED,
     )
 
-    state_color = {
-        QUEUED: 'gray',
-        RUNNING: 'lime',
-        SUCCESS: 'green',
-        SHUTDOWN: 'blue',
-        FAILED: 'red',
-        UP_FOR_RETRY: 'gold',
-        UP_FOR_RESCHEDULE: 'turquoise',
-        UPSTREAM_FAILED: 'orange',
-        SKIPPED: 'pink',
-        REMOVED: 'lightgrey',
-        SCHEDULED: 'tan',
-        NONE: 'lightblue',
-        SENSING: 'lightseagreen',
+    state_color: Dict[Optional[TaskState], str] = {
+        None: 'lightblue',
+        TaskState.QUEUED: 'gray',
+        TaskState.RUNNING: 'lime',
+        TaskState.SUCCESS: 'green',
+        TaskState.SHUTDOWN: 'blue',
+        TaskState.FAILED: 'red',
+        TaskState.UP_FOR_RETRY: 'gold',
+        TaskState.UP_FOR_RESCHEDULE: 'turquoise',
+        TaskState.UPSTREAM_FAILED: 'orange',
+        TaskState.SKIPPED: 'pink',
+        TaskState.REMOVED: 'lightgrey',
+        TaskState.SCHEDULED: 'tan',
+        TaskState.SENSING: 'lightseagreen',
     }
     state_color.update(STATE_COLORS)  # type: ignore
 
@@ -96,17 +136,17 @@ class State:
             return 'white'
         return 'black'
 
-    running = frozenset([RUNNING, SENSING])
+    running: FrozenSet[TaskState] = frozenset([TaskState.RUNNING, TaskState.SENSING])
     """
     A list of states indicating that a task is being executed.
     """
 
-    finished = frozenset(
+    finished: FrozenSet[TaskState] = frozenset(
         [
-            SUCCESS,
-            FAILED,
-            SKIPPED,
-            UPSTREAM_FAILED,
+            TaskState.SUCCESS,
+            TaskState.FAILED,
+            TaskState.SKIPPED,
+            TaskState.UPSTREAM_FAILED,
         ]
     )
     """
@@ -118,16 +158,16 @@ class State:
     case, it is no longer running.
     """
 
-    unfinished = frozenset(
+    unfinished: FrozenSet[Optional[TaskState]] = frozenset(
         [
-            NONE,
-            SCHEDULED,
-            QUEUED,
-            RUNNING,
-            SENSING,
-            SHUTDOWN,
-            UP_FOR_RETRY,
-            UP_FOR_RESCHEDULE,
+            None,
+            TaskState.SCHEDULED,
+            TaskState.QUEUED,
+            TaskState.RUNNING,
+            TaskState.SENSING,
+            TaskState.SHUTDOWN,
+            TaskState.UP_FOR_RETRY,
+            TaskState.UP_FOR_RESCHEDULE,
         ]
     )
     """
@@ -135,12 +175,12 @@ class State:
     a run or has not even started.
     """
 
-    failed_states = frozenset([FAILED, UPSTREAM_FAILED])
+    failed_states: FrozenSet[TaskState] = frozenset([TaskState.FAILED, TaskState.UPSTREAM_FAILED])
     """
     A list of states indicating that a task or dag is a failed state.
     """
 
-    success_states = frozenset([SUCCESS, SKIPPED])
+    success_states: FrozenSet[TaskState] = frozenset([TaskState.SUCCESS, TaskState.SKIPPED])
     """
     A list of states indicating that a task or dag is a success state.
     """
