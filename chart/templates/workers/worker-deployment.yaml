@@ -87,7 +87,9 @@ spec:
       serviceAccountName: {{ .Release.Name }}-worker
       securityContext:
         runAsUser: {{ .Values.uid }}
+        {{- if .Values.useFsGroup }}
         fsGroup: {{ .Values.gid }}
+        {{- end }}
       {{- if or .Values.registry.secretName .Values.registry.connection }}
       imagePullSecrets:
         - name: {{ template "registry_secret" . }}

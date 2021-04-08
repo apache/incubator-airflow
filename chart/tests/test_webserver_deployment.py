@@ -40,6 +40,29 @@ class WebserverDeploymentTest(unittest.TestCase):
             "spec.template.spec.containers[0].readinessProbe.httpGet.httpHeaders", docs[0]
         )
 
+    def test_should_skip_fsgroup(self):
+        docs = render_chart(
+            values={
+                "executor": "LocalExecutor",
+                "useFsGroup": False,
+            },
+            show_only=["templates/scheduler/webserver-deployment.yaml"],
+        )
+
+        assert {'runAsUser': 50000} == jmespath.search("spec.template.spec.securityContext", docs[0])
+
+        docs = render_chart(
+            values={
+                "executor": "LocalExecutor",
+                "useFsGroup": True,
+            },
+            show_only=["templates/scheduler/webserver-deployment.yaml"],
+        )
+
+        assert {'fsGroup': 50000, 'runAsUser': 50000} == jmespath.search(
+            "spec.template.spec.securityContext", docs[0]
+        )
+
     def test_should_add_path_to_liveness_and_readiness_probes(self):
         docs = render_chart(
             values={

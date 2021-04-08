@@ -42,6 +42,29 @@ class WorkerTest(unittest.TestCase):
 
         assert "test-container" == jmespath.search("spec.template.spec.containers[-1].name", docs[0])
 
+    def test_should_skip_fsgroup(self):
+        docs = render_chart(
+            values={
+                "executor": "LocalExecutor",
+                "useFsGroup": False,
+            },
+            show_only=["templates/scheduler/worker-deployment.yaml"],
+        )
+
+        assert {'runAsUser': 50000} == jmespath.search("spec.template.spec.securityContext", docs[0])
+
+        docs = render_chart(
+            values={
+                "executor": "LocalExecutor",
+                "useFsGroup": True,
+            },
+            show_only=["templates/scheduler/worker-deployment.yaml"],
+        )
+
+        assert {'fsGroup': 50000, 'runAsUser': 50000} == jmespath.search(
+            "spec.template.spec.securityContext", docs[0]
+        )
+
     def test_should_add_extra_volume_and_extra_volume_mount(self):
         docs = render_chart(
             values={

@@ -83,7 +83,9 @@ spec:
   restartPolicy: Never
   securityContext:
     runAsUser: {{ .Values.uid }}
+    {{- if .Values.useFsGroup }}
     fsGroup: {{ .Values.gid }}
+    {{- end }}
   nodeSelector: {{ toYaml .Values.nodeSelector | nindent 4 }}
   affinity: {{ toYaml .Values.affinity | nindent 4 }}
   tolerations: {{ toYaml .Values.tolerations | nindent 4 }}

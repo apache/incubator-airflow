@@ -22,6 +22,7 @@
 # User and group of airflow user
 uid: 50000
 gid: 50000
+useFsGroup: true
 
 # Airflow home directory
 # Used for mount paths
