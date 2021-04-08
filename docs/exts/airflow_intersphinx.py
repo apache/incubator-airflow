@@ -62,13 +62,15 @@ def _generate_provider_intersphinx_mapping():
             provider_base_url,
             (doc_inventory if os.path.exists(doc_inventory) else cache_inventory,),
         )
-    if os.environ.get('AIRFLOW_PACKAGE_NAME') != 'apache-airflow':
-        doc_inventory = f'{DOCS_DIR}/_build/docs/apache-airflow/{current_version}/objects.inv'
-        cache_inventory = f'{DOCS_DIR}/_inventory_cache/apache-airflow/objects.inv'
+    for pkg_name in ["apache-airflow", 'helm-chart']:
+        if os.environ.get('AIRFLOW_PACKAGE_NAME') == pkg_name:
+            continue
+        doc_inventory = f'{DOCS_DIR}/_build/docs/{pkg_name}/{current_version}/objects.inv'
+        cache_inventory = f'{DOCS_DIR}/_inventory_cache/{pkg_name}/objects.inv'
 
-        airflow_mapping['apache-airflow'] = (
+        airflow_mapping[pkg_name] = (
             # base URI
-            f'/docs/apache-airflow/{current_version}/',
+            f'/docs/{pkg_name}/latest/',
             (doc_inventory if os.path.exists(doc_inventory) else cache_inventory,),
         )
     for pkg_name in ['apache-airflow-providers', 'docker-stack']:
