@@ -20,6 +20,7 @@ import logging
 import sys
 from collections import defaultdict
 from datetime import datetime
+from operator import attrgetter
 from time import time
 from typing import List, Optional, Tuple
 from urllib.parse import quote
@@ -71,6 +72,8 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
         write_stdout: bool,
         json_format: bool,
         json_fields: str,
+        host_field: str,
+        offset_field: str,
         host: str = "localhost:9200",
         frontend: str = "localhost:5601",
         es_kwargs: Optional[dict] = conf.getsection("elasticsearch_configs"),
@@ -94,6 +97,8 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
         self.write_stdout = write_stdout
         self.json_format = json_format
         self.json_fields = [label.strip() for label in json_fields.split(",")]
+        self.host_field = host_field
+        self.offset_field = offset_field
         self.handler = None
         self.context_set = False
 
@@ -122,11 +127,10 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
         """
         return execution_date.strftime("%Y_%m_%dT%H_%M_%S_%f")
 
-    @staticmethod
-    def _group_logs_by_host(logs):
+    def _group_logs_by_host(self, logs):
         grouped_logs = defaultdict(list)
         for log in logs:
-            key = getattr(log, 'host', 'default_host')
+            key = getattr(log, self.host_field, 'default_host')
             grouped_logs[key].append(log)
 
         # return items sorted by timestamp.
@@ -160,7 +164,7 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
         logs = self.es_read(log_id, offset, metadata)
         logs_by_host = self._group_logs_by_host(logs)
 
-        next_offset = offset if not logs else logs[-1].offset
+        next_offset = offset if not logs else attrgetter(self.offset_field)(logs[-1])
 
         # Ensure a string here. Large offset numbers will get JSON.parsed incorrectly
         # on the client. Sending as a string prevents this issue.
@@ -227,14 +231,16 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
         :type metadata: dict
         """
         # Offset is the unique key for sorting logs given log_id.
-        search = Search(using=self.client).query('match_phrase', log_id=log_id).sort('offset')
+        search = Search(using=self.client).query('match_phrase', log_id=log_id).sort(self.offset_field)
 
-        search = search.filter('range', offset={'gt': int(offset)})
+        search = search.filter('range', **{self.offset_field: {'gt': int(offset)}})
         max_log_line = search.count()
         if 'download_logs' in metadata and metadata['download_logs'] and 'max_offset' not in metadata:
             try:
                 if max_log_line > 0:
-                    metadata['max_offset'] = search[max_log_line - 1].execute()[-1].offset
+                    metadata['max_offset'] = attrgetter(self.offset_field)(
+                        search[max_log_line - 1].execute()[-1]
+                    )
                 else:
                     metadata['max_offset'] = 0
             except Exception:  # pylint: disable=broad-except
