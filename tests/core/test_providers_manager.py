@@ -159,6 +159,8 @@ CONNECTIONS_LIST = [
 ]
 
 CONNECTION_FORM_WIDGETS = [
+    'extra__asana__project',
+    'extra__asana__workspace',
     'extra__azure__subscriptionId',
     'extra__azure__tenantId',
     'extra__azure_batch__account_url',
@@ -204,6 +206,7 @@ CONNECTION_FORM_WIDGETS = [
 ]
 
 CONNECTIONS_WITH_FIELD_BEHAVIOURS = [
+    'asana',
     'azure',
     'azure_batch',
     'azure_container_registry',
