@@ -120,8 +120,7 @@ class AsanaHook(BaseHook):
     def find_task(self, params: dict) -> list:
         """
         Retrieves a list of Asana tasks that match search parameters. For a complete list of parameters,
-        see https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/
-          asana/resources/tasks.py#L182
+        see https://bit.ly/3uIqMj0
         """
         merged_params = self._merge_find_task_parameters(params)
         self._validate_find_task_parameters(merged_params)
@@ -189,9 +188,7 @@ class AsanaHook(BaseHook):
 
     def find_project(self, params: dict) -> list:
         """
-        Searches for projects matching criteria. See
-        https://github.com/Asana/python-asana/blob/40c42dd49c85086c0546129c8bef334817aaa2b5/
-          asana/resources/projects.py#L121
+        Searches for projects matching criteria. See https://bit.ly/31ZrZq6
         for a list of possible parameters.
         """
         merged_params = self._merge_project_parameters(params)
