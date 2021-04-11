@@ -73,7 +73,7 @@ https://developers.google.com/style/inclusive-documentation
 ### Remove `TaskInstance.log_filepath` attribute
 
 This method returned incorrect values for a long time, because it did not take into account the different
-logger configuration and try retires. We're also starting to support more advanced tools that don't use
+logger configuration and task retries. We have also started supporting more advanced tools that don't use
 files, so it is impossible to determine the correct file path in every case e.g. Stackdriver doesn't use files
 but identifies logs based on labels.  For this reason, we decided to delete this attribute.
 
