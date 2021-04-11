@@ -50,62 +50,60 @@ def __get_timestamp(conn):
 def upgrade():
     """Apply make mssql tables in sync with SQLA models"""
     conn = op.get_bind()
-    if conn.dialect.name == "mssql":
-        op.alter_column(
-            table_name="xcom", column_name="timestamp", type_=__get_timestamp(conn), nullable=False
+    if conn.dialect.name != "mssql":
+        return
+    op.alter_column(table_name="xcom", column_name="timestamp", type_=__get_timestamp(conn), nullable=False)
+    with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
+        task_reschedule_batch_op.alter_column(
+            column_name='end_date', type_=__get_timestamp(conn), nullable=False
         )
-        with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
-            task_reschedule_batch_op.alter_column(
-                column_name='end_date', type_=__get_timestamp(conn), nullable=False
-            )
-            task_reschedule_batch_op.alter_column(
-                column_name='reschedule_date', type_=__get_timestamp(conn), nullable=False
-            )
-            task_reschedule_batch_op.alter_column(
-                column_name='start_date', type_=__get_timestamp(conn), nullable=False
-            )
-        with op.batch_alter_table('task_fail') as task_fail_batch_op:
-            task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
-            task_fail_batch_op.alter_column(
-                column_name="execution_date", type_=__get_timestamp(conn), nullable=False
-            )
-            task_fail_batch_op.create_index(
-                'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
-            )
-        with op.batch_alter_table('task_instance') as task_instance_batch_op:
-            task_instance_batch_op.drop_index('ti_state_lkp')
-            task_instance_batch_op.create_index(
-                'ti_state_lkp', ['dag_id', 'task_id', 'execution_date', 'state'], unique=False
-            )
+        task_reschedule_batch_op.alter_column(
+            column_name='reschedule_date', type_=__get_timestamp(conn), nullable=False
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='start_date', type_=__get_timestamp(conn), nullable=False
+        )
+    with op.batch_alter_table('task_fail') as task_fail_batch_op:
+        task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
+        task_fail_batch_op.alter_column(
+            column_name="execution_date", type_=__get_timestamp(conn), nullable=False
+        )
+        task_fail_batch_op.create_index(
+            'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )
+    with op.batch_alter_table('task_instance') as task_instance_batch_op:
+        task_instance_batch_op.drop_index('ti_state_lkp')
+        task_instance_batch_op.create_index(
+            'ti_state_lkp', ['dag_id', 'task_id', 'execution_date', 'state'], unique=False
+        )
 
 
 def downgrade():
     """Unapply make mssql tables in sync with SQLA models"""
     conn = op.get_bind()
-    if conn.dialect.name == "mssql":
-        op.alter_column(
-            table_name="xcom", column_name="timestamp", type_=__get_timestamp(conn), nullable=True
+    if conn.dialect.name != "mssql":
+        return
+    op.alter_column(table_name="xcom", column_name="timestamp", type_=__get_timestamp(conn), nullable=True)
+    with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
+        task_reschedule_batch_op.alter_column(
+            column_name='end_date', type_=__get_timestamp(conn), nullable=True
         )
-        with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
-            task_reschedule_batch_op.alter_column(
-                column_name='end_date', type_=__get_timestamp(conn), nullable=True
-            )
-            task_reschedule_batch_op.alter_column(
-                column_name='reschedule_date', type_=__get_timestamp(conn), nullable=True
-            )
-            task_reschedule_batch_op.alter_column(
-                column_name='start_date', type_=__get_timestamp(conn), nullable=True
-            )
-        with op.batch_alter_table('task_fail') as task_fail_batch_op:
-            task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
-            task_fail_batch_op.alter_column(
-                column_name="execution_date", type_=__get_timestamp(conn), nullable=False
-            )
-            task_fail_batch_op.create_index(
-                'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
-            )
-        with op.batch_alter_table('task_instance') as task_instance_batch_op:
-            task_instance_batch_op.drop_index('ti_state_lkp')
-            task_instance_batch_op.create_index(
-                'ti_state_lkp', ['dag_id', 'task_id', 'execution_date'], unique=False
-            )
+        task_reschedule_batch_op.alter_column(
+            column_name='reschedule_date', type_=__get_timestamp(conn), nullable=True
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='start_date', type_=__get_timestamp(conn), nullable=True
+        )
+    with op.batch_alter_table('task_fail') as task_fail_batch_op:
+        task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
+        task_fail_batch_op.alter_column(
+            column_name="execution_date", type_=__get_timestamp(conn), nullable=False
+        )
+        task_fail_batch_op.create_index(
+            'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )
+    with op.batch_alter_table('task_instance') as task_instance_batch_op:
+        task_instance_batch_op.drop_index('ti_state_lkp')
+        task_instance_batch_op.create_index(
+            'ti_state_lkp', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )

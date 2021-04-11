@@ -166,20 +166,16 @@ def alter_mssql_datetime2_column(conn, op, table_name, column_name, nullable):
 def upgrade():
     """Change timestamp and datetime to datetime2/datetime when using MSSQL as backend"""
     conn = op.get_bind()
-    if conn.dialect.name == 'mssql':
-        recreate_mssql_ts_column(conn, op, 'dag_code', 'last_updated')
-        recreate_mssql_ts_column(conn, op, 'rendered_task_instance_fields', 'execution_date')
-        # alter_mssql_datetime_column(conn, op, 'chart', 'last_modified', False)
-        alter_mssql_datetime_column(conn, op, 'serialized_dag', 'last_updated', False)
-        # alter_mssql_datetime_column(conn, op, 'known_event', 'start_date', True)
-        # alter_mssql_datetime_column(conn, op, 'known_event', 'end_date', True)
+    if conn.dialect.name != 'mssql':
+        return
+    recreate_mssql_ts_column(conn, op, 'dag_code', 'last_updated')
+    recreate_mssql_ts_column(conn, op, 'rendered_task_instance_fields', 'execution_date')
+    alter_mssql_datetime_column(conn, op, 'serialized_dag', 'last_updated', False)
 
 
 def downgrade():
     """Change datetime2(6) columns back to datetime when using MSSQL as backend"""
     conn = op.get_bind()
-    if conn.dialect.name == 'mssql':
-        alter_mssql_datetime2_column(conn, op, 'chart', 'last_modified', False)
-        alter_mssql_datetime2_column(conn, op, 'serialized_dag', 'last_updated', False)
-        alter_mssql_datetime2_column(conn, op, 'known_event', 'start_date', True)
-        alter_mssql_datetime2_column(conn, op, 'known_event', 'end_date', True)
+    if conn.dialect.name != 'mssql':
+        return
+    alter_mssql_datetime2_column(conn, op, 'serialized_dag', 'last_updated', False)
