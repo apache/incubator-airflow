@@ -200,10 +200,7 @@ amazon = [
 apache_beam = [
     'apache-beam>=2.20.0',
 ]
-asana = [
-    'asana>=0.10',
-    'cached-property>=1.5.2'
-]
+asana = ['asana>=0.10', 'cached-property>=1.5.2']
 async_packages = [
     'eventlet>= 0.9.7',
     'gevent>=0.13',
