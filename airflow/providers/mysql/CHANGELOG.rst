@@ -22,6 +22,20 @@ used with MySQL server 5.6.4 through 5.7.
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Adds 'Trino' provider (with lower memory footprint for tests) (#15187)``
+* ``A bunch of template_fields_renderers additions (#15130)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix autocommit calls for mysql-connector-python (#14869)``
+
 1.0.2
 .....
 

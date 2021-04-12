@@ -19,7 +19,6 @@
 """Task runner for cgroup to run Airflow task"""
 
 import datetime
-import getpass
 import os
 import uuid
 
@@ -28,6 +27,7 @@ from cgroupspy import trees
 
 from airflow.task.task_runner.base_task_runner import BaseTaskRunner
 from airflow.utils.operator_resources import Resources
+from airflow.utils.platform import getuser
 from airflow.utils.process_utils import reap_process_group
 
 
@@ -70,7 +70,7 @@ class CgroupTaskRunner(BaseTaskRunner):
         self.cpu_cgroup_name = None
         self._created_cpu_cgroup = False
         self._created_mem_cgroup = False
-        self._cur_user = getpass.getuser()
+        self._cur_user = getuser()
 
     def _create_cgroup(self, path):
         """

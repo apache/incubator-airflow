@@ -62,7 +62,7 @@ function parse_tests_to_run() {
             "--durations=100"
             "--cov=airflow/"
             "--cov-config=.coveragerc"
-            "--cov-report=xml:files/coverage.xml"
+            "--cov-report=xml:files/coverage=${KIND_CLUSTER_NAME}.xml"
             "--color=yes"
             "--maxfail=50"
             "--pythonwarnings=ignore::DeprecationWarning"
@@ -73,12 +73,12 @@ function parse_tests_to_run() {
 }
 
 function create_virtualenv() {
-    start_end::group_start "Creating virtualenv"
     HOST_PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
     readonly HOST_PYTHON_VERSION
 
-    local virtualenv_path="${BUILD_CACHE_DIR}/.kubernetes_venv_${HOST_PYTHON_VERSION}"
+    local virtualenv_path="${BUILD_CACHE_DIR}/.kubernetes_venv/${KIND_CLUSTER_NAME}_host_python_${HOST_PYTHON_VERSION}"
 
+    mkdir -pv "${BUILD_CACHE_DIR}/.kubernetes_venv/"
     if [[ ! -d ${virtualenv_path} ]]; then
         echo
         echo "Creating virtualenv at ${virtualenv_path}"
@@ -95,14 +95,10 @@ function create_virtualenv() {
 
     pip install -e ".[kubernetes]" \
       --constraint "https://raw.githubusercontent.com/${CONSTRAINTS_GITHUB_REPOSITORY}/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${HOST_PYTHON_VERSION}.txt"
-
-    start_end::group_end
 }
 
 function run_tests() {
-    start_end::group_start "Running K8S tests"
     pytest "${pytest_args[@]}" "${tests_to_run[@]}"
-    start_end::group_end
 }
 
 cd "${AIRFLOW_SOURCES}" || exit 1

@@ -63,7 +63,7 @@ Package apache-airflow-providers-mysql
 `MySQL <https://www.mysql.com/products/>`__
 
 
-Release: 1.0.2
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -114,6 +114,7 @@ Dependent package                                                               
 ======================================================================================================  ===========
 `apache-airflow-providers-amazon <https://airflow.apache.org/docs/apache-airflow-providers-amazon>`_    ``amazon``
 `apache-airflow-providers-presto <https://airflow.apache.org/docs/apache-airflow-providers-presto>`_    ``presto``
+`apache-airflow-providers-trino <https://airflow.apache.org/docs/apache-airflow-providers-trino>`_      ``trino``
 `apache-airflow-providers-vertica <https://airflow.apache.org/docs/apache-airflow-providers-vertica>`_  ``vertica``
 ======================================================================================================  ===========
 
@@ -140,6 +141,20 @@ used with MySQL server 5.6.4 through 5.7.
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Adds 'Trino' provider (with lower memory footprint for tests) (#15187)``
+* ``A bunch of template_fields_renderers additions (#15130)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix autocommit calls for mysql-connector-python (#14869)``
 
 1.0.2
 .....

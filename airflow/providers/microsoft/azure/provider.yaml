@@ -22,6 +22,7 @@ description: |
     `Microsoft Azure <https://azure.microsoft.com/>`__
 
 versions:
+  - 1.3.0
   - 1.2.0
   - 1.1.0
   - 1.0.0

@@ -25,6 +25,24 @@ svg {
   stroke: #51504f;
   stroke-width: 1px;
   fill: #fff;
+  transition: stroke 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.node rect[data-highlight="highlight"] {
+  stroke: #017cee !important;
+}
+
+.edgeLabel {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.edgeLabel > .label {
+  font-weight: normal;
+  font-size: 10px;
+}
+
+.edgeLabel text {
+  transform: translate(16px, 0);
 }
 
 .edgeLabel rect {
@@ -34,6 +52,30 @@ svg {
 .edgePath {
   stroke: #51504f;
   stroke-width: 1px;
+  fill: none;
+  transition: stroke 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.edgePath[data-highlight="fade"],
+.edgePaths[data-highlight="fade"] > .edgePath,
+.edgeLabel[data-highlight="fade"] {
+  opacity: 0.2 !important;
+}
+
+.edgePath[data-highlight="highlight"] {
+  stroke: #017cee;
+}
+
+.edgePath .arrowhead {
+  stroke: none !important;
+  fill: #51504f;
+  stroke-width: 0 !important;
+  transition: fill 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.edgePath[data-highlight="highlight"] .arrowhead {
+  stroke: #017cee;
+  fill: #017cee;
 }
 
 g.cluster rect {
@@ -44,21 +86,30 @@ g.cluster rect {
   opacity: 0.5;
 }
 
+g.node {
+  transition: opacity 0.2s ease-in-out;
+}
+
+g.node[data-highlight="fade"] {
+  opacity: 0.2 !important;
+}
+
 g.node rect {
   stroke: #fff;
-  stroke-width: 3px;
+  stroke-width: 1.5px;
   cursor: pointer;
 }
 
 g.node circle {
   stroke: #51504f;
-  stroke-width: 3px;
+  stroke-width: 1.5px;
   cursor: pointer;
 }
 
 g.node .label {
-  font-size: inherit;
+  font-size: 0.7em;
   font-weight: normal;
+  pointer-events: none;
 }
 
 g.node text {

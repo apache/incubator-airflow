@@ -462,7 +462,6 @@ function build_images::get_docker_image_names() {
 # Also enable experimental features of docker (we need `docker manifest` command)
 function build_image::configure_docker_registry() {
     if [[ ${USE_GITHUB_REGISTRY} == "true" ]]; then
-        start_end::group_start "Determine GitHub Registry token"
         local token=""
         if [[ "${GITHUB_REGISTRY}" == "ghcr.io" ]]; then
             # For now ghcr.io can only authenticate using Personal Access Token with package access scope.
@@ -482,8 +481,6 @@ function build_image::configure_docker_registry() {
             echo
             exit 1
         fi
-        start_end::group_end
-        start_end::group_start "Logging in to GitHub Registry"
         if [[ -z "${token}" ]] ; then
             verbosity::print_info
             verbosity::print_info "Skip logging in to GitHub Registry. No Token available!"
@@ -497,14 +494,9 @@ function build_image::configure_docker_registry() {
         else
             verbosity::print_info "Skip Login to GitHub Registry ${GITHUB_REGISTRY} as token is missing"
         fi
-        start_end::group_end
-
-        start_end::group_start "Make sure experimental docker features are enabled"
         local new_config
         new_config=$(jq '.experimental = "enabled"' "${HOME}/.docker/config.json")
         echo "${new_config}" > "${HOME}/.docker/config.json"
-        start_end::group_end
-
     fi
 }
 
@@ -861,9 +853,10 @@ function build_images::build_prod_images() {
     build_images::print_build_info
 
     if [[ ${SKIP_BUILDING_PROD_IMAGE} == "true" ]]; then
-        verbosity::print_info
-        verbosity::print_info "Skip building production image. Assume the one we have is good!"
-        verbosity::print_info
+        echo
+        echo "${COLOR_YELLOW}Skip building production image. Assume the one we have is good!${COLOR_RESET}"
+        echo "${COLOR_YELLOW}You must run './breeze build-image --production-image before for all python versions!${COLOR_RESET}"
+        echo
         return
     fi
 
@@ -978,12 +971,6 @@ function build_images::build_prod_images() {
     fi
 }
 
-function build_images::build_prod_images_with_group() {
-    start_end::group_start "Build PROD images ${AIRFLOW_PROD_BUILD_IMAGE}"
-    build_images::build_prod_images
-    start_end::group_end
-}
-
 # Waits for image tag to appear in GitHub Registry, pulls it and tags with the target tag
 # Parameters:
 #  $1 - image name to wait for
@@ -1084,7 +1071,7 @@ function build_images::build_prod_images_from_locally_built_airflow_packages() {
     build_airflow_packages::build_airflow_packages
     mv "${AIRFLOW_SOURCES}/dist/"* "${AIRFLOW_SOURCES}/docker-context-files/"
 
-    build_images::build_prod_images_with_group
+    build_images::build_prod_images
 }
 
 # Useful information for people who stumble upon a pip check failure

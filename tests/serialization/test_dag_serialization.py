@@ -144,6 +144,7 @@ serialized_simple_dag_ground_truth = {
                 }
             },
         },
+        "edge_info": {},
     },
 }
 
@@ -303,7 +304,6 @@ class TestStringifiedDAGs(unittest.TestCase):
 
         assert sorted_serialized_dag(ground_truth_dag) == sorted_serialized_dag(json_dag)
 
-    @pytest.mark.quarantined
     def test_deserialization_across_process(self):
         """A serialized DAG can be deserialized in another process."""
 
@@ -956,6 +956,27 @@ class TestStringifiedDAGs(unittest.TestCase):
                 check_task_group(child)
 
         check_task_group(serialized_dag.task_group)
+
+    def test_edge_info_serialization(self):
+        """
+        Tests edge_info serialization/deserialization.
+        """
+        from airflow.operators.dummy import DummyOperator
+        from airflow.utils.edgemodifier import Label
+
+        with DAG("test_edge_info_serialization", start_date=datetime(2020, 1, 1)) as dag:
+            task1 = DummyOperator(task_id="task1")
+            task2 = DummyOperator(task_id="task2")
+            task1 >> Label("test label") >> task2  # pylint: disable=W0106
+
+        dag_dict = SerializedDAG.to_dict(dag)
+        SerializedDAG.validate_schema(dag_dict)
+        json_dag = SerializedDAG.from_json(SerializedDAG.to_json(dag))
+        self.validate_deserialized_dag(json_dag, dag)
+
+        serialized_dag = SerializedDAG.deserialize_dag(SerializedDAG.serialize_dag(dag))
+
+        assert serialized_dag.edge_info == dag.edge_info
 
     @parameterized.expand(
         [

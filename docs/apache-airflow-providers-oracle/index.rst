@@ -56,7 +56,7 @@ Package apache-airflow-providers-oracle
 `Oracle <https://www.oracle.com/en/database/>`__
 
 
-Release: 1.0.1
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -108,6 +108,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``A bunch of template_fields_renderers additions (#15130)``
 
 1.0.1
 .....

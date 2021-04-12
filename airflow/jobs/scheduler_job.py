@@ -31,7 +31,7 @@ from collections import defaultdict
 from contextlib import redirect_stderr, redirect_stdout, suppress
 from datetime import timedelta
 from multiprocessing.connection import Connection as MultiprocessingConnection
-from typing import Any, Callable, DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Callable, DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 from setproctitle import setproctitle
 from sqlalchemy import and_, func, not_, or_, tuple_
@@ -678,10 +678,6 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
     If so, it creates appropriate TaskInstances and sends run commands to the
     executor. It does this for each task in each DAG and repeats.
 
-    :param dag_id: if specified, only schedule tasks with this DAG ID
-    :type dag_id: str
-    :param dag_ids: if specified, only schedule tasks with these DAG IDs
-    :type dag_ids: list[str]
     :param subdir: directory containing Python files with Airflow DAG
         definitions, or a specific path to a file
     :type subdir: str
@@ -698,6 +694,8 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
     :param do_pickle: once a DAG object is obtained by executing the Python
         file, whether to serialize the DAG object to the DB
     :type do_pickle: bool
+    :param log: override the default Logger
+    :type log: logging.Logger
     """
 
     __mapper_args__ = {'polymorphic_identity': 'SchedulerJob'}
@@ -710,7 +708,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         num_times_parse_dags: int = -1,
         processor_poll_interval: float = conf.getfloat('scheduler', 'processor_poll_interval'),
         do_pickle: bool = False,
-        log: Any = None,
+        log: logging.Logger = None,
         *args,
         **kwargs,
     ):
@@ -1300,13 +1298,19 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                 )
                 models.DAG.deactivate_stale_dags(execute_start_time)
 
-            self.executor.end()
-
             settings.Session.remove()  # type: ignore
         except Exception:  # pylint: disable=broad-except
             self.log.exception("Exception when executing SchedulerJob._run_scheduler_loop")
+            raise
         finally:
-            self.processor_agent.end()
+            try:
+                self.executor.end()
+            except Exception:  # pylint: disable=broad-except
+                self.log.exception("Exception when executing Executor.end")
+            try:
+                self.processor_agent.end()
+            except Exception:  # pylint: disable=broad-except
+                self.log.exception("Exception when executing DagFileProcessorAgent.end")
             self.log.info("Exited execute loop")
 
     @staticmethod

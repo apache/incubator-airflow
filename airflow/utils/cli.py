@@ -18,7 +18,6 @@
 #
 """Utilities module for cli"""
 import functools
-import getpass
 import json
 import logging
 import os
@@ -35,7 +34,7 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, cast
 from airflow import settings
 from airflow.exceptions import AirflowException
 from airflow.utils import cli_action_loggers
-from airflow.utils.platform import is_terminal_support_colors
+from airflow.utils.platform import getuser, is_terminal_support_colors
 from airflow.utils.session import provide_session
 
 T = TypeVar("T", bound=Callable)  # pylint: disable=invalid-name
@@ -131,7 +130,7 @@ def _build_metrics(func_name, namespace):
         'sub_command': func_name,
         'start_datetime': datetime.utcnow(),
         'full_command': f'{full_command}',
-        'user': getpass.getuser(),
+        'user': getuser(),
     }
 
     if not isinstance(namespace, Namespace):

@@ -1400,7 +1400,11 @@ CONFIG_COMMANDS = (
 KUBERNETES_COMMANDS = (
     ActionCommand(
         name='cleanup-pods',
-        help="Clean up Kubernetes pods in evicted/failed/succeeded states",
+        help=(
+            "Clean up Kubernetes pods "
+            "(created by KubernetesExecutor/KubernetesPodOperator) "
+            "in evicted/failed/succeeded states"
+        ),
         func=lazy_load_command('airflow.cli.commands.kubernetes_command.cleanup_pods'),
         args=(ARG_NAMESPACE,),
     ),

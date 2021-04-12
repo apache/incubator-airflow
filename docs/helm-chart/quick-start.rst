@@ -23,13 +23,12 @@ This article will show you how to install Airflow using Helm Chart on `Kind <htt
 Install kind, and create a cluster
 ----------------------------------
 
-We recommend testing with Kubernetes 1.15, as this image doesn’t support
-Kubernetes 1.16+ for CeleryExecutor presently.
+We recommend testing with Kubernetes 1.16+, example:
 
 .. code-block:: bash
 
    kind create cluster \
-     --image kindest/node:v1.15.7@sha256:e2df133f80ef633c53c0200114fce2ed5e1f6947477dbc83261a6a921169488d
+     --image kindest/node:v1.18.15
 
 Confirm it’s up:
 

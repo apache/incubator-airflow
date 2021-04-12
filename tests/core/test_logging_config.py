@@ -137,21 +137,18 @@ def settings_context(content, directory=None, name='LOGGING_CONFIG'):
         settings_root = tempfile.mkdtemp()
         filename = f"{SETTINGS_DEFAULT_NAME}.py"
         if directory:
-            # Replace slashes by dots
-            module = directory.replace('/', '.') + '.' + SETTINGS_DEFAULT_NAME + '.' + name
-
-            # Create the directory structure
+            # Create the directory structure with __init__.py
             dir_path = os.path.join(settings_root, directory)
             pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
-            # Add the __init__ for the directories
-            # This is required for Python 2.7
             basedir = settings_root
             for part in directory.split('/'):
                 open(os.path.join(basedir, '__init__.py'), 'w').close()
                 basedir = os.path.join(basedir, part)
             open(os.path.join(basedir, '__init__.py'), 'w').close()
 
+            # Replace slashes by dots
+            module = directory.replace('/', '.') + '.' + SETTINGS_DEFAULT_NAME + '.' + name
             settings_file = os.path.join(dir_path, filename)
         else:
             module = SETTINGS_DEFAULT_NAME + '.' + name

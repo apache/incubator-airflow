@@ -15,7 +15,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.providers.google.cloud.operators.translate_speech`."""
+"""
+This module is deprecated.
+Please use :mod:`airflow.providers.google.cloud.operators.translate_speech`.
+"""
 
 import warnings
 

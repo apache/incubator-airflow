@@ -56,7 +56,7 @@ Package apache-airflow-providers-hashicorp
 Hashicorp including `Hashicorp Vault <https://www.vaultproject.io/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -127,6 +127,14 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug Fixes
+~~~~~~~~~
+
+* ``Fix deprecated warning hvac auth (#15216)``
 
 1.0.1
 .....

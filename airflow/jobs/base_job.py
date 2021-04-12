@@ -17,7 +17,6 @@
 # under the License.
 #
 
-import getpass
 from time import sleep
 from typing import Optional
 
@@ -37,6 +36,7 @@ from airflow.utils import timezone
 from airflow.utils.helpers import convert_camel_to_snake
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.net import get_hostname
+from airflow.utils.platform import getuser
 from airflow.utils.session import create_session, provide_session
 from airflow.utils.sqlalchemy import UtcDateTime
 from airflow.utils.state import State
@@ -100,7 +100,7 @@ class BaseJob(Base, LoggingMixin):
         self.latest_heartbeat = timezone.utcnow()
         if heartrate is not None:
             self.heartrate = heartrate
-        self.unixname = getpass.getuser()
+        self.unixname = getuser()
         self.max_tis_per_query = conf.getint('scheduler', 'max_tis_per_query')
         super().__init__(*args, **kwargs)
 

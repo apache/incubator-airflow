@@ -22,6 +22,7 @@ description: |
     `Windows Remote Management (WinRM) <https://docs.microsoft.com/en-us/windows/win32/winrm/portal>`__
 
 versions:
+  - 1.1.0
   - 1.0.1
   - 1.0.0
 

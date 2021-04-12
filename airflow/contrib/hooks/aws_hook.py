@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.providers.amazon.aws.hooks.base_aws`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.amazon.aws.hooks.base_aws`."""
 
 import warnings
 
@@ -30,7 +30,10 @@ warnings.warn(
 
 
 class AwsHook(AwsBaseHook):
-    """This class is deprecated. Please use `airflow.providers.amazon.aws.hooks.base_aws.AwsBaseHook`."""
+    """
+    This class is deprecated.
+    Please use :class:`airflow.providers.amazon.aws.hooks.base_aws.AwsBaseHook`.
+    """
 
     def __init__(self, *args, **kwargs):
         warnings.warn(

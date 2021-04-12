@@ -66,6 +66,7 @@ from airflow.ti_deps.deps.prev_dagrun_dep import PrevDagrunDep
 from airflow.ti_deps.deps.trigger_rule_dep import TriggerRuleDep
 from airflow.utils import timezone
 from airflow.utils.decorators import apply_defaults
+from airflow.utils.edgemodifier import EdgeModifier
 from airflow.utils.helpers import validate_key
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.operator_resources import Resources
@@ -1205,6 +1206,7 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
         self,
         task_or_task_list: Union[TaskMixin, Sequence[TaskMixin]],
         upstream: bool = False,
+        edge_modifier: Optional[EdgeModifier] = None,
     ) -> None:
         """Sets relatives for the task or task list."""
         if not isinstance(task_or_task_list, Sequence):
@@ -1259,23 +1261,35 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
             if upstream:
                 task.add_only_new(task.get_direct_relative_ids(upstream=False), self.task_id)
                 self.add_only_new(self._upstream_task_ids, task.task_id)
+                if edge_modifier:
+                    edge_modifier.add_edge_info(self.dag, task.task_id, self.task_id)
             else:
                 self.add_only_new(self._downstream_task_ids, task.task_id)
                 task.add_only_new(task.get_direct_relative_ids(upstream=True), self.task_id)
+                if edge_modifier:
+                    edge_modifier.add_edge_info(self.dag, self.task_id, task.task_id)
 
-    def set_downstream(self, task_or_task_list: Union[TaskMixin, Sequence[TaskMixin]]) -> None:
+    def set_downstream(
+        self,
+        task_or_task_list: Union[TaskMixin, Sequence[TaskMixin]],
+        edge_modifier: Optional[EdgeModifier] = None,
+    ) -> None:
         """
         Set a task or a task list to be directly downstream from the current
         task. Required by TaskMixin.
         """
-        self._set_relatives(task_or_task_list, upstream=False)
+        self._set_relatives(task_or_task_list, upstream=False, edge_modifier=edge_modifier)
 
-    def set_upstream(self, task_or_task_list: Union[TaskMixin, Sequence[TaskMixin]]) -> None:
+    def set_upstream(
+        self,
+        task_or_task_list: Union[TaskMixin, Sequence[TaskMixin]],
+        edge_modifier: Optional[EdgeModifier] = None,
+    ) -> None:
         """
         Set a task or a task list to be directly upstream from the current
         task. Required by TaskMixin.
         """
-        self._set_relatives(task_or_task_list, upstream=True)
+        self._set_relatives(task_or_task_list, upstream=True, edge_modifier=edge_modifier)
 
     @property
     def output(self):

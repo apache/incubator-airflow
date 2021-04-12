@@ -1049,6 +1049,13 @@
                     "description": "Maximum clients that can connect to pgbouncer (higher = more file descriptors).",
                     "type": "integer"
                 },
+                "configSecretName": {
+                    "description": "The PgBouncer config secret name.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
                 "podDisruptionBudget": {
                     "description": "Pgbouner pod disruption budget.",
                     "type": "object",
@@ -1417,6 +1424,10 @@
                     "properties": {
                         "enabled": {
                             "description": "Enable Git sync.",
+                            "type": "boolean"
+                        },
+                        "excludeWebserver": {
+                            "description": "Disable Git sync on webserver as it is not needed when DAG Serialization is enabled.",
                             "type": "boolean"
                         },
                         "repo": {

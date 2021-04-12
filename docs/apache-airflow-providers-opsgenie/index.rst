@@ -50,7 +50,7 @@ Package apache-airflow-providers-opsgenie
 `Opsgenie <https://www.opsgenie.com/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -112,6 +112,14 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug Fixes
+~~~~~~~~~
+
+* ``Fix type hints in OpsgenieAlertOperator (#14637)``
 
 1.0.1
 .....

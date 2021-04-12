@@ -18,6 +18,7 @@ import unittest
 from unittest import mock
 
 import pytest
+from kubernetes.client.rest import ApiException
 from requests.exceptions import BaseHTTPError
 
 from airflow.exceptions import AirflowException
@@ -206,3 +207,31 @@ class TestPodLauncher(unittest.TestCase):
 
         with pytest.raises(Exception):
             self.pod_launcher.parse_log_line('2020-10-08T14:16:17.793417674ZInvalidmessage\n')
+
+    @mock.patch("airflow.providers.cncf.kubernetes.utils.pod_launcher.PodLauncher.run_pod_async")
+    def test_start_pod_retries_on_409_error(self, mock_run_pod_async):
+        mock_run_pod_async.side_effect = [
+            ApiException(status=409),
+            mock.MagicMock(),
+        ]
+        self.pod_launcher.start_pod(mock.sentinel)
+        assert mock_run_pod_async.call_count == 2
+
+    @mock.patch("airflow.providers.cncf.kubernetes.utils.pod_launcher.PodLauncher.run_pod_async")
+    def test_start_pod_fails_on_other_exception(self, mock_run_pod_async):
+        mock_run_pod_async.side_effect = [ApiException(status=504)]
+        with pytest.raises(ApiException):
+            self.pod_launcher.start_pod(mock.sentinel)
+
+    @mock.patch("airflow.providers.cncf.kubernetes.utils.pod_launcher.PodLauncher.run_pod_async")
+    def test_start_pod_retries_three_times(self, mock_run_pod_async):
+        mock_run_pod_async.side_effect = [
+            ApiException(status=409),
+            ApiException(status=409),
+            ApiException(status=409),
+            ApiException(status=409),
+        ]
+        with pytest.raises(ApiException):
+            self.pod_launcher.start_pod(mock.sentinel)
+
+        assert mock_run_pod_async.call_count == 3

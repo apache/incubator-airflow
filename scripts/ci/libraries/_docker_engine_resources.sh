@@ -19,10 +19,16 @@
 
 function docker_engine_resources::print_overall_stats() {
     echo
-    echo "Overall resource statistics"
+    echo "Docker statistics"
     echo
     docker stats --all --no-stream --no-trunc
-    docker run --rm --entrypoint /bin/bash "debian:buster-slim" -c "cat /proc/meminfo"
+    echo
+    echo "Memory statistics"
+    echo
+    docker run --rm --entrypoint /bin/sh "alpine:latest" -c "free -m"
+    echo
+    echo "Disk statistics"
+    echo
     df -h || true
 }
 

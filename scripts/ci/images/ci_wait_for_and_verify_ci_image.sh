@@ -31,7 +31,6 @@ shift
 function pull_ci_image() {
     local image_name_with_tag="${GITHUB_REGISTRY_AIRFLOW_CI_IMAGE}:${GITHUB_REGISTRY_PULL_IMAGE_TAG}"
     start_end::group_start "Pulling ${image_name_with_tag} image"
-
     push_pull_remove_images::pull_image_github_dockerhub "${AIRFLOW_CI_IMAGE}" "${image_name_with_tag}"
     start_end::group_end
 
@@ -39,7 +38,9 @@ function pull_ci_image() {
 
 push_pull_remove_images::check_if_github_registry_wait_for_image_enabled
 
+start_end::group_start "Configure Docker Registry"
 build_image::configure_docker_registry
+start_end::group_end
 
 export AIRFLOW_CI_IMAGE_NAME="${BRANCH_NAME}-python${PYTHON_MAJOR_MINOR_VERSION}-ci"
 

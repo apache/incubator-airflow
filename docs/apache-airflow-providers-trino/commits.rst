@@ -16,6 +16,7 @@
     specific language governing permissions and limitations
     under the License.
 
+
 Package apache-airflow-providers-trino
 ------------------------------------------------------
 
@@ -24,3 +25,16 @@ Package apache-airflow-providers-trino
 
 This is detailed commit list of changes for versions provider package: ``trino``.
 For high-level changelog, see :doc:`package information including changelog <index>`.
+
+
+
+1.0.0
+.....
+
+Latest change: 2021-04-06
+
+================================================================================================  ===========  ==========================================================================
+Commit                                                                                            Committed    Subject
+================================================================================================  ===========  ==========================================================================
+`eae22cec9 <https://github.com/apache/airflow/commit/eae22cec9c87e8dad4d6e8599e45af1bdd452062>`_  2021-04-06   ``Adds 'Trino' provider (with lower memory footprint for tests) (#15187)``
+================================================================================================  ===========  ==========================================================================

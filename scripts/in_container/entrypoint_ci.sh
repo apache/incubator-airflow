@@ -210,7 +210,7 @@ if [[ "${RUN_TESTS}" != "true" ]]; then
 fi
 set -u
 
-export RESULT_LOG_FILE="/files/test_result-${TEST_TYPE}.xml"
+export RESULT_LOG_FILE="/files/test_result-${TEST_TYPE}-${BACKEND}.xml"
 
 EXTRA_PYTEST_ARGS=(
     "--verbosity=0"
@@ -218,7 +218,7 @@ EXTRA_PYTEST_ARGS=(
     "--durations=100"
     "--cov=airflow/"
     "--cov-config=.coveragerc"
-    "--cov-report=xml:/files/coverage.xml"
+    "--cov-report=xml:/files/coverage-${TEST_TYPE}-${BACKEND}.xml"
     "--color=yes"
     "--maxfail=50"
     "--pythonwarnings=ignore::DeprecationWarning"

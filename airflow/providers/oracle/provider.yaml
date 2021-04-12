@@ -22,6 +22,7 @@ description: |
     `Oracle <https://www.oracle.com/en/database/>`__
 
 versions:
+  - 1.1.0
   - 1.0.1
   - 1.0.0
 

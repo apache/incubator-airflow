@@ -15,7 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import getpass
 import logging
 import os
 import time
@@ -30,6 +29,7 @@ from airflow.jobs.local_task_job import LocalTaskJob
 from airflow.models import TaskInstance as TI
 from airflow.task.task_runner.standard_task_runner import StandardTaskRunner
 from airflow.utils import timezone
+from airflow.utils.platform import getuser
 from airflow.utils.state import State
 from tests.test_utils.db import clear_db_runs
 
@@ -105,7 +105,7 @@ class TestStandardTaskRunner:
     def test_start_and_terminate_run_as_user(self):
         local_task_job = mock.Mock()
         local_task_job.task_instance = mock.MagicMock()
-        local_task_job.task_instance.run_as_user = getpass.getuser()
+        local_task_job.task_instance.run_as_user = getuser()
         local_task_job.task_instance.command_as_list.return_value = [
             'airflow',
             'tasks',
@@ -142,7 +142,7 @@ class TestStandardTaskRunner:
         # Set up mock task
         local_task_job = mock.Mock()
         local_task_job.task_instance = mock.MagicMock()
-        local_task_job.task_instance.run_as_user = getpass.getuser()
+        local_task_job.task_instance.run_as_user = getuser()
         local_task_job.task_instance.command_as_list.return_value = [
             'airflow',
             'tasks',

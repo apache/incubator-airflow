@@ -31,11 +31,12 @@ For high-level changelog, see :doc:`package information including changelog <ind
 2.0.0
 .....
 
-Latest change: 2021-02-27
+Latest change: 2021-03-20
 
 ================================================================================================  ===========  ===================================================================
 Commit                                                                                            Committed    Subject
 ================================================================================================  ===========  ===================================================================
+`68e4c4dcb <https://github.com/apache/airflow/commit/68e4c4dcb0416eb51a7011a3bb040f1e23d7bba8>`_  2021-03-20   ``Remove Backport Providers (#14886)``
 `589d6dec9 <https://github.com/apache/airflow/commit/589d6dec922565897785bcbc5ac6bb3b973d7f5d>`_  2021-02-27   ``Prepare to release the next wave of providers: (#14487)``
 `45e72ca83 <https://github.com/apache/airflow/commit/45e72ca83049a7db526b1f0fbd94c75f5f92cc75>`_  2021-02-25   ``Add Tableau provider separate from Salesforce Provider (#14030)``
 ================================================================================================  ===========  ===================================================================

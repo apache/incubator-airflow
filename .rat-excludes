@@ -72,7 +72,7 @@ node_modules/*
 coverage/*
 git_version
 flake8_diff.sh
-coverage.xml
+coverage*.xml
 _sources/*
 
 rat-results.txt

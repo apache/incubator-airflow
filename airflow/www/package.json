@@ -60,6 +60,7 @@
     "bootstrap-3-typeahead": "^4.0.2",
     "codemirror": "^5.59.1",
     "d3": "^3.4.4",
+    "d3-shape": "^2.1.0",
     "d3-tip": "^0.9.1",
     "dagre-d3": "^0.6.4",
     "datatables.net": "^1.10.23",

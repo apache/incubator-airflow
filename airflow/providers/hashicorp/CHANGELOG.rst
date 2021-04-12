@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.0.2
+.....
+
+Bug Fixes
+~~~~~~~~~
+
+* ``Fix deprecated warning hvac auth (#15216)``
+
 1.0.1
 .....
 

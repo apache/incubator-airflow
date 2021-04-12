@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Add privileged option in DockerOperator (#14157)``
+
 1.0.2
 .....
 

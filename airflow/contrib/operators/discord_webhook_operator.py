@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.providers.discord.operators.discord_webhook`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.discord.operators.discord_webhook`."""
 
 import warnings
 

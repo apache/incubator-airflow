@@ -156,6 +156,10 @@ def render_dag(dag: DAG, tis: Optional[List[TaskInstance]] = None) -> graphviz.D
     _draw_nodes(dag.task_group, dot, states_by_task_id)
 
     for edge in dag_edges(dag):
-        dot.edge(edge["source_id"], edge["target_id"])
+        # Gets an optional label for the edge; this will be None if none is specified.
+        label = dag.get_edge_info(edge["source_id"], edge["target_id"]).get("label")
+        # Add the edge to the graph with optional label
+        # (we can just use the maybe-None label variable directly)
+        dot.edge(edge["source_id"], edge["target_id"], label)
 
     return dot

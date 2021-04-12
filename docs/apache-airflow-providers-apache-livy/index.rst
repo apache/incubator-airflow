@@ -50,7 +50,7 @@ Package apache-airflow-providers-apache-livy
 `Apache Livy <https://livy.apache.org/>`__
 
 
-Release: 1.0.1
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -113,12 +113,21 @@ Dependent package                                                               
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Extend HTTP extra_options to LivyHook and operator (#14816)``
+
+
 1.0.1
 .....
 
-Updated documentation and readme files.
+* ``Updated documentation and readme files.``
 
 1.0.0
 .....
 
-Initial version of the provider.
+* ``Initial version of the provider.``

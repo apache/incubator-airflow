@@ -53,7 +53,7 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
         self.end_of_log_mark = 'end_of_log\n'
         self.write_stdout = False
         self.json_format = False
-        self.json_fields = 'asctime,filename,lineno,levelname,message'
+        self.json_fields = 'asctime,filename,lineno,levelname,message,exc_text'
         self.es_task_handler = ElasticsearchTaskHandler(
             self.local_log_location,
             self.filename_template,
@@ -103,7 +103,7 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
             self.write_stdout,
             self.json_format,
             self.json_fields,
-            es_conf,
+            es_kwargs=es_conf,
         )
 
     def test_read(self):
@@ -253,7 +253,9 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
 
     def test_read_with_json_format(self):
         ts = pendulum.now()
-        formatter = logging.Formatter('[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s - %(exc_text)s'
+        )
         self.es_task_handler.formatter = formatter
         self.es_task_handler.json_format = True
 
@@ -272,7 +274,7 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
         logs, _ = self.es_task_handler.read(
             self.ti, 1, {'offset': 0, 'last_log_timestamp': str(ts), 'end_of_log': False}
         )
-        assert "[2020-12-24 19:25:00,962] {taskinstance.py:851} INFO - some random stuff" == logs[0][0][1]
+        assert "[2020-12-24 19:25:00,962] {taskinstance.py:851} INFO - some random stuff - " == logs[0][0][1]
 
     def test_close(self):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

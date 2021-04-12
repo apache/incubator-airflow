@@ -15,7 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 # Might be empty
 AIRFLOW_COMMAND="${1}"
 
@@ -244,6 +243,47 @@ function exec_to_bash_or_python_command_if_specified() {
     fi
 }
 
+function check_uid_gid() {
+    if [[ $(id -g) == "0" ]]; then
+        return
+    fi
+    if [[ $(id -u) == "50000" ]]; then
+        >&2 echo
+        >&2 echo "WARNING! You should run the image with GID (Group ID) set to 0"
+        >&2 echo "         even if you use 'airflow' user (UID=50000)"
+        >&2 echo
+        >&2 echo " You started the image with UID=$(id -u) and GID=$(id -g)"
+        >&2 echo
+        >&2 echo " This is to make sure you can run the image with an arbitrary UID in the future."
+        >&2 echo
+        >&2 echo " See more about it in the Airflow's docker image documentation"
+        >&2 echo "     http://airflow.apache.org/docs/docker-stack/entrypoint"
+        >&2 echo
+        # We still allow the image to run with `airflow` user.
+        return
+    else
+        >&2 echo
+        >&2 echo "ERROR! You should run the image with GID=0"
+        >&2 echo
+        >&2 echo " You started the image with UID=$(id -u) and GID=$(id -g)"
+        >&2 echo
+        >&2 echo "The image should always be run with GID (Group ID) set to 0 regardless of the UID used."
+        >&2 echo " This is to make sure you can run the image with an arbitrary UID."
+        >&2 echo
+        >&2 echo " See more about it in the Airflow's docker image documentation"
+        >&2 echo "     http://airflow.apache.org/docs/docker-stack/entrypoint"
+        # This will not work so we fail hard
+        exit 1
+    fi
+}
+
+check_uid_gid
+
+# Set umask to 0002 to make all the directories created by the current user group-writeable
+# This allows the same directories to be writeable for any arbitrary user the image will be
+# run with, when the directory is created on a mounted volume and when that volume is later
+# reused with a different UID (but with GID=0)
+umask 0002
 
 CONNECTION_CHECK_MAX_COUNT=${CONNECTION_CHECK_MAX_COUNT:=20}
 readonly CONNECTION_CHECK_MAX_COUNT

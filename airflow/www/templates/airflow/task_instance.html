@@ -25,14 +25,8 @@
   <hr>
   <br>
   <h4>
-    <form method="get" id="daform" action="#">
-      <input type="hidden" name="dag_id" value="{{ dag.dag_id }}">
-      <input type="hidden" value="{{ task_id }}" name="task_id">
-      <div class="form-inline">
-        <span class="text-muted">Task Instance:</span> <span>{{ task_id }}</span>
-        <span class="text-muted">at</span> {{ form.execution_date(class_="form-control") }}
-      </div>
-    </form>
+    <span class="text-muted">Task Instance:</span> <span>{{ task_id }}</span>
+    <span class="text-muted">at</span> <span id="ti_execution_date">{{ execution_date }}</span>
   </h4>
   <ul class="nav nav-pills">
     <li><a href="{{ url_for('Airflow.task', dag_id=dag.dag_id, task_id=task_id, execution_date=execution_date) }}">

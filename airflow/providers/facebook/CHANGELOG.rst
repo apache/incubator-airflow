@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Use built-in 'cached_property' on Python 3.8 where possible (#14606)``
+
 1.0.1
 .....
 

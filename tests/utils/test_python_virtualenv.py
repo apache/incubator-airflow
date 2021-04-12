@@ -19,7 +19,7 @@
 import unittest
 from unittest import mock
 
-from airflow.utils.python_virtualenv import prepare_virtualenv
+from airflow.utils.python_virtualenv import prepare_virtualenv, remove_task_decorator
 
 
 class TestPrepareVirtualenv(unittest.TestCase):
@@ -54,3 +54,25 @@ class TestPrepareVirtualenv(unittest.TestCase):
         mock_execute_in_subprocess.assert_any_call(['virtualenv', '/VENV', '--python=pythonVER'])
 
         mock_execute_in_subprocess.assert_called_with(['/VENV/bin/pip', 'install', 'apache-beam[gcp]'])
+
+    def test_remove_task_decorator(self):
+
+        py_source = "@task.virtualenv(use_dill=True)\ndef f():\nimport funcsigs"
+        res = remove_task_decorator(python_source=py_source, task_decorator_name="@task.virtualenv")
+        assert res == "def f():\nimport funcsigs"
+
+    def test_remove_decorator_no_parens(self):
+
+        py_source = "@task.virtualenv\ndef f():\nimport funcsigs"
+        res = remove_task_decorator(python_source=py_source, task_decorator_name="@task.virtualenv")
+        assert res == "def f():\nimport funcsigs"
+
+    def test_remove_decorator_nested(self):
+
+        py_source = "@foo\n@task.virtualenv\n@bar\ndef f():\nimport funcsigs"
+        res = remove_task_decorator(python_source=py_source, task_decorator_name="@task.virtualenv")
+        assert res == "@foo\n@bar\ndef f():\nimport funcsigs"
+
+        py_source = "@foo\n@task.virtualenv()\n@bar\ndef f():\nimport funcsigs"
+        res = remove_task_decorator(python_source=py_source, task_decorator_name="@task.virtualenv")
+        assert res == "@foo\n@bar\ndef f():\nimport funcsigs"

@@ -384,8 +384,8 @@ pagerduty = [
     'pdpyras>=4.1.2,<5',
 ]
 papermill = [
-    'nteract-scrapbook[all]>=0.3.1',
     'papermill[all]>=1.2.1',
+    'scrapbook[all]',
 ]
 password = [
     'bcrypt>=2.0.0',

@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.hooks.base`."""
+"""This module is deprecated. Please use :mod:`airflow.hooks.base`."""
 
 import warnings
 

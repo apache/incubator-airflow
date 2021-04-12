@@ -56,7 +56,7 @@ Package apache-airflow-providers-ssh
 `Secure Shell (SSH) <https://tools.ietf.org/html/rfc4251>`__
 
 
-Release: 1.2.0
+Release: 1.3.0
 
 Provider package
 ----------------
@@ -110,6 +110,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.3.0
+.....
+
+Features
+~~~~~~~~
+
+* ``A bunch of template_fields_renderers additions (#15130)``
 
 1.2.0
 .....

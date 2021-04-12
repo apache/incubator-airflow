@@ -19,6 +19,20 @@
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``WinRM Operator: Fix stout decoding issue (#13153)``
+
+Bug Fixes
+~~~~~~~~~
+
+* ``WinRM Operator: Fix stout decoding issue (#13153)``
+
+
 1.0.1
 .....
 

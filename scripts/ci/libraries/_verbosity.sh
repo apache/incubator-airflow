@@ -40,7 +40,7 @@ function verbosity::restore_exit_on_error_status() {
 # printed before execution. In case of DRY_RUN_DOCKER flag set to "true"
 # show the command to execute instead of executing them
 function docker_v {
-    if [[ ${DRY_RUN_DOCKER} != "false" ]]; then
+    if [[ ${DRY_RUN_DOCKER=} != "false" ]]; then
         echo
         echo "${COLOR_CYAN}docker" "${@}" "${COLOR_RESET}"
         echo

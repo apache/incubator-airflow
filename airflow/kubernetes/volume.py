@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `kubernetes.client.models.V1Volume`."""
+"""This module is deprecated. Please use :mod:`kubernetes.client.models.V1Volume`."""
 # flake8: noqa
 # pylint: disable=unused-import
 

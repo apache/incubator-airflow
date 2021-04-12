@@ -15,16 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from typing import Callable, Dict, Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
-from airflow.decorators.base import BaseDecoratedOperator, task_decorator_factory
-from airflow.exceptions import AirflowException
+from airflow.decorators.base import DecoratedOperator, task_decorator_factory
+from airflow.operators.python import PythonOperator
 from airflow.utils.decorators import apply_defaults
 
-PYTHON_OPERATOR_UI_COLOR = '#ffefeb'
 
-
-class _PythonDecoratedOperator(BaseDecoratedOperator):
+class _PythonDecoratedOperator(DecoratedOperator, PythonOperator):
     """
     Wraps a Python callable and captures args/kwargs when called for execution.
 
@@ -45,8 +43,6 @@ class _PythonDecoratedOperator(BaseDecoratedOperator):
     template_fields = ('op_args', 'op_kwargs')
     template_fields_renderers = {"op_args": "py", "op_kwargs": "py"}
 
-    ui_color = PYTHON_OPERATOR_UI_COLOR
-
     # since we won't mutate the arguments, we should just do the shallow copy
     # there are some cases we can't deepcopy the objects (e.g protobuf).
     shallow_copy_attrs = ('python_callable',)
@@ -56,27 +52,13 @@ class _PythonDecoratedOperator(BaseDecoratedOperator):
         self,
         **kwargs,
     ) -> None:
-        super().__init__(**kwargs)
+        kwargs_to_upstream = {
+            "python_callable": kwargs["python_callable"],
+            "op_args": kwargs["op_args"],
+            "op_kwargs": kwargs["op_kwargs"],
+        }
 
-    def execute(self, context: Dict):
-        return_value = self.python_callable(*self.op_args, **self.op_kwargs)
-        self.log.debug("Done. Returned value was: %s", return_value)
-        if not self.multiple_outputs:
-            return return_value
-        if isinstance(return_value, dict):
-            for key in return_value.keys():
-                if not isinstance(key, str):
-                    raise AirflowException(
-                        'Returned dictionary keys must be strings when using '
-                        f'multiple_outputs, found {key} ({type(key)}) instead'
-                    )
-            for key, value in return_value.items():
-                self.xcom_push(context, key, value)
-        else:
-            raise AirflowException(
-                f'Returned output was type {type(return_value)} expected dictionary ' 'for multiple_outputs'
-            )
-        return return_value
+        super().__init__(kwargs_to_upstream=kwargs_to_upstream, **kwargs)
 
 
 T = TypeVar("T", bound=Callable)  # pylint: disable=invalid-name

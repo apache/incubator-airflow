@@ -656,7 +656,7 @@ class SparkSubmitHook(BaseHook, LoggingMixin):
 
             if self._yarn_application_id:
                 kill_cmd = f"yarn application -kill {self._yarn_application_id}".split()
-                env = None
+                env = {**os.environ, **(self._env or {})}
                 if self._keytab is not None and self._principal is not None:
                     # we are ignoring renewal failures from renew_from_kt
                     # here as the failure could just be due to a non-renewable ticket,

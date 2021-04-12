@@ -863,17 +863,17 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
         else:
             return 2
 
-    def test_wrong_python_op_args(self):
-        if sys.version_info[0] == 2:
-            version = 3
-        else:
-            version = 2
-
+    def test_wrong_python_version_with_op_args(self):
         def f():
             pass
 
+        version = self._invert_python_major_version()
+
         with pytest.raises(AirflowException):
             self._run_as_operator(f, python_version=version, op_args=[1])
+
+        with pytest.raises(AirflowException):
+            self._run_as_operator(f, python_version=version, op_kwargs={"arg": 1})
 
     def test_without_dill(self):
         def f(a):

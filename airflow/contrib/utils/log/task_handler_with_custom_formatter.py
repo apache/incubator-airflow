@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.utils.log.task_handler_with_custom_formatter`."""
+"""This module is deprecated. Please use :mod:`airflow.utils.log.task_handler_with_custom_formatter`."""
 
 import warnings
 

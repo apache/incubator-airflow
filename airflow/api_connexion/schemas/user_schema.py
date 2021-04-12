@@ -33,7 +33,6 @@ class UserCollectionItemSchema(SQLAlchemySchema):
         model = User
         dateformat = "iso"
 
-    user_id = auto_field('id', dump_only=True)
     first_name = auto_field()
     last_name = auto_field()
     username = auto_field()

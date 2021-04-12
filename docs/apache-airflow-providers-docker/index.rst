@@ -51,7 +51,7 @@ Package apache-airflow-providers-docker
 `Docker <https://docs.docker.com/install/>`__
 
 
-Release: 1.0.2
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -103,6 +103,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Add privileged option in DockerOperator (#14157)``
 
 1.0.2
 .....

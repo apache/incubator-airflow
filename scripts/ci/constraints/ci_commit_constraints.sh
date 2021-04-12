@@ -22,7 +22,7 @@ cp -v ./files/constraints-*/constraints*.txt repo/
 cd repo || exit 1
 git config --local user.email "dev@airflow.apache.org"
 git config --local user.name "Automated GitHub Actions commit"
-git diff --exit-code || git commit --all --message "Updating constraints. Build id:${CI_BUILD_ID}
+git diff --color --exit-code || git commit --all --message "Updating constraints. Build id:${CI_BUILD_ID}
 
 This update in constraints is automatically committed by the CI 'constraints-push' step based on
 HEAD of '${CI_REF}' in '${CI_TARGET_REPO}'

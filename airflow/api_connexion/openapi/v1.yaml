@@ -1581,10 +1581,6 @@ components:
         A user object
       type: object
       properties:
-        user_id:
-          type: integer
-          description: The user id
-          readOnly: true
         first_name:
           type: string
           description: The user firstname
@@ -2568,6 +2564,13 @@ components:
             planned to be cleaned, but not modified in any way.
           type: boolean
           default: true
+
+        task_ids:
+          description: A list of task ids to clear.
+          type: array
+          items:
+            type: string
+          minItems: 1
 
         start_date:
           description: The minimum execution date to clear.

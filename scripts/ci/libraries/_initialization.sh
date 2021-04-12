@@ -510,14 +510,18 @@ function initialization::initialize_kubernetes_variables() {
     # Kubectl version
     export KUBECTL_VERSION=${KUBERNETES_VERSION:=${DEFAULT_KUBERNETES_VERSION}}
     # Local Kind path
-    export KIND_BINARY_PATH="${BUILD_CACHE_DIR}/bin/kind"
+    export KIND_BINARY_PATH="${BUILD_CACHE_DIR}/kubernetes-bin/${KUBERNETES_VERSION}/kind"
     readonly KIND_BINARY_PATH
     # Local Helm path
-    export HELM_BINARY_PATH="${BUILD_CACHE_DIR}/bin/helm"
+    export HELM_BINARY_PATH="${BUILD_CACHE_DIR}/kubernetes-bin/${KUBERNETES_VERSION}/helm"
     readonly HELM_BINARY_PATH
     # local Kubectl path
-    export KUBECTL_BINARY_PATH="${BUILD_CACHE_DIR}/bin/kubectl"
+    export KUBECTL_BINARY_PATH="${BUILD_CACHE_DIR}/kubernetes-bin/${KUBERNETES_VERSION}/kubectl"
     readonly KUBECTL_BINARY_PATH
+    FORWARDED_PORT_NUMBER="${FORWARDED_PORT_NUMBER:="8080"}"
+    readonly FORWARDED_PORT_NUMBER
+    API_SERVER_PORT="${API_SERVER_PORT:="19090"}"
+    readonly API_SERVER_PORT
 }
 
 function initialization::initialize_git_variables() {

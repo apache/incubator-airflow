@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""This module is deprecated. Please use `airflow.providers.amazon.aws.sensors.sqs`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.amazon.aws.sensors.sqs`."""
 
 import warnings
 

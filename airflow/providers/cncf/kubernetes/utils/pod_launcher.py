@@ -37,6 +37,13 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.state import State
 
 
+def should_retry_start_pod(exception: Exception):
+    """Check if an Exception indicates a transient error and warrants retrying"""
+    if isinstance(exception, ApiException):
+        return exception.status == 409
+    return False
+
+
 class PodStatus:
     """Status of the PODs"""
 
@@ -98,6 +105,12 @@ class PodLauncher(LoggingMixin):
             if e.status != 404:
                 raise
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_random_exponential(),
+        reraise=True,
+        retry=tenacity.retry_if_exception(should_retry_start_pod),
+    )
     def start_pod(self, pod: V1Pod, startup_timeout: int = 120):
         """
         Launches the pod synchronously and waits for completion.

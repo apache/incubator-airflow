@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""This module is deprecated. Please use `airflow.providers.apache.cassandra.sensors.record`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.apache.cassandra.sensors.record`."""
 
 import warnings
 

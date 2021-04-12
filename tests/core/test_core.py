@@ -22,6 +22,7 @@ import signal
 import unittest
 from datetime import timedelta
 from time import sleep
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -187,23 +188,17 @@ class TestCore(unittest.TestCase):
             self.fail("BashOperator's subprocess still running after stopping on timeout!")
 
     def test_on_failure_callback(self):
-        # Annoying workaround for nonlocal not existing in python 2
-        data = {'called': False}
-
-        def check_failure(context, test_case=self):  # pylint: disable=unused-argument
-            data['called'] = True
-            error = context.get("exception")
-            test_case.assertIsInstance(error, AirflowException)
+        mock_failure_callback = MagicMock()
 
         op = BashOperator(
             task_id='check_on_failure_callback',
             bash_command="exit 1",
             dag=self.dag,
-            on_failure_callback=check_failure,
+            on_failure_callback=mock_failure_callback,
         )
         with pytest.raises(AirflowException):
             op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
-        assert data['called']
+        mock_failure_callback.assert_called_once()
 
     def test_dryrun(self):
         op = BashOperator(task_id='test_dryrun', bash_command="echo success", dag=self.dag)

@@ -20,6 +20,22 @@
 {% extends "airflow/task_instance.html" %}
 {% block title %}DAGs - {{ appbuilder.app_name }}{% endblock %}
 
+{% block head_meta %}
+  {{ super() }}
+  <meta name="dag_id" content="{{ dag_id }}">
+  <meta name="task_id" content="{{ task_id }}">
+  <meta name="execution_date" content="{{ execution_date }}">
+  <meta name="logs_with_metadata_url" content="{{ url_for('Airflow.get_logs_with_metadata') }}">
+  {# Time interval to wait before next log fetching. Default 2s. #}
+  <meta name="delay" content="{{ (log_fetch_delay_sec | int ) * 1000 }}">
+  {# Distance away from page bottom to enable auto tailing. #}
+  <meta name="auto_tailing_offset" content="{{ log_auto_tailing_offset | int }}">
+  {# Animation speed for auto tailing log display. #}
+  <meta name="animation_speed" content="{{ log_animation_speed | int }}">
+  {# Total number of tabs to show. #}
+  <meta name="total_attempts" content="{{ logs|length }}">
+{% endblock %}
+
 {% block content %}
   {{ super() }}
   <h4>{{ title }}</h4>
@@ -36,8 +52,8 @@
       </ul>
     </div>
     <div class="col-md-4 text-right">
-      <a class="btn btn-default" onclick="scrollBottom()">Jump To End</a>
-      <a class="btn btn-default" onclick="toggleWrap()">Toggle Wrap</a>
+      <a class="btn btn-default" onclick="scrollBottomLogs()">Jump To End</a>
+      <a class="btn btn-default" onclick="toggleWrapLogs()">Toggle Wrap</a>
     </div>
   </div>
   <div class="tab-content">
@@ -53,127 +69,5 @@
 {% endblock %}
 {% block tail %}
   {{ super() }}
-  <script>
-    // Time interval to wait before next log fetching. Default 2s.
-    const DELAY = "{{ (log_fetch_delay_sec | int ) * 1000 }}";
-    // Distance away from page bottom to enable auto tailing.
-    const AUTO_TAILING_OFFSET = "{{ log_auto_tailing_offset | int }}";
-    // Animation speed for auto tailing log display.
-    const ANIMATION_SPEED = "{{ log_animation_speed | int }}";
-    // Total number of tabs to show.
-    const TOTAL_ATTEMPTS = "{{ logs|length }}";
-
-    // Recursively fetch logs from flask endpoint.
-    function recurse(delay=DELAY) {
-      return new Promise((resolve) => setTimeout(resolve, delay));
-    }
-
-    // Enable auto tailing only when users scroll down to the bottom
-    // of the page. This prevent auto tailing the page if users want
-    // to view earlier rendered messages.
-    function checkAutoTailingCondition() {
-      const docHeight = $(document).height();
-      console.debug($(window).scrollTop())
-      console.debug($(window).height())
-      console.debug($(document).height())
-      return $(window).scrollTop() != 0
-             && ($(window).scrollTop() + $(window).height() > docHeight - AUTO_TAILING_OFFSET);
-    }
-
-    function toggleWrap() {
-      $("pre code").toggleClass("wrap")
-    }
-
-    function scrollBottom() {
-      $("html, body").animate({ scrollTop: $(document).height() }, ANIMATION_SPEED);
-    }
-
-    // Streaming log with auto-tailing.
-    function autoTailingLog(try_number, metadata=null, auto_tailing=false) {
-      console.debug("Auto-tailing log for dag_id: {{ dag_id }}, task_id: {{ task_id }}, \
-       execution_date: {{ execution_date }}, try_number: " + try_number + ", metadata: " + JSON.stringify(metadata));
-
-      return Promise.resolve(
-        $.ajax({
-          url: "{{ url_for("Airflow.get_logs_with_metadata") }}",
-          data: {
-            dag_id: "{{ dag_id }}",
-            task_id: "{{ task_id }}",
-            execution_date: "{{ execution_date }}",
-            try_number: try_number,
-            metadata: JSON.stringify(metadata),
-          },
-        })).then(res => {
-          // Stop recursive call to backend when error occurs.
-          if (!res) {
-            document.getElementById("loading-"+try_number).style.display = "none";
-            return;
-          }
-          // res.error is a boolean
-          // res.message is the log itself or the error message
-          if (res.error) {
-            if (res.message) {
-              console.error("Error while retrieving log: " + res.message);
-            }
-            document.getElementById("loading-"+try_number).style.display = "none";
-            return;
-          }
-
-          if (res.message) {
-            // Auto scroll window to the end if current window location is near the end.
-            if(auto_tailing && checkAutoTailingCondition()) {
-              var should_scroll = true;
-            }
-
-            // Detect urls
-            var url_regex = /http(s)?:\/\/[\w\.\-]+(\.?:[\w\.\-]+)*([\/?#][\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=\.%]+)?/g;
-
-            res.message.forEach(function(item, index){
-              var log_block_element_id = "try-" + try_number + "-" + item[0];
-              var log_block = document.getElementById(log_block_element_id);
-              if (!log_block) {
-                log_div_block = document.createElement('div');
-                log_pre_block = document.createElement('pre');
-                log_div_block.appendChild(log_pre_block);
-                log_pre_block.innerHTML = "<code id=\"" + log_block_element_id + "\"  ></code>";
-                document.getElementById("log-group-" + try_number).appendChild(log_div_block);
-                log_block = document.getElementById(log_block_element_id);
-              }
-
-              // The message may contain HTML, so either have to escape it or write it as text.
-              var escaped_message = escapeHtml(item[1]);
-              var linkified_message = escaped_message.replace(url_regex, function(url) {
-                return "<a href=\"" + url + "\" target=\"_blank\">" + url + "</a>";
-              });
-              log_block.innerHTML += linkified_message + "\n";
-            })
-
-            // Auto scroll window to the end if current window location is near the end.
-            if(should_scroll) {
-              scrollBottom();
-            }
-          }
-
-          if (res.metadata.end_of_log) {
-            document.getElementById("loading-"+try_number).style.display = "none";
-            return;
-          }
-          return recurse().then(() => autoTailingLog(
-            try_number, res.metadata, auto_tailing));
-        });
-    }
-    $(document).ready(function() {
-      // Lazily load all past task instance logs.
-      // TODO: We only need to have recursive queries for
-      // latest running task instances. Currently it does not
-      // work well with ElasticSearch because ES query only
-      // returns at most 10k documents. We want the ability
-      // to display all logs in the front-end.
-      // An optimization here is to render from latest attempt.
-      for(let i = TOTAL_ATTEMPTS; i >= 1; i--) {
-        // Only auto_tailing the page when streaming the latest attempt.
-        autoTailingLog(i, null, auto_tailing=(i == TOTAL_ATTEMPTS));
-      }
-    });
-  </script>
+  <script src="{{ url_for_asset('tiLog.js') }}"></script>
 {% endblock %}

@@ -629,6 +629,12 @@ Entering shell with Kubernetes Cluster
 This shell is prepared to run Kubernetes tests interactively. It has ``kubectl`` and ``kind`` cli tools
 available in the path, it has also activated virtualenv environment that allows you to run tests via pytest.
 
+The binaries are available in ./.build/kubernetes-bin/``KUBERNETES_VERSION`` path.
+The virtualenv is available in ./.build/.kubernetes_venv/``KIND_CLUSTER_NAME``_host_python_``HOST_PYTHON_VERSION``
+
+Where ``KIND_CLUSTER_NAME`` is the name of the cluster and ``HOST_PYTHON_VERSION`` is the version of python
+in the host.
+
 You can enter the shell via those scripts
 
       ./scripts/ci/kubernetes/ci_run_kubernetes_tests.sh [-i|--interactive]   - Activates virtual environment ready to run tests and drops you in

@@ -33,9 +33,24 @@ function build_prod_images_on_ci() {
     build_images::prepare_prod_build
 
     if [[ ${USE_GITHUB_REGISTRY} == "true" && ${GITHUB_REGISTRY_WAIT_FOR_IMAGE} == "true" ]]; then
+        # Tries to wait for the images indefinitely
+        # skips further image checks - since we already have the target image
+
+        local python_tag_suffix=""
+        if [[ ${GITHUB_REGISTRY_PULL_IMAGE_TAG} != "latest" ]]; then
+            python_tag_suffix="-${GITHUB_REGISTRY_PULL_IMAGE_TAG}"
+        fi
+
+        # first we pull base python image. We will need it to re-push it after master build
+        # Becoming the new "latest" image for other builds
+        build_images::wait_for_image_tag "${GITHUB_REGISTRY_PYTHON_BASE_IMAGE}" \
+            "${python_tag_suffix}" "${AIRFLOW_PYTHON_BASE_IMAGE}"
+
+        # And then the actual image
         build_images::wait_for_image_tag "${GITHUB_REGISTRY_AIRFLOW_PROD_IMAGE}" \
             ":${GITHUB_REGISTRY_PULL_IMAGE_TAG}" "${AIRFLOW_PROD_IMAGE}"
 
+        # And the prod build image
         if [[ "${WAIT_FOR_PROD_BUILD_IMAGE=}" == "true" ]]; then
             # If specified in variable - also waits for the build image
             build_images::wait_for_image_tag "${GITHUB_REGISTRY_AIRFLOW_PROD_BUILD_IMAGE}" \

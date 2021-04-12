@@ -21,26 +21,24 @@ function kind::get_kind_cluster_name() {
     export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:="airflow-python-${PYTHON_MAJOR_MINOR_VERSION}-${KUBERNETES_VERSION}"}
     # Name of the KinD cluster to connect to when referred to via kubectl
     export KUBECTL_CLUSTER_NAME=kind-${KIND_CLUSTER_NAME}
-    export KUBECONFIG="${BUILD_CACHE_DIR}/.kube/config"
-    mkdir -pv "${BUILD_CACHE_DIR}/.kube/"
+    export KUBECONFIG="${BUILD_CACHE_DIR}/${KIND_CLUSTER_NAME}/.kube/config"
+    mkdir -pv "${BUILD_CACHE_DIR}/${KIND_CLUSTER_NAME}/.kube/"
     touch "${KUBECONFIG}"
 }
 
 function kind::dump_kind_logs() {
-    start_end::group_start "Dumping logs from KinD"
+    verbosity::print_info "Dumping logs from KinD"
     local DUMP_DIR_NAME DUMP_DIR
     DUMP_DIR_NAME=kind_logs_$(date "+%Y-%m-%d")_${CI_BUILD_ID}_${CI_JOB_ID}
     DUMP_DIR="/tmp/${DUMP_DIR_NAME}"
     kind --name "${KIND_CLUSTER_NAME}" export logs "${DUMP_DIR}"
-    start_end::group_end
 }
 
 function kind::make_sure_kubernetes_tools_are_installed() {
-    start_end::group_start "Make sure Kubernetes tools are installed"
     SYSTEM=$(uname -s | tr '[:upper:]' '[:lower:]')
 
     KIND_URL="https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-${SYSTEM}-amd64"
-    mkdir -pv "${BUILD_CACHE_DIR}/bin"
+    mkdir -pv "${BUILD_CACHE_DIR}/kubernetes-bin/${KUBERNETES_VERSION}"
     if [[ -f "${KIND_BINARY_PATH}" ]]; then
         DOWNLOADED_KIND_VERSION=v"$(${KIND_BINARY_PATH} --version | awk '{ print $3 }')"
         echo "Currently downloaded kind version = ${DOWNLOADED_KIND_VERSION}"
@@ -87,15 +85,17 @@ function kind::make_sure_kubernetes_tools_are_installed() {
         echo "Helm version ok"
         echo
     fi
-    PATH=${PATH}:${BUILD_CACHE_DIR}/bin
-    start_end::group_end
+    PATH=${PATH}:${BUILD_CACHE_DIR}/kubernetes-bin/${KUBERNETES_VERSION}
 }
 
 function kind::create_cluster() {
-    kind create cluster \
-        --name "${KIND_CLUSTER_NAME}" \
-        --config "${AIRFLOW_SOURCES}/scripts/ci/kubernetes/kind-cluster-conf.yaml" \
-        --image "kindest/node:${KUBERNETES_VERSION}"
+        sed "s/{{FORWARDED_PORT_NUMBER}}/${FORWARDED_PORT_NUMBER}/" < \
+            "${AIRFLOW_SOURCES}/scripts/ci/kubernetes/kind-cluster-conf.yaml" | \
+        sed "s/{{API_SERVER_PORT}}/${API_SERVER_PORT}/" | \
+        kind create cluster \
+            --name "${KIND_CLUSTER_NAME}" \
+            --config - \
+            --image "kindest/node:${KUBERNETES_VERSION}"
     echo
     echo "Created cluster ${KIND_CLUSTER_NAME}"
     echo
@@ -106,7 +106,7 @@ function kind::delete_cluster() {
     echo
     echo "Deleted cluster ${KIND_CLUSTER_NAME}"
     echo
-    rm -rf "${HOME}/.kube/*"
+    rm -rf "${BUILD_CACHE_DIR}/${KIND_CLUSTER_NAME}/.kube/"
 }
 
 function kind::set_current_context() {
@@ -122,7 +122,6 @@ function kind::perform_kind_cluster_operation() {
         echo
         exit 1
     fi
-    start_end::group_start "Perform KinD cluster operation: ${1}"
 
     set -u
     OPERATION="${1}"
@@ -229,7 +228,6 @@ function kind::perform_kind_cluster_operation() {
             exit 1
         fi
     fi
-    start_end::group_end
 }
 
 function kind::check_cluster_ready_for_airflow() {
@@ -250,7 +248,6 @@ function kind::check_cluster_ready_for_airflow() {
 }
 
 function kind::build_image_for_kubernetes_tests() {
-    start_end::group_start "Build image for kubernetes tests ${AIRFLOW_PROD_IMAGE_KUBERNETES}"
     cd "${AIRFLOW_SOURCES}" || exit 1
     docker_v build --tag "${AIRFLOW_PROD_IMAGE_KUBERNETES}" . -f - <<EOF
 FROM ${AIRFLOW_PROD_IMAGE}
@@ -261,13 +258,10 @@ COPY airflow/kubernetes_executor_templates/ \${AIRFLOW_HOME}/pod_templates/
 
 EOF
     echo "The ${AIRFLOW_PROD_IMAGE_KUBERNETES} is prepared for test kubernetes deployment."
-    start_end::group_end
 }
 
 function kind::load_image_to_kind_cluster() {
-    start_end::group_start "Loading ${AIRFLOW_PROD_IMAGE_KUBERNETES} to ${KIND_CLUSTER_NAME}"
     kind load docker-image --name "${KIND_CLUSTER_NAME}" "${AIRFLOW_PROD_IMAGE_KUBERNETES}"
-    start_end::group_end
 }
 
 MAX_NUM_TRIES_FOR_HEALTH_CHECK=12
@@ -276,12 +270,7 @@ readonly MAX_NUM_TRIES_FOR_HEALTH_CHECK
 SLEEP_TIME_FOR_HEALTH_CHECK=10
 readonly SLEEP_TIME_FOR_HEALTH_CHECK
 
-FORWARDED_PORT_NUMBER=8080
-readonly FORWARDED_PORT_NUMBER
-
-
 function kind::wait_for_webserver_healthy() {
-    start_end::group_start "Waiting for webserver being healthy"
     num_tries=0
     set +e
     sleep "${SLEEP_TIME_FOR_HEALTH_CHECK}"
@@ -300,14 +289,10 @@ function kind::wait_for_webserver_healthy() {
     echo
     echo "Connection to 'airflow webserver' established on port ${FORWARDED_PORT_NUMBER}"
     echo
-    initialization::ga_env CLUSTER_FORWARDED_PORT "${FORWARDED_PORT_NUMBER}"
-    export CLUSTER_FORWARDED_PORT="${FORWARDED_PORT_NUMBER}"
     set -e
-    start_end::group_end
 }
 
 function kind::deploy_airflow_with_helm() {
-    start_end::group_start "Deploying Airflow with Helm"
     echo "Deleting namespace ${HELM_AIRFLOW_NAMESPACE}"
     kubectl delete namespace "${HELM_AIRFLOW_NAMESPACE}" >/dev/null 2>&1 || true
     kubectl delete namespace "test-namespace" >/dev/null 2>&1 || true
@@ -331,7 +316,14 @@ function kind::deploy_airflow_with_helm() {
       kubectl -n "${HELM_AIRFLOW_NAMESPACE}" patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
     fi
 
-    pushd "${AIRFLOW_SOURCES}/chart" >/dev/null 2>&1 || exit 1
+    local chartdir
+    chartdir=$(mktemp -d)
+    traps::add_trap "rm -rf ${chartdir}" EXIT INT HUP TERM
+    # Copy chart to temporary directory to allow chart deployment in parallel
+    # Otherwise helm deployment will fail on renaming charts to tmpcharts
+    cp -r "${AIRFLOW_SOURCES}/chart" "${chartdir}"
+
+    pushd "${chartdir}/chart" >/dev/null 2>&1 || exit 1
     helm repo add stable https://charts.helm.sh/stable/
     helm dep update
     helm install airflow . --namespace "${HELM_AIRFLOW_NAMESPACE}" \
@@ -343,15 +335,10 @@ function kind::deploy_airflow_with_helm() {
         --set "config.api.enable_experimental_api=true"
     echo
     popd > /dev/null 2>&1|| exit 1
-    start_end::group_end
 }
 
 function kind::deploy_test_kubernetes_resources() {
-    start_end::group_start "Deploying Airflow with Helm"
-    echo
-    echo "Deploying Custom kubernetes resources"
-    echo
+    verbosity::print_info "Deploying Custom kubernetes resources"
     kubectl apply -f "scripts/ci/kubernetes/volumes.yaml" --namespace default
     kubectl apply -f "scripts/ci/kubernetes/nodeport.yaml" --namespace airflow
-    start_end::group_end
 }

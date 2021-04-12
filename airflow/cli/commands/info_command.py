@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 """Config sub-commands"""
-import getpass
 import locale
 import logging
 import os
@@ -33,6 +32,7 @@ from airflow.cli.simple_table import AirflowConsole
 from airflow.providers_manager import ProvidersManager
 from airflow.typing_compat import Protocol
 from airflow.utils.cli import suppress_logs_and_warning
+from airflow.utils.platform import getuser
 from airflow.version import version as airflow_version
 
 log = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class PiiAnonymizer(Anonymizer):
 
     def __init__(self):
         home_path = os.path.expanduser("~")
-        username = getpass.getuser()
+        username = getuser()
         self._path_replacements = {home_path: "${HOME}", username: "${USER}"}
 
     def process_path(self, value):

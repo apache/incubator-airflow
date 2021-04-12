@@ -39,7 +39,7 @@ from airflow.utils.state import State
 
 warnings.warn(
     """
-    This module is deprecated. Please use `airflow.providers.cncf.kubernetes.utils.pod_launcher`
+    Please use :mod: Please use `airflow.providers.cncf.kubernetes.utils.pod_launcher`
 
     To use this module install the provider package by installing this pip package:
 

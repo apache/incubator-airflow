@@ -59,8 +59,7 @@ class HDFSHook(BaseHook):
             raise ImportError(
                 'This HDFSHook implementation requires snakebite, but '
                 'snakebite is not compatible with Python 3 '
-                '(as of August 2015). Please use Python 2 if you require '
-                'this hook  -- or help by submitting a PR!'
+                '(as of August 2015). Please help by submitting a PR!'
             )
         self.hdfs_conn_id = hdfs_conn_id
         self.proxy_user = proxy_user

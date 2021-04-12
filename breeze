@@ -3418,7 +3418,7 @@ function breeze::run_breeze_command() {
     set +u
     local dc_run_file
     local run_command="breeze::run_command"
-    if [[ ${DRY_RUN_DOCKER} != "false" ]]; then
+    if [[ ${DRY_RUN_DOCKER=} != "false" ]]; then
         run_command="breeze::print_command"
     fi
     if [[ ${PRODUCTION_IMAGE} == "true" ]]; then

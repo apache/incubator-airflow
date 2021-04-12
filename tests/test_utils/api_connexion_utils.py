@@ -26,7 +26,7 @@ def create_user(app, username, role_name, permissions=None):
     delete_role(app, role_name)
     role = create_role(app, role_name, permissions)
 
-    appbuilder.sm.add_user(
+    return appbuilder.sm.add_user(
         username=username,
         first_name=username,
         last_name=username,
@@ -52,6 +52,12 @@ def create_role(app, name, permissions=None):
 def delete_role(app, name):
     if app.appbuilder.sm.find_role(name):
         app.appbuilder.sm.delete_role(name)
+
+
+def delete_roles(app):
+    for role in app.appbuilder.sm.get_all_roles():
+        if role.name not in EXISTING_ROLES:
+            app.appbuilder.sm.delete_role(role.name)
 
 
 def delete_user(app, username):

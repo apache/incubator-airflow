@@ -160,7 +160,7 @@ function blockedHandler(error, json) {
 
 function lastDagRunsHandler(error, json) {
   Object.keys(json).forEach((safeDagId) => {
-    const { dagId } = json[safeDagId];
+    const dagId = json[safeDagId].dag_id;
     const executionDate = json[safeDagId].execution_date;
     const startDate = json[safeDagId].start_date;
     const g = d3.select(`#last-run-${safeDagId}`);

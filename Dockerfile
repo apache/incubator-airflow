@@ -487,7 +487,7 @@ WORKDIR ${AIRFLOW_HOME}
 
 EXPOSE 8080
 
-RUN usermod -g 0 airflow
+RUN usermod -g 0 airflow -G ${AIRFLOW_GID}
 
 USER ${AIRFLOW_UID}
 

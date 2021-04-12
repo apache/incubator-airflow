@@ -71,12 +71,11 @@ class TestUserCollectionItemSchema(TestUserBase):
         self.session.commit()
         user = self.session.query(User).filter(User.email == TEST_EMAIL).first()
         deserialized_user = user_collection_item_schema.dump(user)
-        # No password in dump
+        # No user_id and password in dump
         assert deserialized_user == {
             'created_on': DEFAULT_TIME,
             'email': 'test@example.org',
             'changed_on': DEFAULT_TIME,
-            'user_id': user.id,
             'active': None,
             'last_login': None,
             'last_name': 'Bar',
@@ -103,13 +102,12 @@ class TestUserSchema(TestUserBase):
         self.session.commit()
         user = self.session.query(User).filter(User.email == TEST_EMAIL).first()
         deserialized_user = user_schema.dump(user)
-        # No password in dump
+        # No user_id and password in dump
         assert deserialized_user == {
             'roles': [],
             'created_on': DEFAULT_TIME,
             'email': 'test@example.org',
             'changed_on': DEFAULT_TIME,
-            'user_id': user.id,
             'active': None,
             'last_login': None,
             'last_name': 'Bar',

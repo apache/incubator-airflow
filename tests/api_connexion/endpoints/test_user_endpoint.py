@@ -98,7 +98,6 @@ class TestGetUser(TestUserEndpoint):
             'last_name': 'test1',
             'login_count': None,
             'roles': [],
-            'user_id': users[0].id,
             'username': 'TEST_USER1',
         }
 

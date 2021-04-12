@@ -15,6 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+set -euo pipefail
 
 # Enable automated tests execution
 RUN_TESTS="true"
@@ -28,6 +29,8 @@ export SEMAPHORE_NAME
 
 # shellcheck source=scripts/ci/libraries/_script_init.sh
 . "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
+
+initialization::set_output_color_variables
 
 BACKEND_TEST_TYPES=(mysql postgres sqlite)
 

@@ -18,7 +18,7 @@
 """
 This module provides everything to be able to search in mails for a specific attachment
 and also to download it.
-It uses the imaplib library that is already integrated in python 2 and 3.
+It uses the imaplib library that is already integrated in python 3.
 """
 import email
 import imaplib

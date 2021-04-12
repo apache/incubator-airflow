@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""This module is deprecated. Please use `airflow.operators.sql`."""
+"""This module is deprecated. Please use :mod:`airflow.operators.sql`."""
 
 import warnings
 

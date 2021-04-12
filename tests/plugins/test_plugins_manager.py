@@ -17,7 +17,9 @@
 # under the License.
 import importlib
 import logging
+import os
 import sys
+import tempfile
 from unittest import mock
 
 import pytest
@@ -25,10 +27,21 @@ import pytest
 from airflow.hooks.base import BaseHook
 from airflow.plugins_manager import AirflowPlugin
 from airflow.www import app as application
+from tests.test_utils.config import conf_vars
 from tests.test_utils.mock_plugins import mock_plugin_manager
 
 py39 = sys.version_info >= (3, 9)
 importlib_metadata = 'importlib.metadata' if py39 else 'importlib_metadata'
+
+ON_LOAD_EXCEPTION_PLUGIN = """
+from airflow.plugins_manager import AirflowPlugin
+
+class AirflowTestOnLoadExceptionPlugin(AirflowPlugin):
+    name = 'preload'
+
+    def on_load(self, *args, **kwargs):
+        raise Exception("oops")
+"""
 
 
 class TestPluginsRBAC:
@@ -145,6 +158,40 @@ class TestPluginsManager:
 
         assert caplog.records[-1].levelname == 'DEBUG'
         assert caplog.records[-1].msg == 'Loading %d plugin(s) took %.2f seconds'
+
+    def test_loads_filesystem_plugins(self, caplog):
+        from airflow import plugins_manager
+
+        with mock.patch('airflow.plugins_manager.plugins', []):
+            plugins_manager.load_plugins_from_plugin_directory()
+
+            assert 5 == len(plugins_manager.plugins)
+            for plugin in plugins_manager.plugins:
+                if 'AirflowTestOnLoadPlugin' not in str(plugin):
+                    continue
+                assert 'postload' == plugin.name
+                break
+            else:
+                pytest.fail("Wasn't able to find a registered `AirflowTestOnLoadPlugin`")
+
+            assert caplog.record_tuples == []
+
+    def test_loads_filesystem_plugins_exception(self, caplog):
+        from airflow import plugins_manager
+
+        with mock.patch('airflow.plugins_manager.plugins', []):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with open(os.path.join(tmpdir, 'testplugin.py'), "w") as f:
+                    f.write(ON_LOAD_EXCEPTION_PLUGIN)
+
+                with conf_vars({('core', 'plugins_folder'): tmpdir}):
+                    plugins_manager.load_plugins_from_plugin_directory()
+
+            assert plugins_manager.plugins == []
+
+            received_logs = caplog.text
+            assert 'Failed to import plugin' in received_logs
+            assert 'testplugin.py' in received_logs
 
     def test_should_warning_about_incompatible_plugins(self, caplog):
         class AirflowAdminViewsPlugin(AirflowPlugin):

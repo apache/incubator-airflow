@@ -17,11 +17,12 @@
 # under the License.
 #
 
-"""This module is deprecated. Please use:
+"""
+This module is deprecated. Please use:
 
-- `airflow.providers.amazon.aws.operators.batch`
-- `airflow.providers.amazon.aws.hooks.batch_client`
-- `airflow.providers.amazon.aws.hooks.batch_waiters``
+- :mod:`airflow.providers.amazon.aws.operators.batch`
+- :mod:`airflow.providers.amazon.aws.hooks.batch_client`
+- :mod:`airflow.providers.amazon.aws.hooks.batch_waiters``
 """
 
 import warnings

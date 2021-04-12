@@ -20,12 +20,12 @@ apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   ipFamily: ipv4
   apiServerAddress: "127.0.0.1"
-  apiServerPort: 19090
+  apiServerPort: {{API_SERVER_PORT}}
 nodes:
   - role: control-plane
   - role: worker
     extraPortMappings:
       - containerPort: 30007
-        hostPort: 8080
+        hostPort: {{FORWARDED_PORT_NUMBER}}
         listenAddress: "127.0.0.1"
         protocol: TCP

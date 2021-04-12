@@ -140,10 +140,17 @@ class TestHelpers(unittest.TestCase):
 
     @conf_vars(
         {
-            ("webserver", "dag_default_view"): "custom",
+            ("webserver", "dag_default_view"): "graph",
         }
     )
     def test_build_airflow_url_with_query(self):
+        """
+        Test query generated with dag_id and params
+        """
         query = {"dag_id": "test_dag", "param": "key/to.encode"}
-        url = build_airflow_url_with_query(query)
-        assert url == "/custom?dag_id=test_dag&param=key%2Fto.encode"
+        expected_url = "/graph?dag_id=test_dag&param=key%2Fto.encode"
+
+        from airflow.www.app import cached_app
+
+        with cached_app(testing=True).test_request_context():
+            assert build_airflow_url_with_query(query) == expected_url

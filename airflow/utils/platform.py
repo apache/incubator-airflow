@@ -16,6 +16,7 @@
 # under the License.
 
 """Platform and system specific function."""
+import getpass
 import logging
 import os
 import pkgutil
@@ -57,3 +58,25 @@ def get_airflow_git_version():
         log.debug(e)
 
     return git_version
+
+
+def getuser() -> str:
+    """
+    Gets the username associated with the current user, or error with a nice
+    error message if there's no current user.
+
+    We don't want to fall back to os.getuid() because not having a username
+    probably means the rest of the user environment is wrong (e.g. no $HOME).
+    Explicit failure is better than silently trying to work badly.
+    """
+    try:
+        return getpass.getuser()
+    except KeyError:
+        # Inner import to avoid circular import
+        from airflow.exceptions import AirflowConfigException
+
+        raise AirflowConfigException(
+            "The user that Airflow is running as has no username; you must run"
+            "Airflow as a full user, with a username and home directory, "
+            "in order for it to function properly."
+        )

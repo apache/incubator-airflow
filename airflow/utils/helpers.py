@@ -24,6 +24,7 @@ from itertools import filterfalse, tee
 from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, TypeVar
 from urllib import parse
 
+from flask import url_for
 from jinja2 import Template
 
 from airflow.configuration import conf
@@ -213,4 +214,5 @@ def build_airflow_url_with_query(query: Dict[str, Any]) -> str:
     'http://0.0.0.0:8000/base/graph?dag_id=my-task&root=&execution_date=2020-10-27T10%3A59%3A25.615587
     """
     view = conf.get('webserver', 'dag_default_view').lower()
-    return f"/{view}?{parse.urlencode(query)}"
+    url = url_for(f"Airflow.{view}")
+    return f"{url}?{parse.urlencode(query)}"

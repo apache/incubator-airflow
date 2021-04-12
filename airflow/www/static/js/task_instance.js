@@ -17,15 +17,11 @@
  * under the License.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  function dateChange() {
-    // We don't want to navigate away if the datetimepicker is still visible
-    if ($('.datetimepicker bootstrap-datetimepicker-widget :visible').length > 0) {
-      return;
-    }
+/* global document */
+import { formatDateTime } from './datetime_utils';
 
-    $('input#execution_date').parents('form').submit();
-  }
-  $('input#execution_date').parents('.datetimepicker').on('dp.change', dateChange);
-  $('input#execution_date').parents('.datetimepicker').on('dp.hide', dateChange);
+// reformat execution date to be more human-readable
+document.addEventListener('DOMContentLoaded', () => {
+  const date = document.getElementById('ti_execution_date');
+  date.innerHTML = formatDateTime(date.innerHTML);
 });

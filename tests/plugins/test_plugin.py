@@ -127,3 +127,10 @@ class MockPluginB(AirflowPlugin):
 
 class MockPluginC(AirflowPlugin):
     name = 'plugin-c'
+
+
+class AirflowTestOnLoadPlugin(AirflowPlugin):
+    name = 'preload'
+
+    def on_load(self, *args, **kwargs):
+        self.name = 'postload'

@@ -51,10 +51,10 @@ Those are the most common arguments that you use when you want to build a custom
 +------------------------------------------+------------------------------------------+------------------------------------------+
 | ``AIRFLOW_UID``                          | ``50000``                                | Airflow user UID.                        |
 +------------------------------------------+------------------------------------------+------------------------------------------+
-| ``AIRFLOW_GID``                          | ``50000``                                | Airflow group GID. Note that most files  |
-|                                          |                                          | created on behalf of airflow user belong |
-|                                          |                                          | to the ``root`` group (0) to keep        |
-|                                          |                                          | OpenShift Guidelines compatibility.      |
+| ``AIRFLOW_GID``                          | ``50000``                                | Airflow group GID. Note that writable    |
+|                                          |                                          | files/dirs, created on behalf of airflow |
+|                                          |                                          | user are set to the ``root`` group (0)   |
+|                                          |                                          | to allow arbitrary UID to run the image. |
 +------------------------------------------+------------------------------------------+------------------------------------------+
 | ``AIRFLOW_CONSTRAINTS_REFERENCE``        |                                          | Reference (branch or tag) from GitHub    |
 |                                          |                                          | where constraints file is taken from     |

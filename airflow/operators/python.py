@@ -27,12 +27,6 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import dill
 
-# To maintain backwards compatibility, we import the task object into this file
-# This prevents breakages in dags that use `from airflow.operators.python import task`
-from airflow.decorators.python import (  # noqa # pylint: disable=unused-import
-    PYTHON_OPERATOR_UI_COLOR,
-    python_task,
-)
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.models.skipmixin import SkipMixin
@@ -67,6 +61,10 @@ def task(python_callable: Optional[Callable] = None, multiple_outputs: Optional[
     :type multiple_outputs: bool
     :return:
     """
+    # To maintain backwards compatibility, we import the task object into this file
+    # This prevents breakages in dags that use `from airflow.operators.python import task`
+    from airflow.decorators.python import python_task  # noqa # pylint: disable=unused-import
+
     warnings.warn(
         """airflow.operators.python.task is deprecated. Please use the following instead
 
@@ -107,7 +105,8 @@ class PythonOperator(BaseOperator):
 
     template_fields = ('templates_dict', 'op_args', 'op_kwargs')
     template_fields_renderers = {"templates_dict": "json", "op_args": "py", "op_kwargs": "py"}
-    ui_color = PYTHON_OPERATOR_UI_COLOR
+    BLUE = '#ffefeb'
+    ui_color = BLUE
 
     # since we won't mutate the arguments, we should just do the shallow copy
     # there are some cases we can't deepcopy the objects(e.g protobuf).
@@ -375,7 +374,7 @@ class PythonVirtualenvOperator(PythonOperator):
                     op_kwargs=self.op_kwargs,
                     pickling_library=self.pickling_library.__name__,
                     python_callable=self.python_callable.__name__,
-                    python_callable_source=dedent(inspect.getsource(self.python_callable)),
+                    python_callable_source=self.get_python_source(),
                 ),
                 filename=script_filename,
             )
@@ -391,6 +390,13 @@ class PythonVirtualenvOperator(PythonOperator):
             )
 
             return self._read_result(output_filename)
+
+    def get_python_source(self):
+        """
+        Returns the source of self.python_callable
+        @return:
+        """
+        return dedent(inspect.getsource(self.python_callable))
 
     def _write_args(self, filename):
         if self.op_args or self.op_kwargs:

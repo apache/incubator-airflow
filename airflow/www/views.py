@@ -348,10 +348,16 @@ def dag_edges(dag):
     for root in dag.roots:
         get_downstream(root)
 
-    return [
-        {'source_id': source_id, 'target_id': target_id}
-        for source_id, target_id in sorted(edges.union(edges_to_add) - edges_to_skip)
-    ]
+    result = []
+    # Build result dicts with the two ends of the edge, plus any extra metadata
+    # if we have it.
+    for source_id, target_id in sorted(edges.union(edges_to_add) - edges_to_skip):
+        record = {"source_id": source_id, "target_id": target_id}
+        label = dag.get_edge_info(source_id, target_id).get("label")
+        if label:
+            record["label"] = label
+        result.append(record)
+    return result
 
 
 ######################################################################################
@@ -3145,9 +3151,9 @@ class VariableModelView(AirflowModelView):
         permissions.ACTION_CAN_ACCESS_MENU,
     ]
 
-    list_columns = ['key', 'val', 'is_encrypted']
-    add_columns = ['key', 'val']
-    edit_columns = ['key', 'val']
+    list_columns = ['key', 'val', 'description', 'is_encrypted']
+    add_columns = ['key', 'val', 'description']
+    edit_columns = ['key', 'val', 'description']
     search_columns = ['key', 'val']
 
     base_order = ('key', 'asc')

@@ -1137,6 +1137,7 @@ pymysql
 pyodbc
 pypa
 pytest
+pythonic
 pythonpath
 pywinrm
 qds

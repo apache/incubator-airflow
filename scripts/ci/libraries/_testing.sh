@@ -52,7 +52,7 @@ function testing::get_docker_compose_local() {
 
 function testing::get_maximum_parallel_test_jobs() {
     docker_engine_resources::get_available_cpus_in_docker
-    if [[ ${RUNS_ON} != *"self-hosted"* ]]; then
+    if [[ -n ${RUNS_ON=} && ${RUNS_ON} != *"self-hosted"* ]]; then
         echo
         echo "${COLOR_YELLOW}This is a Github Public runner - for now we are forcing max parallel Quarantined tests jobs to 1 for those${COLOR_RESET}"
         echo

@@ -50,7 +50,7 @@ Package apache-airflow-providers-facebook
 `Facebook Ads <http://business.facebook.com/>`__
 
 
-Release: 1.0.1
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -102,6 +102,14 @@ PIP package            Version required
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Use built-in 'cached_property' on Python 3.8 where possible (#14606)``
 
 1.0.1
 .....

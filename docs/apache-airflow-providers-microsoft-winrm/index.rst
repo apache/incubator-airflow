@@ -51,7 +51,7 @@ Package apache-airflow-providers-microsoft-winrm
 `Windows Remote Management (WinRM) <https://docs.microsoft.com/en-us/windows/win32/winrm/portal>`__
 
 
-Release: 1.0.1
+Release: 1.1.0
 
 Provider package
 ----------------
@@ -103,6 +103,20 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``WinRM Operator: Fix stout decoding issue (#13153)``
+
+Bug Fixes
+~~~~~~~~~
+
+* ``WinRM Operator: Fix stout decoding issue (#13153)``
+
 
 1.0.1
 .....

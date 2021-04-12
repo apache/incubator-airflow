@@ -25,7 +25,10 @@ Changelog
 Features
 ~~~~~~~~
 
-* ``Bumped snowflake-connector-python library to >=2.4.1 version and get rid of pytz library pinning``
+* ``Add dynamic fields to snowflake connection (#14724)``
+
+1.1.1
+.....
 
 Bug fixes
 ~~~~~~~~~

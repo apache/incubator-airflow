@@ -118,7 +118,7 @@ class DockerSwarmOperator(DockerOperator):
             types.TaskTemplate(
                 container_spec=types.ContainerSpec(
                     image=self.image,
-                    command=self.get_command(),
+                    command=self.format_command(self.command),
                     env=self.environment,
                     user=self.user,
                     tty=self.tty,
@@ -144,10 +144,10 @@ class DockerSwarmOperator(DockerOperator):
                 self.log.info('Service status before exiting: %s', self._service_status())
                 break
 
-        if self.service and self._service_status() == 'failed':
+        if self.service and self._service_status() != 'complete':
             if self.auto_remove:
                 self.cli.remove_service(self.service['ID'])
-            raise AirflowException('Service failed: ' + repr(self.service))
+            raise AirflowException('Service did not complete: ' + repr(self.service))
         elif self.auto_remove:
             if not self.service:
                 raise Exception("The 'service' should be initialized before!")
@@ -160,7 +160,7 @@ class DockerSwarmOperator(DockerOperator):
 
     def _has_service_terminated(self) -> bool:
         status = self._service_status()
-        return status in ['failed', 'complete']
+        return status in ['complete', 'failed', 'shutdown', 'rejected', 'orphaned', 'remove']
 
     def _stream_logs_to_output(self) -> None:
         if not self.cli:

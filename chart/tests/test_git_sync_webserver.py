@@ -18,6 +18,7 @@
 import unittest
 
 import jmespath
+from parameterized import parameterized
 
 from tests.helm_template_generator import render_chart
 
@@ -59,3 +60,38 @@ class GitSyncWebserverTest(unittest.TestCase):
         )
 
         assert "RELEASE-NAME-webserver" == jmespath.search("spec.template.spec.serviceAccountName", docs[0])
+
+    @parameterized.expand([(True,), (False,)])
+    def test_git_sync_with_exclude_webserver(self, exclude_webserver):
+        """
+        If that dags.gitSync.excludeWebserver=True - git sync related containers, volume mounts & volumes
+        are not created.
+        """
+        docs = render_chart(
+            values={
+                "dags": {
+                    "gitSync": {"enabled": True, "excludeWebserver": exclude_webserver},
+                    "persistence": {"enabled": False},
+                }
+            },
+            show_only=["templates/webserver/webserver-deployment.yaml"],
+        )
+
+        containers_names = [
+            container["name"] for container in jmespath.search("spec.template.spec.containers", docs[0])
+        ]
+
+        volume_mount_names = [
+            vm["name"] for vm in jmespath.search("spec.template.spec.containers[0].volumeMounts", docs[0])
+        ]
+
+        volume_names = [volume["name"] for volume in jmespath.search("spec.template.spec.volumes", docs[0])]
+
+        if exclude_webserver:
+            assert "git-sync" not in containers_names
+            assert "dags" not in volume_mount_names
+            assert "dags" not in volume_names
+        else:
+            assert "git-sync" in containers_names
+            assert "dags" in volume_mount_names
+            assert "dags" in volume_names

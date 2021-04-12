@@ -32,7 +32,7 @@ from airflow.models import DagModel
 from airflow.security import permissions
 from airflow.www import app as application
 from airflow.www.utils import CustomSQLAInterface
-from tests.test_utils import fab_utils
+from tests.test_utils import api_connexion_utils
 from tests.test_utils.asserts import assert_queries_count
 from tests.test_utils.db import clear_db_dags, clear_db_runs
 from tests.test_utils.mock_security_manager import MockSecurityManager
@@ -100,7 +100,7 @@ class TestSecurity(unittest.TestCase):
     @classmethod
     def delete_roles(cls):
         for role_name in ['team-a', 'MyRole1', 'MyRole5', 'Test_Role', 'MyRole3', 'MyRole2']:
-            fab_utils.delete_role(cls.app, role_name)
+            api_connexion_utils.delete_role(cls.app, role_name)
 
     def expect_user_is_in_role(self, user, rolename):
         self.security_manager.bulk_sync_roles([{'role': rolename, 'perms': []}])
@@ -332,7 +332,7 @@ class TestSecurity(unittest.TestCase):
         username = 'get_current_user_permissions'
 
         with self.app.app_context():
-            user = fab_utils.create_user(
+            user = api_connexion_utils.create_user(
                 self.app,
                 username,
                 role_name,
@@ -354,7 +354,7 @@ class TestSecurity(unittest.TestCase):
         dag_id = 'dag_id'
         username = "ElUser"
 
-        user = fab_utils.create_user(
+        user = api_connexion_utils.create_user(
             self.app,
             username,
             role_name,
@@ -382,7 +382,7 @@ class TestSecurity(unittest.TestCase):
         permission_action = [permissions.ACTION_CAN_EDIT]
         dag_id = "dag_id"
 
-        user = fab_utils.create_user(
+        user = api_connexion_utils.create_user(
             self.app,
             username,
             role_name,
@@ -448,7 +448,7 @@ class TestSecurity(unittest.TestCase):
         username = 'dag_access_user'
         role_name = 'dag_access_role'
         with self.app.app_context():
-            user = fab_utils.create_user(
+            user = api_connexion_utils.create_user(
                 self.app,
                 username,
                 role_name,
@@ -470,7 +470,7 @@ class TestSecurity(unittest.TestCase):
             'can_eat_pudding',  # clearly not a real permission
         ]
         username = "LaUser"
-        user = fab_utils.create_user(
+        user = api_connexion_utils.create_user(
             self.app,
             username=username,
             role_name='team-a',
@@ -487,7 +487,7 @@ class TestSecurity(unittest.TestCase):
         username = 'access_control_is_set_on_init'
         role_name = 'team-a'
         with self.app.app_context():
-            user = fab_utils.create_user(
+            user = api_connexion_utils.create_user(
                 self.app,
                 username,
                 role_name,
@@ -515,7 +515,7 @@ class TestSecurity(unittest.TestCase):
         username = 'access_control_stale_perms_are_revoked'
         role_name = 'team-a'
         with self.app.app_context():
-            user = fab_utils.create_user(
+            user = api_connexion_utils.create_user(
                 self.app,
                 username,
                 role_name,

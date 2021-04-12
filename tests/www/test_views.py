@@ -65,7 +65,7 @@ from airflow.www import app as application
 from airflow.www.extensions import init_views
 from airflow.www.extensions.init_appbuilder_links import init_appbuilder_links
 from airflow.www.views import ConnectionModelView, get_safe_url, truncate_task_duration
-from tests.test_utils import fab_utils
+from tests.test_utils import api_connexion_utils
 from tests.test_utils.asserts import assert_queries_count
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_runs
@@ -229,7 +229,7 @@ class TestBase(unittest.TestCase):
 
     def create_user_and_login(self, username, role_name, perms):
         self.logout()
-        fab_utils.create_user(
+        api_connexion_utils.create_user(
             self.app,
             username=username,
             role_name=role_name,
@@ -318,12 +318,7 @@ class TestVariableModelView(TestBase):
             set_mock.side_effect = UnicodeEncodeError
             assert self.session.query(models.Variable).count() == 0
 
-            try:
-                # python 3+
-                bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
-            except TypeError:
-                # python 2.7
-                bytes_content = io.BytesIO(bytes(content))
+            bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
 
             resp = self.client.post(
                 '/variable/varimport', data={'file': (bytes_content, 'test.json')}, follow_redirects=True
@@ -336,12 +331,7 @@ class TestVariableModelView(TestBase):
         content = (
             '{"str_key": "str_value", "int_key": 60, "list_key": [1, 2], "dict_key": {"k_a": 2, "k_b": 3}}'
         )
-        try:
-            # python 3+
-            bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
-        except TypeError:
-            # python 2.7
-            bytes_content = io.BytesIO(bytes(content))
+        bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
 
         resp = self.client.post(
             '/variable/varimport', data={'file': (bytes_content, 'test.json')}, follow_redirects=True

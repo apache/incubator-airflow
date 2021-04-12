@@ -17,7 +17,7 @@
 # under the License.
 
 # pylint: disable=invalid-name
-"""This module is deprecated. Please use `airflow.providers.amazon.aws.hooks.s3`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.amazon.aws.hooks.s3`."""
 
 import warnings
 

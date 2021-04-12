@@ -47,12 +47,14 @@ class Variable(Base, LoggingMixin):
     id = Column(Integer, primary_key=True)
     key = Column(String(ID_LEN), unique=True)
     _val = Column('val', Text)
+    description = Column(Text)
     is_encrypted = Column(Boolean, unique=False, default=False)
 
-    def __init__(self, key=None, val=None):
+    def __init__(self, key=None, val=None, description=None):
         super().__init__()
         self.key = key
         self.val = val
+        self.description = description
 
     def __repr__(self):
         # Hiding the value

@@ -67,6 +67,7 @@ class TestDockerOperator(unittest.TestCase):
             owner='unittest',
             task_id='unittest',
             volumes=['/host/path:/container/path'],
+            entrypoint='["sh", "-c"]',
             working_dir='/container/path',
             shm_size=1000,
             host_tmp_dir='/host/airflow',
@@ -86,6 +87,7 @@ class TestDockerOperator(unittest.TestCase):
             host_config=self.client_mock.create_host_config.return_value,
             image='ubuntu:latest',
             user=None,
+            entrypoint=['sh', '-c'],
             working_dir='/container/path',
             tty=True,
         )

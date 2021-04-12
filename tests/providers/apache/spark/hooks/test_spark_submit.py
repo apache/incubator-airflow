@@ -745,7 +745,8 @@ class TestSparkSubmitHook(unittest.TestCase):
             + 'NodeManagerapplication_1486558679801_1820s',
             'INFO Client: Submitting application application_1486558679801_1820 ' + 'to ResourceManager',
         ]
-        hook = SparkSubmitHook(conn_id='spark_yarn_cluster')
+        env = {"PATH": "hadoop/bin"}
+        hook = SparkSubmitHook(conn_id='spark_yarn_cluster', env_vars=env)
         hook._process_spark_submit_log(log_lines)
         hook.submit()
 
@@ -756,7 +757,7 @@ class TestSparkSubmitHook(unittest.TestCase):
         assert (
             call(
                 ['yarn', 'application', '-kill', 'application_1486558679801_1820'],
-                env=None,
+                env={**os.environ, **env},
                 stderr=-1,
                 stdout=-1,
             )

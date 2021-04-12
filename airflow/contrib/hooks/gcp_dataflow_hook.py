@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use `airflow.providers.google.cloud.hooks.dataflow`."""
+"""This module is deprecated. Please use :mod:`airflow.providers.google.cloud.hooks.dataflow`."""
 
 import warnings
 
@@ -29,7 +29,10 @@ warnings.warn(
 
 
 class DataFlowHook(DataflowHook):
-    """This class is deprecated. Please use `airflow.providers.google.cloud.hooks.dataflow.DataflowHook`."""
+    """
+    This class is deprecated.
+    Please use :class:`airflow.providers.google.cloud.hooks.dataflow.DataflowHook`.
+    """
 
     def __init__(self, *args, **kwargs):
         warnings.warn(

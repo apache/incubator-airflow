@@ -160,12 +160,12 @@ span.skipped {
 }
 
 .d3-tip {
-  background: #000;
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
-  border: solid;
-  border-width: 1px;
+  border: 0;
   border-radius: 5px;
   padding: 10px;
+  margin-top: -4px;
 }
 
 input#execution_date {
@@ -269,6 +269,10 @@ body div.panel {
   border: solid 2px #cbcbcb;
   padding: 0 3px;
   font-size: 11px;
+}
+
+.legend-item--interactive {
+  cursor: pointer;
 }
 
 .legend-item--no-border {

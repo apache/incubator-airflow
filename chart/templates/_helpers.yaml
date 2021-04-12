@@ -249,7 +249,7 @@
 {{- end }}
 
 {{ define "pgbouncer_config_secret" -}}
-{{ .Release.Name }}-pgbouncer-config
+{{ default (printf "%s-pgbouncer-config" .Release.Name) .Values.pgbouncer.configSecretName }}
 {{- end }}
 
 {{ define "pgbouncer_certificates_secret" -}}

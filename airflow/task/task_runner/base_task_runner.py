@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 """Base task runner"""
-import getpass
 import os
 import subprocess
 import threading
@@ -29,6 +28,7 @@ from airflow.models.taskinstance import load_error_file
 from airflow.utils.configuration import tmp_configuration_copy
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.net import get_hostname
+from airflow.utils.platform import getuser
 
 PYTHONPATH_VAR = 'PYTHONPATH'
 
@@ -60,7 +60,7 @@ class BaseTaskRunner(LoggingMixin):
         # Add sudo commands to change user if we need to. Needed to handle SubDagOperator
         # case using a SequentialExecutor.
         self.log.debug("Planning to run as the %s user", self.run_as_user)
-        if self.run_as_user and (self.run_as_user != getpass.getuser()):
+        if self.run_as_user and (self.run_as_user != getuser()):
             # We want to include any environment variables now, as we won't
             # want to have to specify them in the sudo call - they would show
             # up in `ps` that way! And run commands now, as the other user

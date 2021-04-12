@@ -51,7 +51,7 @@ Package apache-airflow-providers-apache-hive
 `Apache Hive <https://hive.apache.org/>`__
 
 
-Release: 1.0.2
+Release: 1.0.3
 
 Provider package
 ----------------
@@ -129,6 +129,16 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+1.0.3
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix mistake and typos in doc/docstrings (#15180)``
+* ``Fix grammar and remove duplicate words (#14647)``
+* ``Resolve issue related to HiveCliHook kill (#14542)``
 
 1.0.2
 .....

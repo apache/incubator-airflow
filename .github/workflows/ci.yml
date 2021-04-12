@@ -78,7 +78,8 @@ jobs:
     # change this and get access to our self-hosted runners
     #
     # When changing this list, ensure that it is kept in sync with the
-    # configOverride parameter in AWS SSM (which is what the runner uses)
+    # /runners/apache/airflow/configOverlay
+    # parameter in AWS SSM ParameterStore (which is what the runner uses)
     runs-on: >-
       ${{ (
         (
@@ -119,7 +120,8 @@ jobs:
             "jhtimmins",
             "dstandish",
             "xinbinhuang",
-            "yuqian"
+            "yuqian",
+            "eladkal"
           ]'), github.actor)
         ) && github.repository == 'apache/airflow'
       ) && 'self-hosted' || 'ubuntu-20.04' }}
@@ -132,6 +134,7 @@ jobs:
       pythonVersionsListAsString: ${{ steps.selective-checks.outputs.python-versions-list-as-string }}
       defaultPythonVersion: ${{ steps.selective-checks.outputs.default-python-version }}
       kubernetesVersions: ${{ steps.selective-checks.outputs.kubernetes-versions }}
+      kubernetesVersionsListAsString: ${{ steps.selective-checks.outputs.kubernetes-versions-list-as-string }}
       defaultKubernetesVersion: ${{ steps.selective-checks.outputs.default-kubernetes-version }}
       kubernetesModes: ${{ steps.selective-checks.outputs.kubernetes-modes }}
       defaultKubernetesMode: ${{ steps.selective-checks.outputs.default-kubernetes-mode }}
@@ -147,7 +150,6 @@ jobs:
       postgresExclude: ${{ steps.selective-checks.outputs.postgres-exclude }}
       mysqlExclude: ${{ steps.selective-checks.outputs.mysql-exclude }}
       sqliteExclude: ${{ steps.selective-checks.outputs.sqlite-exclude }}
-      kubernetesExclude: ${{ steps.selective-checks.outputs.kubernetes-exclude }}
       run-tests: ${{ steps.selective-checks.outputs.run-tests }}
       run-ui-tests: ${{ steps.selective-checks.outputs.run-ui-tests }}
       run-kubernetes-tests: ${{ steps.selective-checks.outputs.run-kubernetes-tests }}
@@ -507,7 +509,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         if: >
           github.ref == 'refs/heads/master' && github.repository == 'apache/airflow' &&
           github.event_name == 'push'
-        run: aws s3 sync --delete ./docs/_build s3://apache-airflow-docs
+        run: aws s3 sync --delete ./files/documentation s3://apache-airflow-docs
 
   prepare-test-provider-packages-wheel:
     timeout-minutes: 40
@@ -647,7 +649,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         with:
           name: >
             coverage-helm
-          path: "./files/coverage.xml"
+          path: "./files/coverage*.xml"
           retention-days: 7
 
   tests-postgres:
@@ -705,7 +707,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         with:
           name: >
             coverage-postgres-${{matrix.python-version}}-${{matrix.postgres-version}}
-          path: "./files/coverage.xml"
+          path: "./files/coverage*.xml"
           retention-days: 7
 
   tests-mysql:
@@ -761,7 +763,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/upload-artifact@v2
         with:
           name: coverage-mysql-${{matrix.python-version}}-${{matrix.mysql-version}}
-          path: "./files/coverage.xml"
+          path: "./files/coverage*.xml"
           retention-days: 7
 
   tests-sqlite:
@@ -815,7 +817,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/upload-artifact@v2
         with:
           name: coverage-sqlite-${{matrix.python-version}}
-          path: ./files/coverage.xml
+          path: ./files/coverage*.xml
           retention-days: 7
 
   tests-quarantined:
@@ -886,7 +888,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/upload-artifact@v2
         with:
           name: coverage-quarantined-${{ matrix.backend }}
-          path: "./files/coverage.xml"
+          path: "./files/coverage*.xml"
           retention-days: 7
 
   upload-coverage:
@@ -966,27 +968,22 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
 
   tests-kubernetes:
     timeout-minutes: 50
-    name: K8s ${{matrix.python-version}} ${{matrix.kubernetes-version}} ${{matrix.kubernetes-mode}}
+    name: K8s tests
     runs-on: ${{ fromJson(needs.build-info.outputs.runsOn) }}
     needs: [build-info, prod-images]
-    strategy:
-      matrix:
-        python-version: ${{ fromJson(needs.build-info.outputs.pythonVersions) }}
-        kubernetes-version: ${{ fromJson(needs.build-info.outputs.kubernetesVersions) }}
-        kubernetes-mode: ${{ fromJson(needs.build-info.outputs.kubernetesModes) }}
-        exclude: ${{ fromJson(needs.build-info.outputs.kubernetesExclude) }}
-      fail-fast: false
     env:
       RUNS_ON: ${{ fromJson(needs.build-info.outputs.runsOn) }}
       BACKEND: postgres
       RUN_TESTS: "true"
       RUNTIME: "kubernetes"
-      PYTHON_MAJOR_MINOR_VERSION: "${{ matrix.python-version }}"
-      KUBERNETES_MODE: "${{ matrix.kubernetes-mode }}"
-      KUBERNETES_VERSION: "${{ matrix.kubernetes-version }}"
+      KUBERNETES_MODE: "image"
       KIND_VERSION: "${{ needs.build-info.outputs.defaultKindVersion }}"
       HELM_VERSION: "${{ needs.build-info.outputs.defaultHelmVersion }}"
       GITHUB_REGISTRY: ${{ needs.prod-images.outputs.githubRegistry }}
+      CURRENT_PYTHON_MAJOR_MINOR_VERSIONS_AS_STRING: >
+        ${{needs.build-info.outputs.pythonVersionsListAsString}}
+      CURRENT_KUBERNETES_VERSIONS_AS_STRING: >
+        ${{needs.build-info.outputs.kubernetesVersionsListAsString}}
     if: needs.build-info.outputs.run-kubernetes-tests == 'true'
     steps:
       - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
@@ -999,45 +996,43 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
           python-version: ${{ needs.build-info.outputs.defaultPythonVersion }}
       - name: "Free space"
         run: ./scripts/ci/tools/ci_free_space_on_ci.sh
-      - name: "Prepare PROD Image"
-        run: ./scripts/ci/images/ci_prepare_prod_image_on_ci.sh
-      - name: "Setup cluster and deploy Airflow"
-        id: setp-cluster-deploy-app
-        run: ./scripts/ci/kubernetes/ci_setup_cluster_and_deploy_airflow_to_kubernetes.sh
-        env:
-          # We have the right image pulled already by the previous step
-          SKIP_BUILDING_PROD_IMAGE: "true"
+      - name: "Get all PROD images"
+        run: ./scripts/ci/images/ci_wait_for_and_verify_all_prod_images.sh
       - name: "Cache virtualenv for kubernetes testing"
         uses: actions/cache@v2
         with:
-          path: ".build/.kubernetes_venv_ ${{ needs.build-info.outputs.defaultPythonVersion }}"
+          path: ".build/.kubernetes_venv"
           key: "kubernetes-${{ needs.build-info.outputs.defaultPythonVersion }}\
+-${{needs.build-info.outputs.kubernetesVersionsListAsString}}
+-${{needs.build-info.outputs.pythonVersionsListAsString}}
 -${{ hashFiles('setup.py','setup.cfg') }}"
-          restore-keys: "kubernetes-${{ needs.build-info.outputs.defaultPythonVersion }}-"
+          restore-keys: "kubernetes-${{ needs.build-info.outputs.defaultPythonVersion }}-\
+-${{needs.build-info.outputs.kubernetesVersionsListAsString}}
+-${{needs.build-info.outputs.pythonVersionsListAsString}}"
       - name: "Cache bin folder with tools for kubernetes testing"
         uses: actions/cache@v2
         with:
-          path: ".build/bin"
-          key: "bin-${{ matrix.kubernetes-version }}\
+          path: ".build/kubernetes-bin"
+          key: "kubernetes-binaries
 -${{ needs.build-info.outputs.defaultKindVersion }}\
 -${{ needs.build-info.outputs.defaultHelmVersion }}"
-          restore-keys: "bin-${{ matrix.kubernetes-version }}"
+          restore-keys: "kubernetes-binaries"
       - name: "Kubernetes Tests"
-        run: ./scripts/ci/kubernetes/ci_run_kubernetes_tests.sh
+        run: ./scripts/ci/kubernetes/ci_setup_clusters_and_run_kubernetes_tests_in_parallel.sh
       - name: "Upload KinD logs"
         uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: >
-            kind-logs-${{matrix.kubernetes-mode}}-${{matrix.python-version}}-${{matrix.kubernetes-version}}
+            kind-logs-
           path: /tmp/kind_logs_*
           retention-days: 7
       - name: "Upload artifact for coverage"
         uses: actions/upload-artifact@v2
         with:
           name: >
-            coverage-k8s-${{matrix.kubernetes-mode}}-${{matrix.python-version}}-${{matrix.kubernetes-version}}
-          path: "./files/coverage.xml"
+            coverage-k8s-
+          path: "./files/coverage*.xml"
           retention-days: 7
 
   push-prod-images-to-github-registry:
@@ -1157,6 +1152,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+          submodules: recursive
       - name: "Setup python"
         uses: actions/setup-python@v2
         with:
@@ -1250,7 +1246,6 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/checkout@v2
         with:
           persist-credentials: false
-          submodules: recursive
       - name: "Setup node"
         uses: actions/setup-node@v2
         with:

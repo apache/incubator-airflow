@@ -19,6 +19,19 @@
 Changelog
 ---------
 
+1.3.0
+.....
+
+Features
+~~~~~~~~
+
+* ``A bunch of template_fields_renderers additions (#15130)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix attributes for AzureDataFactory hook (#14704)``
+
 1.2.0
 .....
 

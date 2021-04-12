@@ -24,6 +24,7 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
+from airflow.utils.edgemodifier import Label
 
 args = {
     'owner': 'airflow',
@@ -63,4 +64,5 @@ with DAG(
             task_id='follow_' + option,
         )
 
-        branching >> t >> dummy_follow >> join
+        # Label is optional here, but it can help identify more complex branches
+        branching >> Label(option) >> t >> dummy_follow >> join  # pylint: disable=expression-not-assigned

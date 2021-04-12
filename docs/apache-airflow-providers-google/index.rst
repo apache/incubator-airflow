@@ -63,12 +63,12 @@ Google services including:
   - `Google Ads <https://ads.google.com/>`__
   - `Google Cloud (GCP) <https://cloud.google.com/>`__
   - `Google Firebase <https://firebase.google.com/>`__
+  - `Google LevelDB <https://github.com/google/leveldb/>`__
   - `Google Marketing Platform <https://marketingplatform.google.com/>`__
   - `Google Workspace <https://workspace.google.pl/>`__ (formerly Google Suite)
-  - `Google LevelDB <https://github.com/google/leveldb>`__
 
 
-Release: 2.1.0
+Release: 2.2.0
 
 Provider package
 ----------------
@@ -130,7 +130,7 @@ PIP package                             Version required
 ``google-cloud-workflows``              ``>=0.1.0,<2.0.0``
 ``grpcio-gcp``                          ``>=0.2.2``
 ``json-merge-patch``                    ``~=0.2``
-``pandas-gbq``
+``pandas-gbq``                          ``<0.15.0``
 ``plyvel``
 ======================================  ===================
 
@@ -164,6 +164,7 @@ Dependent package                                                               
 `apache-airflow-providers-salesforce <https://airflow.apache.org/docs/apache-airflow-providers-salesforce>`_              ``salesforce``
 `apache-airflow-providers-sftp <https://airflow.apache.org/docs/apache-airflow-providers-sftp>`_                          ``sftp``
 `apache-airflow-providers-ssh <https://airflow.apache.org/docs/apache-airflow-providers-ssh>`_                            ``ssh``
+`apache-airflow-providers-trino <https://airflow.apache.org/docs/apache-airflow-providers-trino>`_                        ``trino``
 ========================================================================================================================  ====================
 
  .. Licensed to the Apache Software Foundation (ASF) under one
@@ -186,6 +187,26 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+2.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Adds 'Trino' provider (with lower memory footprint for tests) (#15187)``
+* ``update remaining old import paths of operators (#15127)``
+* ``Override project in dataprocSubmitJobOperator (#14981)``
+* ``GCS to BigQuery Transfer Operator with Labels and Description parameter (#14881)``
+* ``Add GCS timespan transform operator (#13996)``
+* ``Add job labels to bigquery check operators. (#14685)``
+* ``Use libyaml C library when available. (#14577)``
+* ``Add Google leveldb hook and operator (#13109) (#14105)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Google Dataflow Hook to handle no Job Type (#14914)``
 
 2.1.0
 .....

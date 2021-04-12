@@ -19,6 +19,26 @@
 Changelog
 ---------
 
+2.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Adds 'Trino' provider (with lower memory footprint for tests) (#15187)``
+* ``update remaining old import paths of operators (#15127)``
+* ``Override project in dataprocSubmitJobOperator (#14981)``
+* ``GCS to BigQuery Transfer Operator with Labels and Description parameter (#14881)``
+* ``Add GCS timespan transform operator (#13996)``
+* ``Add job labels to bigquery check operators. (#14685)``
+* ``Use libyaml C library when available. (#14577)``
+* ``Add Google leveldb hook and operator (#13109) (#14105)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Google Dataflow Hook to handle no Job Type (#14914)``
+
 2.1.0
 .....
 

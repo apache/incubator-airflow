@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 import datetime as dt
-import getpass
 from unittest import mock
 
 import pytest
@@ -23,6 +22,7 @@ from parameterized import parameterized
 
 from airflow.models import DagBag, DagRun, SlaMiss, TaskInstance
 from airflow.security import permissions
+from airflow.utils.platform import getuser
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
 from airflow.utils.timezone import datetime
@@ -160,7 +160,7 @@ class TestGetTaskInstance(TestTaskInstanceEndpoint):
             "state": "running",
             "task_id": "print_the_context",
             "try_number": 0,
-            "unixname": getpass.getuser(),
+            "unixname": getuser(),
         }
 
     def test_should_respond_200_with_task_state_in_removed(self, session):
@@ -190,7 +190,7 @@ class TestGetTaskInstance(TestTaskInstanceEndpoint):
             "state": "removed",
             "task_id": "print_the_context",
             "try_number": 0,
-            "unixname": getpass.getuser(),
+            "unixname": getuser(),
         }
 
     def test_should_respond_200_task_instance_with_sla(self, session):
@@ -238,7 +238,7 @@ class TestGetTaskInstance(TestTaskInstanceEndpoint):
             "state": "running",
             "task_id": "print_the_context",
             "try_number": 0,
-            "unixname": getpass.getuser(),
+            "unixname": getuser(),
         }
 
     def test_should_raises_401_unauthenticated(self):
@@ -761,6 +761,31 @@ class TestPostClearTaskInstances(TestTaskInstanceEndpoint):
                 {
                     "dry_run": True,
                     "only_failed": True,
+                },
+                2,
+            ),
+            (
+                "clear by task ids",
+                "example_python_operator",
+                [
+                    {"execution_date": DEFAULT_DATETIME_1, "state": State.FAILED},
+                    {
+                        "execution_date": DEFAULT_DATETIME_1 + dt.timedelta(days=1),
+                        "state": State.FAILED,
+                    },
+                    {
+                        "execution_date": DEFAULT_DATETIME_1 + dt.timedelta(days=2),
+                        "state": State.FAILED,
+                    },
+                    {
+                        "execution_date": DEFAULT_DATETIME_1 + dt.timedelta(days=3),
+                        "state": State.FAILED,
+                    },
+                ],
+                "example_python_operator",
+                {
+                    "dry_run": True,
+                    "task_ids": ["print_the_context", "sleep_for_1"],
                 },
                 2,
             ),
