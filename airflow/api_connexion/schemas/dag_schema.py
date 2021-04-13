@@ -21,10 +21,9 @@ from itsdangerous import URLSafeSerializer
 from marshmallow import Schema, fields
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 
-from airflow import DAG
 from airflow.api_connexion.schemas.common_schema import ScheduleIntervalSchema, TimeDeltaSchema, TimezoneField
 from airflow.configuration import conf
-from airflow.models.dag import DagModel, DagTag
+from airflow.models.dag import DAG, DagModel, DagTag
 
 
 class DagTagSchema(SQLAlchemySchema):

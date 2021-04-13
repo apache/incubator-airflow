@@ -26,11 +26,11 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 import tenacity
+from typing_extensions import Protocol
 
 from airflow import configuration
 from airflow.cli.simple_table import AirflowConsole
 from airflow.providers_manager import ProvidersManager
-from airflow.typing_compat import Protocol
 from airflow.utils.cli import suppress_logs_and_warning
 from airflow.utils.platform import getuser
 from airflow.version import version as airflow_version

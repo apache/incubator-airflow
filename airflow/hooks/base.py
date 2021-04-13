@@ -20,8 +20,9 @@ import logging
 import warnings
 from typing import Any, Dict, List
 
+from typing_extensions import Protocol
+
 from airflow.models.connection import Connection
-from airflow.typing_compat import Protocol
 from airflow.utils.log.logging_mixin import LoggingMixin
 
 log = logging.getLogger(__name__)

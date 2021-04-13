@@ -17,7 +17,6 @@
 from flask import current_app, g, request
 from marshmallow import ValidationError
 
-from airflow import DAG
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import BadRequest, NotFound
 from airflow.api_connexion.parameters import check_limit, format_parameters
@@ -28,7 +27,7 @@ from airflow.api_connexion.schemas.dag_schema import (
     dags_collection_schema,
 )
 from airflow.exceptions import SerializedDagNotFound
-from airflow.models.dag import DagModel
+from airflow.models.dag import DAG, DagModel
 from airflow.security import permissions
 from airflow.utils.session import provide_session
 

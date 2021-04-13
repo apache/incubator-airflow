@@ -164,9 +164,9 @@ issue unrelated to spelling. Please review the traceback.
     """
     console.print(msg)
     console.print()
-    console.print
+    console.print()
     console.print("[red]" + "#" * 30 + " End docs build errors summary " + "#" * 30 + "[/]")
-    console.print
+    console.print()
 
 
 def _display_error(error: SpellingError):

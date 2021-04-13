@@ -103,6 +103,8 @@ def build_command_args() -> Tuple[Dict[str, list], list]:
     return command_args, list(hyphen_args)
 
 
+COMMAND_ARGS: List[str]
+HYPHEN_ARGS: List[str]
 COMMAND_ARGS, HYPHEN_ARGS = build_command_args()
 
 

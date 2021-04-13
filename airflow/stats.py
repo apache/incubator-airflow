@@ -24,9 +24,10 @@ import time
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, cast
 
+from typing_extensions import Protocol
+
 from airflow.configuration import conf
 from airflow.exceptions import AirflowConfigException, InvalidStatsNameException
-from airflow.typing_compat import Protocol
 
 log = logging.getLogger(__name__)
 
@@ -347,9 +348,9 @@ class SafeDogStatsdLogger:
         return Timer()
 
 
-class _Stats(type):
+class _Stats:
     factory = None
-    instance: Optional[StatsLogger] = None
+    instance = None  # : Optional[StatsLogger] = None
 
     def __getattr__(cls, name):
         if not cls.instance:
@@ -361,7 +362,6 @@ class _Stats(type):
         return getattr(cls.instance, name)
 
     def __init__(cls, *args, **kwargs):
-        super().__init__(cls)
         if cls.__class__.factory is None:
             is_datadog_enabled_defined = conf.has_option('metrics', 'statsd_datadog_enabled')
             if is_datadog_enabled_defined and conf.getboolean('metrics', 'statsd_datadog_enabled'):

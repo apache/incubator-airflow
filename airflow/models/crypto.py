@@ -19,10 +19,10 @@ import logging
 from typing import Optional
 
 from cryptography.fernet import Fernet, MultiFernet
+from typing_extensions import Protocol
 
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException
-from airflow.typing_compat import Protocol
 
 log = logging.getLogger(__name__)
 

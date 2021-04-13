@@ -19,12 +19,12 @@
 from typing import Optional, Sequence, Union
 
 from google.api_core.retry import Retry
-from google.cloud.speech_v1.types import RecognitionConfig
+from google.cloud.speech_v1.types import RecognitionAudio, RecognitionConfig
 from google.protobuf.json_format import MessageToDict
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
-from airflow.providers.google.cloud.hooks.speech_to_text import CloudSpeechToTextHook, RecognitionAudio
+from airflow.providers.google.cloud.hooks.speech_to_text import CloudSpeechToTextHook
 from airflow.utils.decorators import apply_defaults
 
 

@@ -511,6 +511,11 @@ autoapi_root = '_api'
 # TOC tree entry yourself.
 autoapi_add_toctree_entry = False
 
+# Options for display of the generated documentation.
+autoapi_options = [
+    'members',
+]
+
 # -- Options for ext.exampleinclude --------------------------------------------
 exampleinclude_sourceroot = os.path.abspath('..')
 

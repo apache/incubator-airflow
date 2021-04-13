@@ -17,9 +17,10 @@
 # under the License.
 from typing import Any, Callable, Dict, Optional
 
+from jira.exceptions import JIRAError
 from jira.resources import Issue, Resource
 
-from airflow.providers.jira.operators.jira import JIRAError, JiraOperator
+from airflow.providers.jira.operators.jira import JiraOperator
 from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 

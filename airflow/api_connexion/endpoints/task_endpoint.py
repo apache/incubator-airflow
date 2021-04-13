@@ -18,11 +18,11 @@ from operator import attrgetter
 
 from flask import current_app
 
-from airflow import DAG
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import BadRequest, NotFound
 from airflow.api_connexion.schemas.task_schema import TaskCollection, task_collection_schema, task_schema
 from airflow.exceptions import TaskNotFound
+from airflow.models.dag import DAG
 from airflow.security import permissions
 
 

@@ -17,10 +17,10 @@
 
 from flask import current_app
 
-from airflow import DAG
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import NotFound
 from airflow.exceptions import TaskNotFound
+from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.models.dagrun import DagRun as DR
 from airflow.security import permissions

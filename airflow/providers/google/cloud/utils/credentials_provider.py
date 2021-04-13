@@ -16,8 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-This module contains a mechanism for providing temporary
-Google Cloud authentication.
+This module contains a mechanism for providing temporary Google Cloud authentication.
 """
 import json
 import logging
@@ -79,7 +78,7 @@ def build_gcp_conn(
 def provide_gcp_credentials(key_file_path: Optional[str] = None, key_file_dict: Optional[Dict] = None):
     """
     Context manager that provides a Google Cloud credentials for application supporting `Application
-    Default Credentials (ADC) strategy <https://cloud.google.com/docs/authentication/production>`__.
+    Default Credentials (ADC) strategy <https://cloud.google.com/docs/authentication/production>`_.
 
     It can be used to provide credentials for external programs (e.g. gcloud) that expect authorization
     file in ``GOOGLE_APPLICATION_CREDENTIALS`` environment variable.
@@ -144,11 +143,11 @@ def provide_gcp_conn_and_credentials(
     """
     Context manager that provides both:
 
-    - Google Cloud credentials for application supporting `Application Default Credentials (ADC)
-      strategy <https://cloud.google.com/docs/authentication/production>`__.
-    - temporary value of :envvar:`AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT` connection
+     - Google Cloud credentials for application supporting `Application Default Credentials (ADC)
+       strategy <https://cloud.google.com/docs/authentication/production>`__.
+     - temporary value of :envvar:`AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT` connection
 
-    :param key_file_path: Path to file with Google Cloud Service Account .json file.
+    :param key_file_path: Path to file with Google Cloud Service Account ``.json`` file.
     :type key_file_path: str
     :param scopes: OAuth scopes for the connection
     :type scopes: Sequence
@@ -175,7 +174,7 @@ class _CredentialProvider(LoggingMixin):
     """
     Prepare the Credentials object for Google API and the associated project_id
 
-    Only either `key_path` or `keyfile_dict` should be provided, or an exception will
+    Only either ``key_path`` or ``keyfile_dict`` should be provided, or an exception will
     occur. If neither of them are provided, return default credentials for the current environment
 
     :param key_path: Path to Google Cloud Service Account key file (JSON).
@@ -311,7 +310,7 @@ def get_credentials_and_project_id(*args, **kwargs) -> Tuple[google.auth.credent
 
 def _get_scopes(scopes: Optional[str] = None) -> Sequence[str]:
     """
-    Parse a comma-separated string containing OAuth2 scopes if `scopes` is provided.
+    Parse a comma-separated string containing OAuth2 scopes if ``scopes`` is provided.
     Otherwise, default scope will be returned.
 
     :param scopes: A comma-separated string containing OAuth2 scopes
@@ -330,10 +329,8 @@ def _get_target_principal_and_delegates(
     to directly impersonate using short-term credentials, if any) and optional list of delegates
     required to get the access_token of target_principal.
 
-    :param impersonation_chain: the service account to impersonate or a chained list leading to this
-        account
+    :param impersonation_chain: the service account to impersonate or a chained list leading to this account
     :type impersonation_chain: Optional[Union[str, Sequence[str]]]
-
     :return: Returns the tuple of target_principal and delegates
     :rtype: Tuple[Optional[str], Optional[Sequence[str]]]
     """
@@ -352,7 +349,6 @@ def _get_project_id_from_service_account_email(service_account_email: str) -> st
 
     :param service_account_email: email of the service account.
     :type service_account_email: str
-
     :return: Returns the project_id of the provided service account.
     :rtype: str
     """
@@ -360,5 +356,5 @@ def _get_project_id_from_service_account_email(service_account_email: str) -> st
         return service_account_email.split('@')[1].split('.')[0]
     except IndexError:
         raise AirflowException(
-            f"Could not extract project_id from service account's email: " f"{service_account_email}."
+            f"Could not extract project_id from service account's email: {service_account_email}."
         )

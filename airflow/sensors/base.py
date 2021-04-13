@@ -18,7 +18,6 @@
 
 import datetime
 import hashlib
-import os
 import time
 from datetime import timedelta
 from typing import Any, Callable, Dict, Iterable
@@ -322,9 +321,3 @@ def poke_mode_only(cls):
         return cls_type
 
     return decorate(cls)
-
-
-if 'BUILDING_AIRFLOW_DOCS' in os.environ:
-    # flake8: noqa: F811
-    # Monkey patch hook to get good function headers while building docs
-    apply_defaults = lambda x: x

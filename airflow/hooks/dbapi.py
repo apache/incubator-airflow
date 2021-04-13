@@ -21,10 +21,10 @@ from typing import Any, Optional
 from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine
+from typing_extensions import Protocol
 
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
-from airflow.typing_compat import Protocol
 
 
 class ConnectorProtocol(Protocol):

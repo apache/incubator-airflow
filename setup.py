@@ -254,7 +254,7 @@ doc = [
     'sphinx>=2.1.2, <3.5.0',
     f'sphinx-airflow-theme{get_sphinx_theme_version()}',
     'sphinx-argparse>=0.1.13',
-    'sphinx-autoapi==1.0.0',
+    'sphinx-autoapi==1.7.0',
     'sphinx-copybutton',
     'sphinx-jinja~=1.1',
     'sphinx-rtd-theme>=0.1.6',

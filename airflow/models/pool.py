@@ -20,11 +20,11 @@ from typing import Dict, Iterable, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, Text, func
 from sqlalchemy.orm.session import Session
+from typing_extensions import TypedDict
 
 from airflow.exceptions import AirflowException
 from airflow.models.base import Base
 from airflow.ti_deps.dependencies_states import EXECUTION_STATES
-from airflow.typing_compat import TypedDict
 from airflow.utils.session import provide_session
 from airflow.utils.sqlalchemy import nowait, with_row_locks
 from airflow.utils.state import State
