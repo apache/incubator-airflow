@@ -24,13 +24,11 @@ Welcome to Apache Airflow! Contributions from the community are the heartbeat of
 and credit will always be given.
 
 The guide below contains instructions on how to contribute to core Apache Airflow code. If you are a new contributor,
-follow `Contributors Quick Start <https://github.com/apache/airflow/blob/master
-/CONTRIBUTORS_QUICK_START.rst>`__ first for easy, step-by-step guidelines on how to set up your development
+follow `Contributors Quick Start <https://github.com/apache/airflow/blob/master/contribute/CONTRIBUTE_QUICK_START.rst>`__ first for easy, step-by-step guidelines on how to set up your development
 environment and make your first contribution.
 
 If you're interested in contributing to other parts of the project, refer to
-`Contribute to Airflow Documentation <https://github.com/apache/airflow/blob/master
-/CONTROBUTE-DOCS.rst>`__ or `Contribute to Airflow Providers <https://airflow.apache.org/docs/apache-airflow-providers/index.html#creating-your-own-providers>`__.
+`Contribute to Airflow Documentation <https://github.com/apache/airflow/blob/master/contribute/CONTRIBUTE-DOCS.rst>`__ or `Contribute to Airflow Providers <https://airflow.apache.org/docs/apache-airflow-providers/index.html#creating-your-own-providers>`__.
 
 Where to Contribute
 --------------------
@@ -116,7 +114,7 @@ You can configure the Docker-based Breeze development environment as follows:
    as the project's default virtualenv in your IDE.
 
 Step 3: Create a Branch & Make Local Changes
-------------------
+--------------------------------------------
 Create a local branch in your forked GitHub repository to track your local changes. Make sure to use latest ``apache/master`` as the base for the branch, and that your fork's master branch is synced with Apache Airflow's master as well. 
 To bring in the latest changes from the Apache Airflow repo into your master at any given time, run ``git pull apache/master`` from the ``master`` branch in your fork. If you have conflicts and want to override your local master,
 you can override your local changes with ``git fetch apache; git reset --hard apache/master``.
@@ -127,7 +125,7 @@ Note: While we recommend that you always create a local branch for your developm
 This allows you to easily compare changes, especially if you or your team are working on multiple changes at once. 
 
 Step 4: Prepare a PR
-------------------
+--------------------
 
 Now that you've made your changes locally, create a `Pull Request from your fork <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork>`__.
 
