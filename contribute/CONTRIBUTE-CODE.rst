@@ -135,7 +135,7 @@ Now that you've made your changes locally, create a `Pull Request from your fork
 
    For example, to address this example issue, do the following:
 
-   * Read about `email configuration in Airflow </docs/howto/email-config.rst>`__.
+   * Read about `email configuration in Airflow </docs/apache-airflow/howto/email-config.rst>`__.
 
    * Find the class you should modify. For the example GitHub issue,
      this is `email.py <https://github.com/apache/airflow/blob/master/airflow/utils/email.py>`__.
