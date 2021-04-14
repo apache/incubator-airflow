@@ -545,17 +545,14 @@ them manually (committers only). For example when master build did not succeed f
 This can be done by running this (it utilizes parallel preparation of the constraints):
 
 .. code-block:: bash
-    for python_version in 3.6 3.7 3.8
     export CURRENT_PYTHON_MAJOR_MINOR_VERSIONS_AS_STRING="3.6 3.7 3.8"
     for python_version in $(echo "${CURRENT_PYTHON_MAJOR_MINOR_VERSIONS_AS_STRING}")
     do
-      ./breeze generate-constraints --generate-constraints-mode source-providers --python ${python_version} --build-cache-local
-      ./breeze generate-constraints --generate-constraints-mode pypi-providers --python ${python_version} --build-cache-local
-      ./breeze generate-constraints --generate-constraints-mode no-providers --python ${python_version} --build-cache-local
       ./breeze build-image --upgrade-to-newer-dependencies --python ${python_version} --build-cache-local
       ./breeze build-image --upgrade-to-newer-dependencies --python ${python_version} --build-cache-local
       ./breeze build-image --upgrade-to-newer-dependencies --python ${python_version} --build-cache-local
     done
+    
     GENERATE_CONSTRAINTS_MODE="pypi-providers" ./scripts/ci/constraints/ci_generate_all_constraints.sh
     GENERATE_CONSTRAINTS_MODE="source-providers" ./scripts/ci/constraints/ci_generate_all_constraints.sh
     GENERATE_CONSTRAINTS_MODE="no-providers" ./scripts/ci/constraints/ci_generate_all_constraints.sh
