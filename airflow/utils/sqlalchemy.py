@@ -26,7 +26,7 @@ from dateutil import relativedelta
 from sqlalchemy import event, nullsfirst
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.session import Session
-from sqlalchemy.types import DateTime, Text, TypeDecorator
+from sqlalchemy.types import DateTime, JSON, Text, TypeDecorator
 
 from airflow.configuration import conf
 
@@ -89,6 +89,25 @@ class UtcDateTime(TypeDecorator):
                 value = value.astimezone(utc)
 
         return value
+
+
+class ExtendedJSON(TypeDecorator):
+    """
+    A version of the JSON column that uses the Airflow extended JSON
+    serialization provided by airflow.serialization.
+    """
+
+    impl = JSON()
+
+    def process_bind_param(self, value, dialect):
+        from airflow.serialization.serialized_objects import BaseSerialization
+
+        return BaseSerialization._serialize(value)
+
+    def process_result_value(self, value, dialect):
+        from airflow.serialization.serialized_objects import BaseSerialization
+
+        return BaseSerialization._deserialize(value)
 
 
 class Interval(TypeDecorator):

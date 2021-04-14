@@ -506,6 +506,7 @@ devel = [
     'pylint~=2.8.1',
     'pysftp',
     'pytest~=6.0',
+    'pytest-asyncio',
     'pytest-cov',
     'pytest-instafail',
     'pytest-rerunfailures~=9.1',

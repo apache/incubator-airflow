@@ -1529,6 +1529,18 @@ airflow_commands: List[CLICommand] = [
         ),
     ),
     ActionCommand(
+        name='triggerer',
+        help="Start a triggerer instance",
+        func=lazy_load_command('airflow.cli.commands.triggerer_command.triggerer'),
+        args=(
+            ARG_PID,
+            ARG_DAEMON,
+            ARG_STDOUT,
+            ARG_STDERR,
+            ARG_LOG_FILE,
+        ),
+    ),
+    ActionCommand(
         name='version',
         help="Show the version",
         func=lazy_load_command('airflow.cli.commands.version_command.version'),

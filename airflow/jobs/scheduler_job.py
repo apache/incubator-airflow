@@ -47,7 +47,7 @@ from airflow.models import DAG, DagModel, SlaMiss, errors
 from airflow.models.dagbag import DagBag
 from airflow.models.dagrun import DagRun
 from airflow.models.serialized_dag import SerializedDagModel
-from airflow.models.taskinstance import SimpleTaskInstance, TaskInstanceKey
+from airflow.models.taskinstance import SimpleTaskInstance, TaskInstance, TaskInstanceKey
 from airflow.stats import Stats
 from airflow.ti_deps.dependencies_states import EXECUTION_STATES
 from airflow.utils import timezone
@@ -1356,6 +1356,11 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         )
 
         timers.call_regular_interval(
+            conf.getfloat('scheduler', 'trigger_timeout_check_interval', fallback=60.0),
+            self.check_trigger_timeouts,
+        )
+
+        timers.call_regular_interval(
             conf.getfloat('scheduler', 'pool_metrics_interval', fallback=5.0),
             self._emit_pool_metrics,
         )
@@ -1424,7 +1429,13 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                 )
 
                 self._change_state_for_tis_without_dagrun(
-                    old_states=[State.QUEUED, State.SCHEDULED, State.UP_FOR_RESCHEDULE, State.SENSING],
+                    old_states=[
+                        State.QUEUED,
+                        State.SCHEDULED,
+                        State.UP_FOR_RESCHEDULE,
+                        State.SENSING,
+                        State.DEFERRED,
+                    ],
                     new_state=State.NONE,
                     session=session,
                 )
@@ -1897,3 +1908,17 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                     raise
 
         return len(to_reset)
+
+    @provide_session
+    def check_trigger_timeouts(self, session: Session = None):
+        """
+        Looks at all tasks that are in the "deferred" state and whose trigger
+        timeout has passed, so they can be marked as failed.
+        """
+        timed_out_tasks = session.query(TaskInstance).filter(
+            TaskInstance.state == State.DEFERRED, TaskInstance.trigger_timeout < timezone.utcnow()
+        )
+        num_tasks = timed_out_tasks.count()
+        if num_tasks:
+            timed_out_tasks.update({"state": State.FAILED})
+            self.log.info("Timed out %i deferred tasks without fired triggers", num_tasks)

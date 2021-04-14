@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from airflow.triggers.temporal import DateTimeTrigger
 from airflow.sensors.base import BaseSensorOperator
 from airflow.utils import timezone
 
@@ -35,3 +36,18 @@ class TimeSensor(BaseSensorOperator):
     def poke(self, context):
         self.log.info('Checking if the time (%s) has come', self.target_time)
         return timezone.make_naive(timezone.utcnow(), self.dag.timezone).time() > self.target_time
+
+
+class AsyncTimeSensor(BaseSensorOperator):
+    @apply_defaults
+    def __init__(self, *, target_time, **kwargs):
+        super().__init__(**kwargs)
+        self.target_time = target_time
+
+    def execute(self, context):
+        self.log.info("Kicking off trigger deferral")
+        self.defer(trigger=DateTimeTrigger(moment=self.target_time), method_name="execute_complete")
+
+    def execute_complete(self, context, event=None):
+        self.log.info("Trigger complete, sensor complete")
+        return
