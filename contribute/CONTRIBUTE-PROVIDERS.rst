@@ -63,7 +63,7 @@ google_auth, grpc, hashicorp, hdfs, hive, http, imap, jdbc, jenkins, jira, kerbe
 ldap, microsoft.azure, microsoft.mssql, microsoft.winrm, mongo, mssql, mysql, neo4j, odbc, openfaas,
 opsgenie, oracle, pagerduty, papermill, password, pinot, plexus, postgres, presto, qds, qubole,
 rabbitmq, redis, s3, salesforce, samba, segment, sendgrid, sentry, sftp, singularity, slack,
-snowflake, spark, sqlite, ssh, statsd, tableau, telegram, vertica, virtualenv, webhdfs, winrm,
+snowflake, spark, sqlite, ssh, statsd, tableau, telegram, trino, vertica, virtualenv, webhdfs, winrm,
 yandex, zendesk
 
   .. END EXTRAS HERE
@@ -129,11 +129,11 @@ apache.hive                amazon,microsoft.mssql,mysql,presto,samba,vertica
 apache.livy                http
 dingding                   http
 discord                    http
-google                     amazon,apache.beam,apache.cassandra,cncf.kubernetes,facebook,microsoft.azure,microsoft.mssql,mysql,oracle,postgres,presto,salesforce,sftp,ssh
+google                     amazon,apache.beam,apache.cassandra,cncf.kubernetes,facebook,microsoft.azure,microsoft.mssql,mysql,oracle,postgres,presto,salesforce,sftp,ssh, trino
 hashicorp                  google
 microsoft.azure            google,oracle
 microsoft.mssql            odbc
-mysql                      amazon,presto,vertica
+mysql                      amazon,presto,trino,vertica
 opsgenie                   http
 postgres                   amazon
 salesforce                 tableau
@@ -223,8 +223,7 @@ providers.
 * Unit tests have to be comprehensive and they should tests for possible regressions and edge cases
   not only "green path"
 
-* Integration tests where 'local' integration with a component is possible (for example tests with
-  MySQL/Postgres DB/Presto/Kerberos all have integration tests which run with real, dockerised components
+* Integration tests where 'local' integration with a component is possible (for example tests with MySQL/Postgres DB/Trino/Kerberos all have integration tests which run with real, dockerized components)
 
 * System Tests which provide end-to-end testing, usually testing together several operators, sensors,
   transfers connecting to a real external system
