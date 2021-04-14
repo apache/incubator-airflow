@@ -541,9 +541,7 @@ Manually generating constraint files
 ------------------------------------
 
 The constraint files are generated automatically by the CI job. Sometimes however it is needed to regenerate
-them manually (committers only). For example when master build did not succeed for quite some time). This can be done by
-running this:
-them manually (committers only). For example when master build did not succeed for quite some time).
+them manually (committers only). For example when master build did not succeed for quite some time.
 This can be done by running this (it utilizes parallel preparation of the constraints):
 
 .. code-block:: bash
