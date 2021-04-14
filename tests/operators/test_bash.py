@@ -18,11 +18,11 @@
 
 import unittest
 from datetime import datetime, timedelta
-from subprocess import PIPE, STDOUT
 from tempfile import NamedTemporaryFile
 from unittest import mock
 
 import pytest
+from parameterized import parameterized
 
 from airflow.exceptions import AirflowException, AirflowSkipException
 from airflow.models import DagRun
@@ -40,12 +40,9 @@ INTERVAL = timedelta(hours=12)
 class TestBashOperator(unittest.TestCase):
     def test_echo_env_variables(self):
         """
-        Test that env variables are exported correctly to the
-        task bash environment.
+        Test that env variables are exported correctly to the task bash environment.
         """
-        now = datetime.utcnow()
-        now = now.replace(tzinfo=timezone.utc)
-
+        utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)
         dag = DAG(
             dag_id='bash_op_test',
             default_args={'owner': 'airflow', 'retries': 100, 'start_date': DEFAULT_DATE},
@@ -55,8 +52,8 @@ class TestBashOperator(unittest.TestCase):
 
         dag.create_dagrun(
             run_type=DagRunType.MANUAL,
-            execution_date=DEFAULT_DATE,
-            start_date=now,
+            execution_date=utc_now,
+            start_date=utc_now,
             state=State.RUNNING,
             external_trigger=False,
         )
@@ -76,7 +73,7 @@ class TestBashOperator(unittest.TestCase):
             with mock.patch.dict(
                 'os.environ', {'AIRFLOW_HOME': 'MY_PATH_TO_AIRFLOW_HOME', 'PYTHONPATH': 'AWESOME_PYTHONPATH'}
             ):
-                task.run(DEFAULT_DATE, DEFAULT_DATE, ignore_first_depends_on_past=True, ignore_ti_state=True)
+                task.run(utc_now, utc_now, ignore_first_depends_on_past=True, ignore_ti_state=True)
 
             with open(tmp_file.name) as file:
                 output = ''.join(file.readlines())
@@ -85,14 +82,21 @@ class TestBashOperator(unittest.TestCase):
                 assert 'AWESOME_PYTHONPATH' in output
                 assert 'bash_op_test' in output
                 assert 'echo_env_vars' in output
-                assert DEFAULT_DATE.isoformat() in output
-                assert DagRun.generate_run_id(DagRunType.MANUAL, DEFAULT_DATE) in output
+                assert utc_now.isoformat() in output
+                assert DagRun.generate_run_id(DagRunType.MANUAL, utc_now) in output
 
-    def test_return_value(self):
-        bash_operator = BashOperator(bash_command='echo "stdout"', task_id='test_return_value', dag=None)
-        return_value = bash_operator.execute(context={})
-
-        assert return_value == 'stdout'
+    @parameterized.expand(
+        [
+            ('test-val', 'test-val'),
+            ('test-val\ntest-val\n', ''),
+            ('test-val\ntest-val', 'test-val'),
+            ('', ''),
+        ]
+    )
+    def test_return_value(self, val, expected):
+        op = BashOperator(task_id='abc', bash_command=f'set -e; echo "{val}";')
+        line = op.execute({})
+        assert line == expected
 
     def test_raise_exception_on_non_zero_exit_code(self):
         bash_operator = BashOperator(bash_command='exit 42', task_id='test_return_value', dag=None)
@@ -112,31 +116,6 @@ class TestBashOperator(unittest.TestCase):
         bash_operator = BashOperator(bash_command='echo "stdout"', task_id='test_default_retries', dag=None)
 
         assert bash_operator.retries == 0
-
-    @mock.patch.dict('os.environ', clear=True)
-    @mock.patch(
-        "airflow.operators.bash.TemporaryDirectory",
-        **{'return_value.__enter__.return_value': '/tmp/airflowtmpcatcat'},  # type: ignore
-    )
-    @mock.patch(
-        "airflow.operators.bash.Popen",
-        **{  # type: ignore
-            'return_value.stdout.readline.side_effect': [b'BAR', b'BAZ'],
-            'return_value.returncode': 0,
-        },
-    )
-    def test_should_exec_subprocess(self, mock_popen, mock_temporary_directory):
-        bash_operator = BashOperator(bash_command='echo "stdout"', task_id='test_return_value', dag=None)
-        bash_operator.execute({})
-
-        mock_popen.assert_called_once_with(
-            ['bash', '-c', 'echo "stdout"'],
-            cwd='/tmp/airflowtmpcatcat',
-            env={},
-            preexec_fn=mock.ANY,
-            stderr=STDOUT,
-            stdout=PIPE,
-        )
 
     def test_skip(self):
         op = BashOperator(task_id='abc', bash_command='set -e; echo "hello world"; exit 127;')

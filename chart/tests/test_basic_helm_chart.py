@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 import unittest
+from subprocess import CalledProcessError
 from typing import Any, Dict, List, Union
 
 import jmespath
@@ -133,3 +133,16 @@ class TestBaseChartTest(unittest.TestCase):
             if image.startswith(image_repo):
                 # Make sure that a command is not specified
                 assert "command" not in obj
+
+    def test_unsupported_executor(self):
+        with self.assertRaises(CalledProcessError) as ex_ctx:
+            render_chart(
+                "TEST-BASIC",
+                {
+                    "executor": "SequentialExecutor",
+                },
+            )
+        assert (
+            'executor must be one of the following: "LocalExecutor", "CeleryExecutor", '
+            '"KubernetesExecutor", "CeleryKubernetesExecutor"' in ex_ctx.exception.stderr.decode()
+        )

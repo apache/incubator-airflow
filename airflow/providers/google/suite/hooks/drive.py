@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Hook for Google Drive service"""
+from io import TextIOWrapper
 from typing import Any, Optional, Sequence, Union
 
 from googleapiclient.discovery import Resource, build
@@ -203,13 +204,13 @@ class GoogleDriveHook(GoogleBaseHook):
         :rtype: str
         """
         service = self.get_conn()
-        directory_path, _, filename = remote_location.rpartition("/")
+        directory_path, _, file_name = remote_location.rpartition("/")
         if directory_path:
             parent = self._ensure_folders_exists(directory_path)
         else:
             parent = "root"
 
-        file_metadata = {"name": filename, "parents": [parent]}
+        file_metadata = {"name": file_name, "parents": [parent]}
         media = MediaFileUpload(local_location)
         file = (
             service.files()  # pylint: disable=no-member
@@ -218,3 +219,15 @@ class GoogleDriveHook(GoogleBaseHook):
         )
         self.log.info("File %s uploaded to gdrive://%s.", local_location, remote_location)
         return file.get("id")
+
+    def download_file(self, file_id: str, file_handle: TextIOWrapper, chunk_size: int = 104857600):
+        """
+        Download a file from Google Drive.
+
+        :param file_id: the id of the file
+        :type file_id: str
+        :param file_handle: file handle used to write the content to
+        :type file_handle: io.TextIOWrapper
+        """
+        request = self.get_media_request(file_id=file_id)
+        self.download_content_from_request(file_handle=file_handle, request=request, chunk_size=chunk_size)

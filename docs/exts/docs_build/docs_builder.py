@@ -54,9 +54,9 @@ class AirflowDocsBuilder:
     @property
     def is_versioned(self):
         """Is current documentation package versioned?"""
-        # Disable versioning. This documentation does not apply to any issued product and we can update
+        # Disable versioning. This documentation does not apply to any released product and we can update
         # it as needed, i.e. with each new package of providers.
-        return self.package_name != 'apache-airflow-providers'
+        return self.package_name not in ('apache-airflow-providers', 'docker-stack')
 
     @property
     def _build_dir(self) -> str:
@@ -150,8 +150,8 @@ class AirflowDocsBuilder:
                 )
                 warning_text = ""
                 for filepath in glob(f"{tmp_dir}/**/*.spelling", recursive=True):
-                    with open(filepath) as speeling_file:
-                        warning_text += speeling_file.read()
+                    with open(filepath) as spelling_file:
+                        warning_text += spelling_file.read()
 
                 spelling_errors.extend(parse_spelling_warnings(warning_text, self._src_dir))
         return spelling_errors
@@ -241,4 +241,10 @@ def get_available_providers_packages():
 def get_available_packages():
     """Get list of all available packages to build."""
     provider_package_names = get_available_providers_packages()
-    return ["apache-airflow", *provider_package_names, "apache-airflow-providers"]
+    return [
+        "apache-airflow",
+        *provider_package_names,
+        "apache-airflow-providers",
+        "helm-chart",
+        "docker-stack",
+    ]

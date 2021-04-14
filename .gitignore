@@ -215,3 +215,7 @@ Chart.lock
 pip-wheel-metadata
 
 .pypirc
+
+# Dev files
+/dev/packages.txt
+/dev/Dockerfile.pmc

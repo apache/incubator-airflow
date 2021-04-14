@@ -47,7 +47,7 @@ Your reverse proxy (ex: nginx) should be configured as follow:
 
         location /myorg/airflow/ {
             proxy_pass http://localhost:8080;
-            proxy_set_header Host $host;
+            proxy_set_header Host $http_host;
             proxy_redirect off;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
@@ -64,7 +64,7 @@ Your reverse proxy (ex: nginx) should be configured as follow:
           location /myorg/flower/ {
               rewrite ^/myorg/flower/(.*)$ /$1 break;  # remove prefix from http header
               proxy_pass http://localhost:5555;
-              proxy_set_header Host $host;
+              proxy_set_header Host $http_host;
               proxy_redirect off;
               proxy_http_version 1.1;
               proxy_set_header Upgrade $http_upgrade;

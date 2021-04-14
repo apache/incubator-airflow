@@ -63,7 +63,7 @@ spec:
         - name: run-airflow-migrations
           image: {{ template "airflow_image" . }}
           imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
-          # Support running against 1.10.x and 2.0.0dev/master
+          # Support running against 1.10.x and 2.x
           args: ["bash", "-c", "airflow db upgrade || airflow upgradedb"]
           envFrom:
           {{- include "custom_airflow_environment_from" . | default "\n  []" | indent 10 }}

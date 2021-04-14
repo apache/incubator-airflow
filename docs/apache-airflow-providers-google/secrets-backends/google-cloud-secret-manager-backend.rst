@@ -79,13 +79,13 @@ the following parameters:
 
 All options should be passed as a JSON dictionary.
 
-For example, if you want to set parameter ``connections_prefix`` to ``"airflow-tenant-primary"`` and parameter ``variables_prefix`` to ``"variables_prefix"``, your configuration file should look like this:
+For example, if you want to set parameter ``connections_prefix`` to ``"example-connections-prefix"`` and parameter ``variables_prefix`` to ``"example-variables-prefix"``, your configuration file should look like this:
 
 .. code-block:: ini
 
     [secrets]
     backend = airflow.providers.google.cloud.secrets.secret_manager.CloudSecretManagerBackend
-    backend_kwargs = {"connections_prefix": "airflow-tenant-primary", "variables_prefix": "airflow-tenant-primary"}
+    backend_kwargs = {"connections_prefix": "example-connections-prefix", "variables_prefix": "example-variables-prefix"}
 
 Set-up credentials
 """"""""""""""""""
@@ -114,14 +114,14 @@ In order to manage secrets, you can use the ``gcloud`` tool or other supported t
 
 The name of the secret must fit the following formats:
 
- * for connection: ``[variable_prefix][sep][connection_name]``
- * for variable: ``[connections_prefix][sep][variable_name]``
+ * for connections: ``[connections_prefix][sep][connection_name]``
+ * for variables: ``[variables_prefix][sep][variable_name]``
  * for Airflow config: ``[config_prefix][sep][config_name]``
 
 where:
 
  * ``connections_prefix`` - fixed value defined in the ``connections_prefix`` parameter in backend configuration. Default: ``airflow-connections``.
- * ``variable_prefix`` - fixed value defined in the ``variable_prefix`` parameter in backend configuration. Default: ``airflow-variables``.
+ * ``variables_prefix`` - fixed value defined in the ``variables_prefix`` parameter in backend configuration. Default: ``airflow-variables``.
  * ``config_prefix`` - fixed value defined in the ``config_prefix`` parameter in backend configuration. Default: ``airflow-config``.
  * ``sep`` - fixed value defined in the ``sep`` parameter in backend configuration. Default: ``-``.
 

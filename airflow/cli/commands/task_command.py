@@ -263,6 +263,7 @@ def task_failed_deps(args):
 
 
 @cli_utils.action_logging
+@suppress_logs_and_warning
 def task_state(args):
     """
     Returns the state of a TaskInstance at the command line.
@@ -276,6 +277,7 @@ def task_state(args):
 
 
 @cli_utils.action_logging
+@suppress_logs_and_warning
 def task_list(args, dag=None):
     """Lists the tasks within a DAG at the command line"""
     dag = dag or get_dag(args.subdir, args.dag_id)
@@ -397,6 +399,7 @@ def task_test(args, dag=None):
 
 
 @cli_utils.action_logging
+@suppress_logs_and_warning
 def task_render(args):
     """Renders and displays templated fields for a given task"""
     dag = get_dag(args.subdir, args.dag_id)

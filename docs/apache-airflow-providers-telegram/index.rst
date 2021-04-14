@@ -57,7 +57,7 @@ Package apache-airflow-providers-telegram
 `Telegram <https://telegram.org/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -109,6 +109,14 @@ PIP package              Version required
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix the AttributeError with text field in TelegramOperator (#13990)``
 
 1.0.1
 .....

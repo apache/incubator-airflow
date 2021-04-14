@@ -27,6 +27,10 @@ class S3CreateBucketOperator(BaseOperator):
     """
     This operator creates an S3 bucket
 
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:S3CreateBucketOperator`
+
     :param bucket_name: This is bucket name you want to create
     :type bucket_name: str
     :param aws_conn_id: The Airflow connection used for AWS credentials.
@@ -68,6 +72,10 @@ class S3CreateBucketOperator(BaseOperator):
 class S3DeleteBucketOperator(BaseOperator):
     """
     This operator deletes an S3 bucket
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:S3DeleteBucketOperator`
 
     :param bucket_name: This is bucket name you want to delete
     :type bucket_name: str

@@ -139,17 +139,17 @@ def build_docs_for_packages(
         print("#" * 20, f"[{package_no}/{len(current_packages)}] {package_name}", "#" * 20)
         builder = AirflowDocsBuilder(package_name=package_name, for_production=for_production)
         builder.clean_files()
-        if not docs_only:
-            with with_group(f"Check spelling: {package_name}"):
-                spelling_errors = builder.check_spelling(verbose=verbose)
-            if spelling_errors:
-                all_spelling_errors[package_name].extend(spelling_errors)
-
         if not spellcheck_only:
             with with_group(f"Building docs: {package_name}"):
                 docs_errors = builder.build_sphinx_docs(verbose=verbose)
             if docs_errors:
                 all_build_errors[package_name].extend(docs_errors)
+
+        if not docs_only:
+            with with_group(f"Check spelling: {package_name}"):
+                spelling_errors = builder.check_spelling(verbose=verbose)
+            if spelling_errors:
+                all_spelling_errors[package_name].extend(spelling_errors)
 
     return all_build_errors, all_spelling_errors
 
@@ -205,18 +205,22 @@ def main():
         _promote_new_flags()
 
     with with_group("Available packages"):
-        for pkg in available_packages:
+        for pkg in sorted(available_packages):
             print(f" - {pkg}")
 
     if package_filters:
         print("Current package filters: ", package_filters)
     current_packages = process_package_filters(available_packages, package_filters)
+
+    with with_group("Fetching inventories"):
+        # Inventories that could not be retrieved should be retrieved first. This may mean this is a
+        # new package.
+        priority_packages = fetch_inventories()
+    current_packages = sorted(current_packages, key=lambda d: -1 if d in priority_packages else 1)
+
     with with_group(f"Documentation will be built for {len(current_packages)} package(s)"):
         for pkg_no, pkg in enumerate(current_packages, start=1):
             print(f"{pkg_no}. {pkg}")
-
-    with with_group("Fetching inventories"):
-        fetch_inventories()
 
     all_build_errors: Dict[Optional[str], List[DocBuildError]] = {}
     all_spelling_errors: Dict[Optional[str], List[SpellingError]] = {}

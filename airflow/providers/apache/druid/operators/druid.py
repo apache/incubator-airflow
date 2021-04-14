@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import json
 from typing import Any, Dict, Optional
 
 from airflow.models import BaseOperator
@@ -55,4 +54,4 @@ class DruidOperator(BaseOperator):
     def execute(self, context: Dict[Any, Any]) -> None:
         hook = DruidHook(druid_ingest_conn_id=self.conn_id, max_ingestion_time=self.max_ingestion_time)
         self.log.info("Submitting %s", self.json_index_file)
-        hook.submit_indexing_job(json.loads(self.json_index_file))
+        hook.submit_indexing_job(self.json_index_file)

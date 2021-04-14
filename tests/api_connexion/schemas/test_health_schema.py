@@ -19,7 +19,7 @@ import unittest
 from airflow.api_connexion.schemas.health_schema import health_schema
 
 
-class TestHeathSchema(unittest.TestCase):
+class TestHealthSchema(unittest.TestCase):
     def setUp(self):
         self.default_datetime = "2020-06-10T12:02:44+00:00"
 

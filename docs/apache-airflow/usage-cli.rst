@@ -182,6 +182,7 @@ Some Airflow commands like ``airflow dags list`` or ``airflow tasks states-for-d
 which allow users to change the formatting of command's output. Possible options:
 
   - ``table`` - renders the information as a plain text table
+  - ``simple`` - renders the information as simple table which can be parsed by standard linux utilities
   - ``json`` - renders the information in form of json string
   - ``yaml`` - render the information in form of valid yaml
 

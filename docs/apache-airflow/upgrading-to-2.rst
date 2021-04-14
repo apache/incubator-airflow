@@ -37,26 +37,26 @@ For a list of breaking changes between Python 2 and Python 3, please refer to th
 from the CouchBaseDB team.
 
 
-Step 2: Upgrade to Airflow 1.10.14 (a.k.a our "bridge" release)
+Step 2: Upgrade to Airflow 1.10.15 (a.k.a our "bridge" release)
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-To minimize friction for users upgrading from Airflow 1.10 to Airflow 2.0 and beyond, Airflow 1.10.14 "a bridge release" has
-been created. This is intended to be the final 1.10 feature release. Airflow 1.10.14 includes support for various features
+To minimize friction for users upgrading from Airflow 1.10 to Airflow 2.0 and beyond, Airflow 1.10.15 "a bridge release" has
+been created. This is intended to be the final 1.10 feature release. Airflow 1.10.15 includes support for various features
 that have been backported from Airflow 2.0 to make it easy for users to test their Airflow
 environment before upgrading to Airflow 2.0.
 
 We strongly recommend that all users upgrading to Airflow 2.0, first
-upgrade to Airflow 1.10.14 and test their Airflow deployment and only then upgrade to Airflow 2.0.
+upgrade to Airflow 1.10.15 and test their Airflow deployment and only then upgrade to Airflow 2.0.
 The Airflow 1.10.x release tree will be supported for six months from Airflow 2.0 release date.
 
-Features in 1.10.14 include:
+Features in 1.10.15 include:
 
-1. Most breaking DAG and architecture changes of Airflow 2.0 have been backported to Airflow 1.10.14. This backward-compatibility does not mean
-that 1.10.14 will process these DAGs the same way as Airflow 2.0. Instead, this means that most Airflow 2.0
-compatible DAGs will work in Airflow 1.10.14. This backport will give users time to modify their DAGs over time
+1. Most breaking DAG and architecture changes of Airflow 2.0 have been backported to Airflow 1.10.15. This backward-compatibility does not mean
+that 1.10.15 will process these DAGs the same way as Airflow 2.0. Instead, this means that most Airflow 2.0
+compatible DAGs will work in Airflow 1.10.15. This backport will give users time to modify their DAGs over time
 without any service disruption.
 
-2. We have also backported the updated Airflow 2.0 CLI commands to Airflow 1.10.14, so that users can modify their scripts
+2. We have also backported the updated Airflow 2.0 CLI commands to Airflow 1.10.15, so that users can modify their scripts
 to be compatible with Airflow 2.0 before the upgrade.
 
 3. For users of the KubernetesExecutor, we have backported the ``pod_template_file`` capability for the KubernetesExecutor
@@ -73,7 +73,7 @@ section of your ``airflow.cfg``
 Step 3: Install and run the Upgrade check scripts
 '''''''''''''''''''''''''''''''''''''''''''''''''
 
-After upgrading to Airflow 1.10.14, we recommend that you install the "upgrade check" scripts. These scripts will read through your ``airflow.cfg`` and all of your DAGs and will give a detailed report of all changes required before upgrading. We are testing this script diligently, and our goal is that any Airflow setup that can pass these tests will be able to upgrade to 2.0 without any issues.
+After upgrading to Airflow 1.10.15, we recommend that you install the "upgrade check" scripts. These scripts will read through your ``airflow.cfg`` and all of your DAGs and will give a detailed report of all changes required before upgrading. We are testing this script diligently, and our goal is that any Airflow setup that can pass these tests will be able to upgrade to 2.0 without any issues.
 
 .. code-block:: bash
 
@@ -91,7 +91,7 @@ More details about this process are here :ref:`Upgrade Check Scripts<upgrade-che
 Step 4: Import Operators from Backport Providers
 ''''''''''''''''''''''''''''''''''''''''''''''''
 
-Now that you are set up in Airflow 1.10.14 with Python a 3.6+ environment, you are ready to start porting your DAGs to Airflow 2.0 compliance!
+Now that you are set up in Airflow 1.10.15 with Python a 3.6+ environment, you are ready to start porting your DAGs to Airflow 2.0 compliance!
 
 The most important step in this transition is also the easiest step to do in pieces. All Airflow 2.0 operators are backwards compatible with Airflow 1.10
 using the backport provider packages. In your own time, you can transition to using these backport-providers
@@ -299,7 +299,7 @@ When DAGs are initialized with the ``access_control`` variable set, any usage of
     If you previously used non-RBAC UI, you have to switch to the new RBAC-UI and create users to be able
     to access Airflow's webserver. For more details on CLI to create users see :doc:`cli-and-env-variables-ref`
 
-Please note that that custom auth backends will need re-writing to target new FAB based UI.
+Please note that custom auth backends will need re-writing to target new FAB based UI.
 
 As part of this change, a few configuration items in ``[webserver]`` section are removed and no longer applicable,
 including ``authenticate``, ``filter_by_owner``, ``owner_mode``, and ``rbac``.
@@ -314,7 +314,7 @@ the ``rbac`` options  in ``[webserver]`` in the ``airflow.cfg`` file to ``True``
 
 In order to login to the interface, you need to create an administrator account.
 
-Assuming you have already installed Airflow 1.10.14, you can create a user with
+Assuming you have already installed Airflow 1.10.15, you can create a user with
 Airflow 2.0 CLI command syntax ``airflow users create``.
 You don't need to make changes to the configuration file as the FAB RBAC UI is
 the only supported UI.
@@ -334,7 +334,7 @@ the only supported UI.
 
     When multiple replicas of the airflow webserver are running they
     need to share the same *secret_key* to access the same user session. Inject
-    this via any configuration mechanism. The 1.10.14 bridge-release modifies this feature
+    this via any configuration mechanism. The 1.10.15 bridge-release modifies this feature
     to use randomly generated secret keys instead of an insecure default and may break existing
     deployments that rely on the default.
 
@@ -523,7 +523,7 @@ At this point, just follow the standard Airflow version upgrade process:
 
       The database upgrade may take a while depending on the number of DAGs in the database and the volume of history
       stored in the database for task history, xcom variables, etc.
-      In our testing, we saw that performing the Airflow database upgrade from Airflow 1.10.14 to Airflow 2.0
+      In our testing, we saw that performing the Airflow database upgrade from Airflow 1.10.15 to Airflow 2.0
       took between two to three minutes on an Airflow database on PostgreSQL with around 35,000 task instances and
       500 DAGs.
       For a faster database upgrade and for better overall performance, it is recommended that you periodically archive
@@ -959,7 +959,7 @@ Old command                   New command                       Group
 ``airflow trigger_dag``       ``airflow dags trigger``          ``dags``
 ``airflow delete_dag``        ``airflow dags delete``           ``dags``
 ``airflow show_dag``          ``airflow dags show``             ``dags``
-``airflow list_dag``          ``airflow dags list``             ``dags``
+``airflow list_dags``         ``airflow dags list``             ``dags``
 ``airflow dag_status``        ``airflow dags status``           ``dags``
 ``airflow backfill``          ``airflow dags backfill``         ``dags``
 ``airflow list_dag_runs``     ``airflow dags list-runs``        ``dags``
@@ -1110,7 +1110,7 @@ and there is no need for it to be accessible from the CLI interface.
 
 If the DAGRun was triggered with conf key/values passed in, they will also be printed in the dag_state CLI response
 ie. running, {"name": "bob"}
-whereas in in prior releases it just printed the state:
+whereas in prior releases it just printed the state:
 ie. running
 
 **Deprecating ignore_first_depends_on_past on backfill command and default it to True**
@@ -1166,7 +1166,7 @@ non-RBAC UI (``flask-admin`` based UI), update it to use ``flask_appbuilder_view
 
         @expose("/")
         def test(self):
-            return self.render("test_plugin/test.html", content="Hello galaxy!")
+            return self.render_template("test_plugin/test.html", content="Hello galaxy!")
 
     v_appbuilder_view = TestAppBuilderBaseView()
     v_appbuilder_package = {"name": "Test View",

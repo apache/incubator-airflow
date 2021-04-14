@@ -20,7 +20,11 @@ from io import StringIO
 from typing import Any, Dict, Optional
 
 import paramiko
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.retry import exponential_sleep_generator
 
 from airflow import AirflowException

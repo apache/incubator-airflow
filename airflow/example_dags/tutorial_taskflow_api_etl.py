@@ -45,7 +45,7 @@ def tutorial_taskflow_api_etl():
     the TaskFlow API using three simple tasks for Extract, Transform, and Load.
     Documentation that goes along with the Airflow TaskFlow API tutorial is
     located
-    [here](https://airflow.apache.org/docs/stable/tutorial_taskflow_api.html)
+    [here](https://airflow.apache.org/docs/apache-airflow/stable/tutorial_taskflow_api.html)
     """
     # [END instantiate_dag]
 

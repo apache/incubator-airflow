@@ -62,8 +62,8 @@ repos:
           - --fuzzy-match-generates-todo
         files: \.rst$
       - id: insert-license
-        name: Add license for all JS/CSS/PUML files
-        files: \.(js|css|puml)$
+        name: Add license for all JS/TS/TSX/CSS/PUML files
+        files: \.(js|ts|tsx|css|puml)$
         exclude: ^\.github/.*$
         args:
           - --comment-style
@@ -171,17 +171,17 @@ repos:
         args:
           - --remove
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.7.4
+    rev: v2.10.0
     hooks:
       - id: pyupgrade
         args: ["--py36-plus"]
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.7.0
+    rev: v1.8.0
     hooks:
       - id: rst-backticks
       - id: python-no-log-warn
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.25.0
+    rev: v1.26.0
     hooks:
       - id: yamllint
         name: Check yaml files with yamllint
@@ -233,6 +233,7 @@ repos:
         entry: "./scripts/ci/pre_commit/pre_commit_lint_dockerfile.sh"
         files: Dockerfile.*$
         pass_filenames: true
+        require_serial: true
       - id: setup-order
         name: Check order of dependencies in setup.py and setup.cfg
         language: python
@@ -337,6 +338,7 @@ repos:
         pass_filenames: true
         exclude: >
           (?x)
+          ^airflow/decorators/.*$|
           ^airflow/gcp/.*$|
           ^airflow/hooks/.*$|
           ^airflow/operators/.*$|
@@ -407,6 +409,12 @@ repos:
         entry: ./scripts/ci/pre_commit/pre_commit_sort_in_the_wild.sh
         language: system
         files: ^.pre-commit-config.yaml$|^INTHEWILD.md$
+        require_serial: true
+      - id: sort-spelling-wordlist
+        name: Sort alphabetically and uniquify spelling_wordlist.txt
+        entry: ./scripts/ci/pre_commit/pre_commit_sort_spelling_wordlist.sh
+        language: system
+        files: ^.pre-commit-config.yaml$|^docs/spelling_wordlist.txt$
         require_serial: true
       - id: helm-lint
         name: Lint Helm Chart
@@ -548,6 +556,25 @@ repos:
         files: airflow/config_templates/config.yml$
         require_serial: true
         additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+      - id: flynt
+        name: Convert to f-strings with flynt
+        entry: flynt
+        language: python
+        language_version: python3
+        additional_dependencies: ['flynt']
+        files: \.py$
+      - id: ui-lint
+        name: Lint React UI
+        language: node
+        entry: bash
+        args: ["-c", "cd airflow/ui && yarn install && yarn lint"]
+        files: ^airflow/ui/.*\.(ts|tsx)$
+      - id: ui-test
+        name: Test React UI
+        language: node
+        entry: bash
+        args: ["-c", "cd airflow/ui && yarn install && yarn test"]
+        files: ^airflow/ui/.*\.(ts|tsx)$
         ## ADD MOST PRE-COMMITS ABOVE THAT LINE
         # The below pre-commits are those requiring CI image to be built
       - id: build
@@ -567,26 +594,33 @@ repos:
         language: system
         entry: "./scripts/ci/pre_commit/pre_commit_mypy.sh"
         files: ^chart/.*\.py$
-        require_serial: true
+        require_serial: false
       - id: mypy
         name: Run mypy for /docs/ folder
         language: system
         entry: "./scripts/ci/pre_commit/pre_commit_mypy.sh"
         files: ^docs/.*\.py$
         exclude: rtd-deprecation
-        require_serial: true
+        require_serial: false
       - id: pylint
-        name: Run pylint
+        name: Run pylint for main code
         language: system
         entry: "./scripts/ci/pre_commit/pre_commit_pylint.sh"
         files: \.py$
-        exclude: ^scripts/.*\.py$|^dev|^provider_packages|^chart
+        exclude: ^scripts/.*\.py$|^dev|^provider_packages|^chart|^tests|^kubernetes_tests
+        pass_filenames: true
+        require_serial: true
+      - id: pylint
+        name: Run pylint for tests
+        language: system
+        entry: "env PYLINTRC=pylintrc-tests ./scripts/ci/pre_commit/pre_commit_pylint.sh"
+        files: ^tests/.*\.py$
         pass_filenames: true
         require_serial: true
       - id: pylint
         name: Run pylint for helm chart tests
         language: system
-        entry: "./scripts/ci/pre_commit/pre_commit_pylint.sh"
+        entry: "env PYLINTRC=pylintrc-tests ./scripts/ci/pre_commit/pre_commit_pylint.sh"
         files: ^chart/.*\.py$
         pass_filenames: true
         require_serial: true
@@ -602,11 +636,4 @@ repos:
         entry: "./scripts/ci/pre_commit/pre_commit_in_container_bats_test.sh"
         files: ^tests/bats/in_container/.*.bats$|^scripts/in_container/.*sh
         pass_filenames: false
-      - id: flynt
-        name: Convert to f-strings with flynt
-        entry: flynt
-        language: python
-        language_version: python3
-        additional_dependencies: ['flynt']
-        files: \.py$
         ## ONLY ADD PRE-COMMITS HERE THAT REQUIRE CI IMAGE

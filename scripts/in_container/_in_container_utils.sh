@@ -16,9 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Can be used to add extra parameters when generating providers
-# We will be able to remove it after we drop backport providers
-OPTIONAL_BACKPORT_FLAG=()
+OPTIONAL_VERBOSE_FLAG=()
 PROVIDER_PACKAGES_DIR="${AIRFLOW_SOURCES}/dev/provider_packages"
 
 #######################################################################################################
@@ -109,6 +107,7 @@ function in_container_cleanup_pyc() {
     sudo find . \
         -path "./airflow/www/node_modules" -prune -o \
         -path "./airflow/www_rbac/node_modules" -prune -o \
+        -path "./airflow/ui/node_modules" -prune -o \
         -path "./.eggs" -prune -o \
         -path "./docs/_build" -prune -o \
         -path "./build" -prune -o \
@@ -124,6 +123,7 @@ function in_container_cleanup_pycache() {
     find . \
         -path "./airflow/www/node_modules" -prune -o \
         -path "./airflow/www_rbac/node_modules" -prune -o \
+        -path "./airflow/ui/node_modules" -prune -o \
         -path "./.eggs" -prune -o \
         -path "./docs/_build" -prune -o \
         -path "./build" -prune -o \
@@ -185,6 +185,7 @@ function in_container_refresh_pylint_todo() {
     find . \
         -path "./airflow/www/node_modules" -prune -o \
         -path "./airflow/www_rbac/node_modules" -prune -o \
+        -path "./airflow/ui/node_modules" -prune -o \
         -path "./airflow/migrations/versions" -prune -o \
         -path "./.eggs" -prune -o \
         -path "./docs/_build" -prune -o \
@@ -306,6 +307,10 @@ function uninstall_airflow() {
     find /root/airflow/ -type f -print0 | xargs -0 rm -f --
 }
 
+function uninstall_all_pip_packages() {
+    pip uninstall -y -r <(pip freeze)
+}
+
 function uninstall_providers() {
     local provider_packages_to_uninstall
     provider_packages_to_uninstall=$(pip freeze | grep apache-airflow-providers || true)
@@ -329,6 +334,45 @@ function install_released_airflow_version() {
     pip install --upgrade "apache-airflow==${version}"
 }
 
+function install_local_airflow_with_eager_upgrade() {
+    local extras
+    extras="${1}"
+    # we add eager requirements to make sure to take into account limitations that will allow us to
+    # install all providers
+    # shellcheck disable=SC2086
+    pip install -e ".${extras}" ${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS} \
+        --upgrade --upgrade-strategy eager
+}
+
+
+function install_all_providers_from_pypi_with_eager_upgrade() {
+    ALL_PROVIDERS_PACKAGES=$(python -c 'import setup; print(setup.get_all_provider_packages())')
+    local packages_to_install=()
+    local provider_package
+    local res
+    for provider_package in ${ALL_PROVIDERS_PACKAGES}
+    do
+        echo -n "Checking if ${provider_package} is available in PyPI: "
+        res=$(curl --head -s -o /dev/null -w "%{http_code}" "https://pypi.org/project/${provider_package}/")
+        if [[ ${res} == "200" ]]; then
+            packages_to_install+=( "${provider_package}" )
+            echo "${COLOR_GREEN}OK${COLOR_RESET}"
+        else
+            echo "${COLOR_YELLOW}Skipped${COLOR_RESET}"
+        fi
+    done
+    echo "Installing provider packages: ${packages_to_install[*]}"
+    # we add eager requirements to make sure to take into account limitations that will allow us to
+    # install all providers. We install only those packages that are available in PyPI - we might
+    # Have some new providers in the works and they might not yet be simply available in PyPI
+    # Installing it with Airflow makes sure that the version of package that matches current
+    # Airflow requirements will be used.
+    # shellcheck disable=SC2086
+    pip install -e . "${packages_to_install[@]}" ${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS} \
+        --upgrade --upgrade-strategy eager
+
+}
+
 function install_all_provider_packages_from_wheels() {
     echo
     echo "Installing all provider packages from wheels"
@@ -346,25 +390,17 @@ function install_all_provider_packages_from_sdist() {
 }
 
 function setup_provider_packages() {
-    if [[ ${BACKPORT_PACKAGES:=} == "true" ]]; then
-        export PACKAGE_TYPE="backport"
-        export PACKAGE_PREFIX_UPPERCASE="BACKPORT_"
-        export PACKAGE_PREFIX_LOWERCASE="backport_"
-        export PACKAGE_PREFIX_HYPHEN="backport-"
-        OPTIONAL_BACKPORT_FLAG+=("--backports")
-    else
-        export PACKAGE_TYPE="regular"
-        export PACKAGE_PREFIX_UPPERCASE=""
-        export PACKAGE_PREFIX_LOWERCASE=""
-        export PACKAGE_PREFIX_HYPHEN=""
+    export PACKAGE_TYPE="regular"
+    export PACKAGE_PREFIX_UPPERCASE=""
+    export PACKAGE_PREFIX_LOWERCASE=""
+    export PACKAGE_PREFIX_HYPHEN=""
+    if [[ ${VERBOSE} == "true" ]]; then
+        OPTIONAL_VERBOSE_FLAG+=("--verbose")
     fi
     readonly PACKAGE_TYPE
     readonly PACKAGE_PREFIX_UPPERCASE
     readonly PACKAGE_PREFIX_LOWERCASE
     readonly PACKAGE_PREFIX_HYPHEN
-
-    readonly BACKPORT_PACKAGES
-    export BACKPORT_PACKAGES
 }
 
 function verify_suffix_versions_for_package_preparation() {
@@ -563,14 +599,8 @@ function get_providers_to_act_on() {
     if [[ -z "$*" ]]; then
         while IFS='' read -r line; do PROVIDER_PACKAGES+=("$line"); done < <(
             python3 "${PROVIDER_PACKAGES_DIR}/prepare_provider_packages.py" \
-                "${OPTIONAL_BACKPORT_FLAG[@]}" \
                 list-providers-packages
         )
-        if [[ "$BACKPORT_PACKAGES" != "true" ]]; then
-            # Don't check for missing packages when we are building backports -- we have filtered some out,
-            # and the non-backport build will check for any missing.
-            check_missing_providers
-        fi
     else
         if [[ "${1}" == "--help" ]]; then
             echo
@@ -579,8 +609,8 @@ function get_providers_to_act_on() {
             echo "You can provide list of packages to build out of:"
             echo
             python3 "${PROVIDER_PACKAGES_DIR}/prepare_provider_packages.py" \
-                "${OPTIONAL_BACKPORT_FLAG[@]}" \
-                list-providers-packages | tr '\n ' ' ' | fold -w 100 -s
+                list-providers-packages \
+                | tr '\n ' ' ' | fold -w 100 -s
             echo
             echo
             exit
@@ -589,7 +619,7 @@ function get_providers_to_act_on() {
     group_end
 }
 
-# Starts group for Github Actions - makes logs much more readable
+# Starts group for GitHub Actions - makes logs much more readable
 function group_start {
     if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
         echo "::group::${1}"
@@ -600,7 +630,7 @@ function group_start {
     fi
 }
 
-# Ends group for Github Actions
+# Ends group for GitHub Actions
 function group_end {
     if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
         echo -e "\033[0m"  # Disable any colors set in the group

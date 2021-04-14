@@ -30,11 +30,11 @@ import warnings
 from functools import reduce
 from typing import List, Optional, Union
 
-import yaml
 from dateutil import parser
 from kubernetes.client import models as k8s
 from kubernetes.client.api_client import ApiClient
 
+import airflow.utils.yaml as yaml
 from airflow.exceptions import AirflowConfigException
 from airflow.kubernetes.pod_generator_deprecated import PodGenerator as PodGeneratorDeprecated
 from airflow.version import version as airflow_version
@@ -411,13 +411,13 @@ class PodGenerator:
         return reduce(PodGenerator.reconcile_pods, pod_list)
 
     @staticmethod
-    def serialize_pod(pod: k8s.V1Pod):
+    def serialize_pod(pod: k8s.V1Pod) -> dict:
         """
 
         Converts a k8s.V1Pod into a jsonified object
 
-        @param pod:
-        @return:
+        :param pod: k8s.V1Pod object
+        :return: Serialized version of the pod returned as dict
         """
         api_client = ApiClient()
         return api_client.sanitize_for_serialization(pod)
@@ -445,8 +445,9 @@ class PodGenerator:
     def deserialize_model_dict(pod_dict: dict) -> k8s.V1Pod:
         """
         Deserializes python dictionary to k8s.V1Pod
-        @param pod_dict:
-        @return:
+
+        :param pod_dict: Serialized dict of k8s.V1Pod object
+        :return: De-serialized k8s.V1Pod
         """
         api_client = ApiClient()
         return api_client._ApiClient__deserialize_model(pod_dict, k8s.V1Pod)  # pylint: disable=W0212

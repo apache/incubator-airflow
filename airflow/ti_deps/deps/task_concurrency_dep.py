@@ -24,7 +24,7 @@ class TaskConcurrencyDep(BaseTIDep):
     """This restricts the number of running task instances for a particular task."""
 
     NAME = "Task Concurrency"
-    IGNOREABLE = True
+    IGNORABLE = True
     IS_TASK_DEP = True
 
     @provide_session

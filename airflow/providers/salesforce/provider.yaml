@@ -22,6 +22,7 @@ description: |
     `Salesforce <https://www.salesforce.com/>`__
 
 versions:
+  - 2.0.0
   - 1.0.1
   - 1.0.0
 
@@ -42,10 +43,12 @@ sensors:
       - airflow.providers.salesforce.sensors.tableau_job_status
 
 hooks:
+  - integration-name: Tableau
+    python-modules:
+      - airflow.providers.salesforce.hooks.tableau
   - integration-name: Salesforce
     python-modules:
       - airflow.providers.salesforce.hooks.salesforce
-      - airflow.providers.salesforce.hooks.tableau
 
 hook-class-names:
   - airflow.providers.salesforce.hooks.tableau.TableauHook

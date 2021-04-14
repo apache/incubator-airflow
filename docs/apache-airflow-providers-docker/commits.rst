@@ -28,14 +28,26 @@ For high-level changelog, see :doc:`package information including changelog <ind
 
 
 
+1.0.2
+.....
+
+Latest change: 2021-02-05
+
+================================================================================================  ===========  =======================================================================
+Commit                                                                                            Committed    Subject
+================================================================================================  ===========  =======================================================================
+`10343ec29 <https://github.com/apache/airflow/commit/10343ec29f8f0abc5b932ba26faf49bc63c6bcda>`_  2021-02-05   ``Corrections in docs and tools after releasing provider RCs (#14082)``
+================================================================================================  ===========  =======================================================================
+
 1.0.1
 .....
 
-Latest change: 2021-02-01
+Latest change: 2021-02-04
 
 ================================================================================================  ===========  ==============================================================================
 Commit                                                                                            Committed    Subject
 ================================================================================================  ===========  ==============================================================================
+`88bdcfa0d <https://github.com/apache/airflow/commit/88bdcfa0df5bcb4c489486e05826544b428c8f43>`_  2021-02-04   ``Prepare to release a new wave of providers. (#14013)``
 `ac2f72c98 <https://github.com/apache/airflow/commit/ac2f72c98dc0821b33721054588adbf2bb53bb0b>`_  2021-02-01   ``Implement provider versioning tools (#13767)``
 `ba54afe58 <https://github.com/apache/airflow/commit/ba54afe58b7cbd3711aca23252027fbd034cca41>`_  2021-01-31   ``Remove failed DockerOperator tasks with auto_remove=True (#13532) (#13993)``
 `25d68a7a9 <https://github.com/apache/airflow/commit/25d68a7a9e0b4481486552ece9e77bcaabfa4de2>`_  2021-01-30   ``Fix error on DockerSwarmOperator with auto_remove True (#13532) (#13852)``

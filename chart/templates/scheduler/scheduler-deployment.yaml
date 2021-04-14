@@ -19,8 +19,8 @@
 ## Airflow Scheduler Deployment/StatefulSet
 #################################
 
-# Are we using a local/sequential executor?
-{{- $local := or (eq .Values.executor "LocalExecutor") (eq .Values.executor "SequentialExecutor") }}
+# Are we using a local executor?
+{{- $local := eq .Values.executor "LocalExecutor" }}
 # Is persistence enabled on the _workers_?
 # This is important because in $local mode, the scheduler assumes the role of the worker
 {{- $persistence := .Values.workers.persistence.enabled }}
@@ -160,7 +160,7 @@ spec:
               subPath: airflow_local_settings.py
               readOnly: true
 {{- end }}
-{{- if .Values.dags.persistence.enabled }}
+{{- if or .Values.dags.gitSync.enabled .Values.dags.persistence.enabled }}
             - name: dags
               mountPath: {{ template "airflow_dags_mount_path" . }}
 {{- end }}
@@ -200,6 +200,9 @@ spec:
           env:
           {{- include "custom_airflow_environment" . | indent 10 }}
           {{- include "standard_airflow_environment" . | indent 10 }}
+{{- end }}
+{{- if .Values.scheduler.extraContainers }}
+{{- toYaml .Values.scheduler.extraContainers | nindent 8 }}
 {{- end }}
       volumes:
         - name: config

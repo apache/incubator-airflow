@@ -29,6 +29,9 @@ in the ``[email]`` section.
   subject_template = /path/to/my_subject_template_file
   html_content_template = /path/to/my_html_content_template_file
 
+To configure SMTP credentials, create a connection called ``smtp_default``, or
+choose a custom connection name and set it in ``email_conn_id``.
+
 If you want to check which email backend is currently set, you can use ``airflow config get-value email email_backend`` command as in
 the example below.
 
@@ -74,10 +77,33 @@ Follow the steps below to enable it:
 
       [email]
       email_backend = airflow.providers.sendgrid.utils.emailer.send_email
+      email_conn_id = sendgrid_default
 
-3. Configure SendGrid specific environment variables at all Airflow instances:
+3. Create a connection called ``sendgrid_default``, or choose a custom connection
+   name and set it in ``email_conn_id``.
 
-   .. code-block:: bash
+.. _email-configuration-ses:
 
-      export SENDGRID_MAIL_FROM={your-mail-from}
-      export SENDGRID_API_KEY={your-sendgrid-api-key}
+Send email using AWS SES
+------------------------
+
+Airflow can be configured to send e-mail using `AWS SES <https://aws.amazon.com/ses/>`__.
+
+Follow the steps below to enable it:
+
+1. Include ``amazon`` subpackage as part of your Airflow installation:
+
+  .. code-block:: ini
+
+     pip install 'apache-airflow[amazon]'
+
+2. Update ``email_backend`` property in ``[email]`` section in ``airflow.cfg``:
+
+   .. code-block:: ini
+
+      [email]
+      email_backend = airflow.providers.amazon.aws.utils.emailer.send_email
+      email_conn_id = aws_default
+
+3. Create a connection called ``aws_default``, or choose a custom connection
+   name and set it in ``email_conn_id``.

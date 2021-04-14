@@ -145,6 +145,7 @@
         "execution_timeout": { "$ref": "#/definitions/timedelta" },
         "retry_delay": { "$ref": "#/definitions/timedelta" },
         "retry_exponential_backoff": { "type": "boolean" },
+        "max_retry_delay": { "$ref": "#/definitions/timedelta" },
         "params": { "$ref": "#/definitions/dict" },
         "priority_weight": { "type": "number" },
         "weight_rule": { "type": "string" },

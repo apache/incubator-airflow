@@ -16,17 +16,21 @@
 # specific language governing permissions and limitations
 # under the License.
 """This module contains a Google Cloud Storage Bucket operator."""
+import datetime
 import subprocess
 import sys
 import warnings
-from tempfile import NamedTemporaryFile
+from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Dict, Iterable, List, Optional, Sequence, Union
 
 from google.api_core.exceptions import Conflict
+from google.cloud.exceptions import GoogleCloudError
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
+from airflow.utils import timezone
 from airflow.utils.decorators import apply_defaults
 
 
@@ -654,6 +658,256 @@ class GCSFileTransformOperator(BaseOperator):
                 object_name=self.destination_object,
                 filename=destination_file.name,
             )
+
+
+class GCSTimeSpanFileTransformOperator(BaseOperator):
+    """
+    Determines a list of objects that were added or modified at a GCS source
+    location during a specific time-span, copies them to a temporary location
+    on the local file system, runs a transform on this file as specified by
+    the transformation script and uploads the output to the destination bucket.
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:GCSTimeSpanFileTransformOperator`
+
+    The locations of the source and the destination files in the local
+    filesystem is provided as an first and second arguments to the
+    transformation script. The time-span is passed to the transform script as
+    third and fourth argument as UTC ISO 8601 string.
+
+    The transformation script is expected to read the
+    data from source, transform it and write the output to the local
+    destination file.
+
+    :param source_bucket: The bucket to fetch data from. (templated)
+    :type source_bucket: str
+    :param source_prefix: Prefix string which filters objects whose name begin with
+           this prefix. Can interpolate execution date and time components. (templated)
+    :type source_prefix: str
+    :param source_gcp_conn_id: The connection ID to use connecting to Google Cloud
+           to download files to be processed.
+    :type source_gcp_conn_id: str
+    :param source_impersonation_chain: Optional service account to impersonate using short-term
+        credentials (to download files to be processed), or chained list of accounts required to
+        get the access_token of the last account in the list, which will be impersonated in the
+        request. If set as a string, the account must grant the originating account
+        the Service Account Token Creator IAM role.
+        If set as a sequence, the identities from the list must grant
+        Service Account Token Creator IAM role to the directly preceding identity, with first
+        account from the list granting this role to the originating account (templated).
+    :type source_impersonation_chain: Union[str, Sequence[str]]
+
+    :param destination_bucket: The bucket to write data to. (templated)
+    :type destination_bucket: str
+    :param destination_prefix: Prefix string for the upload location.
+        Can interpolate execution date and time components. (templated)
+    :type destination_prefix: str
+    :param destination_gcp_conn_id: The connection ID to use connecting to Google Cloud
+           to upload processed files.
+    :type destination_gcp_conn_id: str
+    :param destination_impersonation_chain: Optional service account to impersonate using short-term
+        credentials (to upload processed files), or chained list of accounts required to get the access_token
+        of the last account in the list, which will be impersonated in the request.
+        If set as a string, the account must grant the originating account
+        the Service Account Token Creator IAM role.
+        If set as a sequence, the identities from the list must grant
+        Service Account Token Creator IAM role to the directly preceding identity, with first
+        account from the list granting this role to the originating account (templated).
+    :type destination_impersonation_chain: Union[str, Sequence[str]]
+
+    :param transform_script: location of the executable transformation script or list of arguments
+        passed to subprocess ex. `['python', 'script.py', 10]`. (templated)
+    :type transform_script: Union[str, List[str]]
+
+
+    :param chunk_size: The size of a chunk of data when downloading or uploading (in bytes).
+        This must be a multiple of 256 KB (per the google clout storage API specification).
+    :type chunk_size: Optional[int]
+    :param download_continue_on_fail: With this set to true, if a download fails the task does not error out
+        but will still continue.
+    :type download_num_attempts: int
+    :param upload_chunk_size: The size of a chunk of data when uploading (in bytes).
+        This must be a multiple of 256 KB (per the google clout storage API specification).
+    :type download_chunk_size: Optional[int]
+    :param upload_continue_on_fail: With this set to true, if an upload fails the task does not error out
+        but will still continue.
+    :type download_chunk_size: Optional[bool]
+    :param upload_num_attempts: Number of attempts to try to upload a single file.
+    :type upload_num_attempts: int
+    """
+
+    template_fields = (
+        'source_bucket',
+        'source_prefix',
+        'destination_bucket',
+        'destination_prefix',
+        'transform_script',
+        'source_impersonation_chain',
+        'destination_impersonation_chain',
+    )
+
+    @staticmethod
+    def interpolate_prefix(prefix: str, dt: datetime.datetime) -> Optional[datetime.datetime]:
+        """Interpolate prefix with datetime.
+
+        :param prefix: The prefix to interpolate
+        :type prefix: str
+        :param dt: The datetime to interpolate
+        :type dt: datetime
+
+        """
+        return dt.strftime(prefix) if prefix else None
+
+    @apply_defaults
+    def __init__(
+        self,
+        *,
+        source_bucket: str,
+        source_prefix: str,
+        source_gcp_conn_id: str,
+        destination_bucket: str,
+        destination_prefix: str,
+        destination_gcp_conn_id: str,
+        transform_script: Union[str, List[str]],
+        source_impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        destination_impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        chunk_size: Optional[int] = None,
+        download_continue_on_fail: Optional[bool] = False,
+        download_num_attempts: int = 1,
+        upload_continue_on_fail: Optional[bool] = False,
+        upload_num_attempts: int = 1,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.source_bucket = source_bucket
+        self.source_prefix = source_prefix
+        self.source_gcp_conn_id = source_gcp_conn_id
+        self.source_impersonation_chain = source_impersonation_chain
+
+        self.destination_bucket = destination_bucket
+        self.destination_prefix = destination_prefix
+        self.destination_gcp_conn_id = destination_gcp_conn_id
+        self.destination_impersonation_chain = destination_impersonation_chain
+
+        self.transform_script = transform_script
+        self.output_encoding = sys.getdefaultencoding()
+
+        self.chunk_size = chunk_size
+        self.download_continue_on_fail = download_continue_on_fail
+        self.download_num_attempts = download_num_attempts
+        self.upload_continue_on_fail = upload_continue_on_fail
+        self.upload_num_attempts = upload_num_attempts
+
+    def execute(self, context: dict) -> None:
+        # Define intervals and prefixes.
+        timespan_start = context["execution_date"]
+        timespan_end = context["dag"].following_schedule(timespan_start)
+        if timespan_end is None:
+            self.log.warning("No following schedule found, setting timespan end to max %s", timespan_end)
+            timespan_end = datetime.datetime.max
+
+        timespan_start = timespan_start.replace(tzinfo=timezone.utc)
+        timespan_end = timespan_end.replace(tzinfo=timezone.utc)
+
+        source_prefix_interp = GCSTimeSpanFileTransformOperator.interpolate_prefix(
+            self.source_prefix,
+            timespan_start,
+        )
+        destination_prefix_interp = GCSTimeSpanFileTransformOperator.interpolate_prefix(
+            self.destination_prefix,
+            timespan_start,
+        )
+
+        source_hook = GCSHook(
+            gcp_conn_id=self.source_gcp_conn_id,
+            impersonation_chain=self.source_impersonation_chain,
+        )
+        destination_hook = GCSHook(
+            gcp_conn_id=self.destination_gcp_conn_id,
+            impersonation_chain=self.destination_impersonation_chain,
+        )
+
+        # Fetch list of files.
+        blobs_to_transform = source_hook.list_by_timespan(
+            bucket_name=self.source_bucket,
+            prefix=source_prefix_interp,
+            timespan_start=timespan_start,
+            timespan_end=timespan_end,
+        )
+
+        with TemporaryDirectory() as temp_input_dir, TemporaryDirectory() as temp_output_dir:
+            temp_input_dir = Path(temp_input_dir)
+            temp_output_dir = Path(temp_output_dir)
+
+            # TODO: download in parallel.
+            for blob_to_transform in blobs_to_transform:
+                destination_file = temp_input_dir / blob_to_transform
+                destination_file.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    source_hook.download(
+                        bucket_name=self.source_bucket,
+                        object_name=blob_to_transform,
+                        filename=str(destination_file),
+                        chunk_size=self.chunk_size,
+                        num_max_attempts=self.download_num_attempts,
+                    )
+                except GoogleCloudError:
+                    if self.download_continue_on_fail:
+                        continue
+                    raise
+
+            self.log.info("Starting the transformation")
+            cmd = [self.transform_script] if isinstance(self.transform_script, str) else self.transform_script
+            cmd += [
+                str(temp_input_dir),
+                str(temp_output_dir),
+                timespan_start.replace(microsecond=0).isoformat(),
+                timespan_end.replace(microsecond=0).isoformat(),
+            ]
+            process = subprocess.Popen(
+                args=cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True
+            )
+            self.log.info("Process output:")
+            if process.stdout:
+                for line in iter(process.stdout.readline, b''):
+                    self.log.info(line.decode(self.output_encoding).rstrip())
+
+            process.wait()
+            if process.returncode:
+                raise AirflowException(f"Transform script failed: {process.returncode}")
+
+            self.log.info("Transformation succeeded. Output temporarily located at %s", temp_output_dir)
+
+            files_uploaded = []
+
+            # TODO: upload in parallel.
+            for upload_file in temp_output_dir.glob("**/*"):
+                if upload_file.is_dir():
+                    continue
+
+                upload_file_name = str(upload_file.relative_to(temp_output_dir))
+
+                if self.destination_prefix is not None:
+                    upload_file_name = f"{destination_prefix_interp}/{upload_file_name}"
+
+                self.log.info("Uploading file %s to %s", upload_file, upload_file_name)
+
+                try:
+                    destination_hook.upload(
+                        bucket_name=self.destination_bucket,
+                        object_name=upload_file_name,
+                        filename=str(upload_file),
+                        chunk_size=self.chunk_size,
+                        num_max_attempts=self.upload_num_attempts,
+                    )
+                    files_uploaded.append(str(upload_file_name))
+                except GoogleCloudError:
+                    if self.upload_continue_on_fail:
+                        continue
+                    raise
+
+            return files_uploaded
 
 
 class GCSDeleteBucketOperator(BaseOperator):

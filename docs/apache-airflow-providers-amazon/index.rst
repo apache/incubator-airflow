@@ -59,7 +59,7 @@ Package apache-airflow-providers-amazon
 Amazon integration (including `Amazon Web Services (AWS) <https://aws.amazon.com/>`__).
 
 
-Release: 1.1.0
+Release: 1.2.0
 
 Provider package
 ----------------
@@ -97,7 +97,7 @@ Cross provider package dependencies
 -----------------------------------
 
 Those are dependencies that might be needed in order to use all the features of the package.
-You need to install the specified backport providers package in order to use them.
+You need to install the specified provider packages in order to use them.
 
 You can install such cross-provider dependencies when installing from PyPI. For example:
 
@@ -141,12 +141,23 @@ Dependent package                                                               
 Changelog
 ---------
 
+1.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Avoid using threads in S3 remote logging upload (#14414)``
+* ``Allow AWS Operator RedshiftToS3Transfer To Run a Custom Query (#14177)``
+* ``includes the STS token if STS credentials are used (#11227)``
+
 1.1.0
 .....
 
 Features
 ~~~~~~~~
 
+* ``Adding support to put extra arguments for Glue Job. (#14027)``
 * ``Add aws ses email backend for use with EmailOperator. (#13986)``
 * ``Add bucket_name to template fileds in S3 operators (#13973)``
 * ``Add ExasolToS3Operator (#13847)``

@@ -64,7 +64,18 @@ class TestDataprocHook(unittest.TestCase):
         mock_client.assert_called_once_with(
             credentials=mock_get_credentials.return_value,
             client_info=mock_client_info.return_value,
-            client_options={"api_endpoint": f"{GCP_LOCATION}-dataproc.googleapis.com:443"},
+            client_options=None,
+        )
+
+    @mock.patch(DATAPROC_STRING.format("DataprocHook._get_credentials"))
+    @mock.patch(DATAPROC_STRING.format("DataprocHook.client_info"), new_callable=mock.PropertyMock)
+    @mock.patch(DATAPROC_STRING.format("ClusterControllerClient"))
+    def test_get_cluster_client_region(self, mock_client, mock_client_info, mock_get_credentials):
+        self.hook.get_cluster_client(location='region1')
+        mock_client.assert_called_once_with(
+            credentials=mock_get_credentials.return_value,
+            client_info=mock_client_info.return_value,
+            client_options={'api_endpoint': 'region1-dataproc.googleapis.com:443'},
         )
 
     @mock.patch(DATAPROC_STRING.format("DataprocHook._get_credentials"))
@@ -97,7 +108,18 @@ class TestDataprocHook(unittest.TestCase):
         mock_client.assert_called_once_with(
             credentials=mock_get_credentials.return_value,
             client_info=mock_client_info.return_value,
-            client_options={"api_endpoint": f"{GCP_LOCATION}-dataproc.googleapis.com:443"},
+            client_options=None,
+        )
+
+    @mock.patch(DATAPROC_STRING.format("DataprocHook._get_credentials"))
+    @mock.patch(DATAPROC_STRING.format("DataprocHook.client_info"), new_callable=mock.PropertyMock)
+    @mock.patch(DATAPROC_STRING.format("JobControllerClient"))
+    def test_get_job_client_region(self, mock_client, mock_client_info, mock_get_credentials):
+        self.hook.get_job_client(location='region1')
+        mock_client.assert_called_once_with(
+            credentials=mock_get_credentials.return_value,
+            client_info=mock_client_info.return_value,
+            client_options={'api_endpoint': 'region1-dataproc.googleapis.com:443'},
         )
 
     @mock.patch(DATAPROC_STRING.format("DataprocHook.get_cluster_client"))

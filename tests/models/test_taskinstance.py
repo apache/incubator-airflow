@@ -1488,6 +1488,39 @@ class TestTaskInstance(unittest.TestCase):
         assert ti_list[3].get_previous_start_date(state=State.SUCCESS) == ti_list[1].start_date
         assert ti_list[3].get_previous_start_date(state=State.SUCCESS) != ti_list[2].start_date
 
+    def test_get_previous_start_date_none(self):
+        """
+        Test that get_previous_start_date() can handle TaskInstance with no start_date.
+        """
+        with DAG("test_get_previous_start_date_none", start_date=DEFAULT_DATE, schedule_interval=None) as dag:
+            task = DummyOperator(task_id="op")
+
+        day_1 = DEFAULT_DATE
+        day_2 = DEFAULT_DATE + datetime.timedelta(days=1)
+
+        # Create a DagRun for day_1 and day_2. Calling ti_2.get_previous_start_date()
+        # should return the start_date of ti_1 (which is None because ti_1 was not run).
+        # It should not raise an error.
+        dagrun_1 = dag.create_dagrun(
+            execution_date=day_1,
+            state=State.RUNNING,
+            run_type=DagRunType.MANUAL,
+        )
+
+        dagrun_2 = dag.create_dagrun(
+            execution_date=day_2,
+            state=State.RUNNING,
+            run_type=DagRunType.MANUAL,
+        )
+
+        ti_1 = dagrun_1.get_task_instance(task.task_id)
+        ti_2 = dagrun_2.get_task_instance(task.task_id)
+        ti_1.task = task
+        ti_2.task = task
+
+        assert ti_2.get_previous_start_date() == ti_1.start_date
+        assert ti_1.start_date is None
+
     def test_pendulum_template_dates(self):
         dag = models.DAG(
             dag_id='test_pendulum_template_dates',
@@ -1938,8 +1971,8 @@ class TestTaskInstance(unittest.TestCase):
                 for upstream, downstream in dependencies.items():
                     dag.set_dependency(upstream, downstream)
 
-            scheduler = SchedulerJob(subdir=os.devnull)
-            scheduler.dagbag.bag_dag(dag, root_dag=dag)
+            scheduler_job = SchedulerJob(subdir=os.devnull)
+            scheduler_job.dagbag.bag_dag(dag, root_dag=dag)
 
             dag_run = dag.create_dagrun(run_id='test_dagrun_fast_follow', state=State.RUNNING)
 
@@ -1966,9 +1999,11 @@ class TestTaskInstance(unittest.TestCase):
             self.validate_ti_states(dag_run, first_run_state, error_message)
 
             if second_run_state:
-                scheduler._critical_section_execute_task_instances(session=session)
+                scheduler_job._critical_section_execute_task_instances(session=session)
                 task_instance_b.run()
                 self.validate_ti_states(dag_run, second_run_state, error_message)
+            if scheduler_job.processor_agent:
+                scheduler_job.processor_agent.end()
 
     def test_set_state_up_for_retry(self):
         dag = DAG('dag', start_date=DEFAULT_DATE)
@@ -2027,7 +2062,7 @@ class TestRunRawTaskQueriesCount(unittest.TestCase):
         db.clear_db_pools()
         db.clear_db_dags()
         db.clear_db_sla_miss()
-        db.clear_db_errors()
+        db.clear_db_import_errors()
 
     def setUp(self) -> None:
         self._clean()

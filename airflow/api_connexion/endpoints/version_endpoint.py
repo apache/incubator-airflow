@@ -15,14 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import logging
 from typing import NamedTuple, Optional
 
 import airflow
 from airflow.api_connexion.schemas.version_schema import version_info_schema
 from airflow.utils.platform import get_airflow_git_version
-
-log = logging.getLogger(__name__)
 
 
 class VersionInfo(NamedTuple):

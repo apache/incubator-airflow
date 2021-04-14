@@ -158,6 +158,7 @@ class TestS3KeySizeSensor(unittest.TestCase):
         mock_paginator = mock.Mock()
         mock_paginator.paginate.return_value = []
         mock_conn = mock.Mock()
+        # pylint: disable=no-member
         mock_conn.return_value.get_paginator.return_value = mock_paginator
         mock_hook.return_value.get_conn = mock_conn
         mock_paginator.paginate.return_value = [paginate_return_value]

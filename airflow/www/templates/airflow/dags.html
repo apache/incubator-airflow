@@ -21,11 +21,23 @@
 {% from 'appbuilder/loading_dots.html' import loading_dots %}
 
 {% block page_title %}
-  {% if search_query %}
-    "{{ search_query }}" - DAGs - Airflow
-  {% else %}
-    DAGs - Airflow
-  {% endif %}
+  {% if search_query %}"{{ search_query }}" - {% endif %}DAGs - {{ appbuilder.app_name }}
+{% endblock %}
+
+{% block head_meta %}
+  {{ super() }}
+  <meta name="dags_index" content="{{ url_for('Airflow.index') }}">
+  <meta name="paused_url" content="{{ url_for('Airflow.paused') }}">
+  <meta name="status_filter" content="{{ status_filter }}">
+  <meta name="autocomplete_url" content="{{ url_for('DagModelView.autocomplete') }}">
+  <meta name="graph_url" content="{{ url_for('Airflow.graph') }}">
+  <meta name="dag_run_url" content="{{ url_for('DagRunModelView.list') }}">
+  <meta name="task_instance_url" content="{{ url_for('TaskInstanceModelView.list') }}">
+  <meta name="blocked_url" content="{{ url_for('Airflow.blocked') }}">
+  <meta name="csrf_token" content="{{ csrf_token() }}">
+  <meta name="last_dag_runs_url" content="{{ url_for('Airflow.last_dagruns') }}">
+  <meta name="dag_stats_url" content="{{ url_for('Airflow.dag_stats') }}">
+  <meta name="task_stats_url" content="{{ url_for('Airflow.task_stats') }}">
 {% endblock %}
 
 {% block head_css %}
@@ -35,7 +47,7 @@
 {% endblock %}
 
 {% block content %}
-  <h2>DAGs</h2>
+  <h2>{{ page_title }}</h2>
   <div id="main_content">
     <div class="dags-table-wrap">
       <div class="row dags-table-header">
@@ -246,345 +258,8 @@
 {% block tail %}
   {{ super() }}
   <script src="{{ url_for_asset('d3.min.js') }}"></script>
+  <script src="{{ url_for_asset('dags.js') }}"></script>
   <script>
-    const DAGS_INDEX = '{{ url_for('Airflow.index') }}';
-    const ENTER_KEY_CODE = 13;
     const STATE_COLOR = {{ state_color|tojson }};
-
-    $('#tags_filter').select2({
-      placeholder: 'Filter DAGs by tag',
-      allowClear: true
-    });
-
-    $('#tags_filter').on('change', function (e) {
-      e.preventDefault();
-      var query = new URLSearchParams(window.location.search);
-      if (!!e.val.length) {
-        if (query.has('tags')) query.delete('tags');
-        e.val.map(function(value) {
-          query.append('tags', value);
-        })
-      } else {
-        query.delete('tags');
-        query.set('reset_tags', 'reset')
-      }
-      if (query.has('page')) query.delete('page');
-      window.location = `${DAGS_INDEX}?${query.toString()}`;
-    });
-
-    $('#tags_form').on('reset', function(e) {
-      e.preventDefault();
-      var query = new URLSearchParams(window.location.search);
-      query.delete('tags');
-      if (query.has('page')) query.delete('page');
-      query.set('reset_tags', 'reset')
-      window.location = `${DAGS_INDEX}?${query.toString()}`;
-    });
-
-    $('#dag_query').on('keypress', function (e) {
-      // check for key press on ENTER (key code 13) to trigger the search
-      if (e.which === ENTER_KEY_CODE) {
-        var query = new URLSearchParams(window.location.search);
-        query.set("search", e.target.value.trim());
-        query.delete("page");
-        window.location = `${DAGS_INDEX}?${query.toString()}`;
-        e.preventDefault();
-      }
-    });
-
-    $('#page_size').on('change', function() {
-      p_size = $(this).val();
-      window.location = `${DAGS_INDEX}?page_size=${p_size}`;
-    });
-
-    function confirmDeleteDag(link, dag_id){
-      if (confirm("Are you sure you want to delete '"+dag_id+"' now?\n\
-        This option will delete ALL metadata, DAG runs, etc.\n\
-        EXCEPT Log.\n\
-        This cannot be undone.")) {
-        postAsForm(link.href, {});
-      }
-      return false;
-    }
-
-    var encoded_dag_ids = new URLSearchParams();
-
-    $.each($('[id^=toggle]'), function() {
-      var $input = $(this);
-      var dagId = $input.data('dag-id');
-      encoded_dag_ids.append('dag_ids', dagId);
-
-      $input.change(function() {
-        var isPaused = $input.is(':checked');
-        var url = `{{ url_for('Airflow.paused') }}?is_paused=${isPaused}&dag_id=${encodeURIComponent(dagId)}`;
-        $input.removeClass('switch-input--error');
-        $.post(url).fail(function() {
-          setTimeout(() => {
-            $input.prop('checked', !isPaused);
-            $input.addClass('switch-input--error');
-          }, 500 );
-        });
-      });
-    });
-
-    $('.typeahead').typeahead({
-      source: function (query, callback) {
-        return $.ajax('{{ url_for('DagModelView.autocomplete') }}',
-          {
-            data: {
-              'query': encodeURIComponent(query),
-              'status': '{{ status_filter }}'
-            },
-            success: callback
-          });
-      },
-      autoSelect: false,
-      afterSelect: function(value) {
-        var search_query = value.trim();
-        if (search_query) {
-          var query = new URLSearchParams(window.location.search);
-          query.set('search', search_query);
-          window.location = `${DAGS_INDEX}?${query}`;
-        }
-      }
-    });
-
-    $('#search_form').on('reset', function() {
-      var query = new URLSearchParams(window.location.search);
-      query.delete('search');
-      query.delete('page');
-      window.location = `${DAGS_INDEX}?${query}`;
-    });
-
-    $('#main_content').show(250);
-    diameter = 25;
-    circle_margin = 4;
-    stroke_width = 2;
-    stroke_width_hover = 6;
-
-    function blockedHandler(error, json) {
-      $.each(json, function() {
-        a = document.querySelector(`[data-dag-id="${this.dag_id}"]`);
-        a.title = `${this.active_dag_run}/${this.max_active_runs} active dag runs`;
-        if(this.active_dag_run >= this.max_active_runs) {
-          a.style.color = '#e43921';
-        }
-      });
-    }
-
-    function lastDagRunsHandler(error, json) {
-      for(var safe_dag_id in json) {
-        dag_id = json[safe_dag_id].dag_id;
-        execution_date = json[safe_dag_id].execution_date;
-        start_date = json[safe_dag_id].start_date;
-        g = d3.select(`#last-run-${safe_dag_id}`)
-        g.selectAll('a')
-          .attr('href', `{{ url_for('Airflow.graph') }}?dag_id=${encodeURIComponent(dag_id)}&execution_date=${encodeURIComponent(execution_date)}`)
-          .insert(isoDateToTimeEl.bind(null, execution_date, {title: false}));
-        g.selectAll('span')
-          // We don't translate the timezone in the tooltip, that stays in UTC.
-          .attr('data-original-title', `Start Date: ${start_date}`)
-          .style('display', null);
-        g.selectAll('.js-loading-last-run').remove();
-      }
-      $('.js-loading-last-run').remove();
-    }
-
-    function drawDagStatsForDag(dag_id, states) {
-      g = d3.select(`svg#dag-run-${dag_id.replace(/\./g, '__dot__')}`)
-        .attr('height', diameter + (stroke_width_hover * 2))
-        .attr('width', '110px')
-        .selectAll("g")
-        .data(states)
-        .enter()
-        .append('g')
-        .attr('transform', function(d, i) {
-          x = (i * (diameter + circle_margin)) + (diameter/2 + circle_margin);
-          y = (diameter/2) + stroke_width_hover;
-          return `translate(${x},${y})`;
-        });
-
-      g.append('svg:a')
-        .attr('href', function(d) {
-          return `{{ url_for('DagRunModelView.list') }}?_flt_3_dag_id=${dag_id}&_flt_3_state=${d.state}`;
-        })
-      .append('circle')
-        .attr('id', function(d) {return `run-${dag_id.replace(/\./g, '_')}${d.state || 'none'}`})
-        .attr('class', 'has-svg-tooltip')
-        .attr('stroke-width', function(d) {
-          if (d.count > 0)
-            return stroke_width;
-          else {
-            return 1;
-          }
-        })
-        .attr('stroke', function(d) {
-          if (d.count > 0)
-            return STATE_COLOR[d.state];
-          else {
-            return 'gainsboro';
-          }
-        })
-        .attr('fill', '#fff')
-        .attr('r', diameter/2)
-        .attr('title', function(d) {return d.state})
-        .on('mouseover', function(d) {
-          if (d.count > 0) {
-            d3.select(this).transition().duration(400)
-              .attr('fill', '#e2e2e2')
-              .style('stroke-width', stroke_width_hover);
-          }
-        })
-        .on('mouseout', function(d) {
-          if (d.count > 0) {
-            d3.select(this).transition().duration(400)
-              .attr('fill', '#fff')
-              .style('stroke-width', stroke_width);
-          }
-        })
-        .style('opacity', 0)
-        .transition().duration(300).delay(function(d, i){return i*50;})
-        .style('opacity', 1);
-      d3.select('.js-loading-dag-stats').remove();
-
-      g.append('text')
-        .attr('fill', '#51504f')
-        .attr('text-anchor', 'middle')
-        .attr('vertical-align', 'middle')
-        .attr('font-size', 8)
-        .attr('y', 3)
-        .style('pointer-events', 'none')
-        .text(function(d){ return d.count > 0 ? d.count : ''; });
-    }
-
-    function dagStatsHandler(error, json) {
-      for(var dag_id in json) {
-        states = json[dag_id];
-        drawDagStatsForDag(dag_id, states);
-      }
-    }
-
-    function drawTaskStatsForDag(dag_id, states) {
-      g = d3.select(`svg#task-run-${dag_id.replace(/\./g, '__dot__')}`)
-        .attr('height', diameter + (stroke_width_hover * 2))
-        .attr('width', (states.length * (diameter + circle_margin)) + circle_margin)
-        .selectAll("g")
-        .data(states)
-        .enter()
-        .append('g')
-        .attr('transform', function(d, i) {
-          x = (i * (diameter + circle_margin)) + (diameter/2 + circle_margin);
-          y = (diameter/2) + stroke_width_hover;
-          return `translate(${x},${y})`;
-        });
-
-      g.append('svg:a')
-        .attr('href', function(d) {
-          return `{{ url_for('TaskInstanceModelView.list') }}?_flt_3_dag_id=${dag_id}&_flt_3_state=${d.state}`;
-        })
-      .append('circle')
-        .attr('id', function(d) {return `task-${dag_id.replace(/\./g, '_')}${d.state || 'none'}`})
-        .attr('class', 'has-svg-tooltip')
-        .attr('stroke-width', function(d) {
-          if (d.count > 0)
-            return stroke_width;
-          else {
-            return 1;
-          }
-        })
-        .attr('stroke', function(d) {
-          if (d.count > 0)
-            return STATE_COLOR[d.state];
-          else {
-            return 'gainsboro';
-          }
-        })
-        .attr('fill', '#fff')
-        .attr('r', diameter/2)
-        .attr('title', function(d) {return d.state || 'none'})
-        .on('mouseover', function(d) {
-          if (d.count > 0) {
-            d3.select(this).transition().duration(400)
-              .attr('fill', '#e2e2e2')
-              .style('stroke-width', stroke_width_hover);
-          }
-        })
-        .on('mouseout', function(d) {
-          if (d.count > 0) {
-            d3.select(this).transition().duration(400)
-              .attr('fill', '#fff')
-              .style('stroke-width', stroke_width);
-          }
-        })
-        .style('opacity', 0)
-        .transition().duration(300).delay(function(d, i){return i*50;})
-        .style('opacity', 1);
-      d3.select('.js-loading-task-stats').remove();
-
-      g.append('text')
-        .attr('fill', '#51504f')
-        .attr('text-anchor', 'middle')
-        .attr('vertical-align', 'middle')
-        .attr('font-size', 8)
-        .attr('y', 3)
-        .style('pointer-events', 'none')
-        .text(function(d){ return d.count > 0 ? d.count : ''; });
-    }
-
-    function taskStatsHandler(error, json) {
-      for(var dag_id in json) {
-        states = json[dag_id];
-        drawTaskStatsForDag(dag_id, states);
-      }
-    }
-
-    if (encoded_dag_ids.has('dag_ids')) {
-      // dags on page fetch stats
-      d3.json('{{ url_for('Airflow.blocked') }}')
-        .header('X-CSRFToken', '{{ csrf_token() }}')
-        .post(encoded_dag_ids, blockedHandler);
-      d3.json('{{ url_for('Airflow.last_dagruns') }}')
-        .header('X-CSRFToken', '{{ csrf_token() }}')
-        .post(encoded_dag_ids, lastDagRunsHandler);
-      d3.json('{{ url_for('Airflow.dag_stats') }}')
-        .header('X-CSRFToken', '{{ csrf_token() }}')
-        .post(encoded_dag_ids, dagStatsHandler);
-      d3.json('{{ url_for('Airflow.task_stats') }}')
-        .header('X-CSRFToken', '{{ csrf_token() }}')
-        .post(encoded_dag_ids, taskStatsHandler);
-    }
-    else {
-      // no dags, hide the loading dots
-      $('.js-loading-task-stats').remove();
-      $('.js-loading-dag-stats').remove();
-    }
-
-    function showSvgTooltip(text, circ) {
-      var tip = $('#svg-tooltip');
-      tip.children('.tooltip-inner').text(text);
-      var centeringOffset = tip.width() / 2;
-      tip.css({
-        'display': 'block',
-        'left': `${circ.left + 12.5 - centeringOffset}px`,// 12.5 == half of circle width
-        'top': `${circ.top - 25}px`// 25 == position above circle
-      });
-    }
-
-    function hideSvgTooltip() {
-      $('#svg-tooltip').css('display', 'none');
-    }
-
-    $(window).on('load', function() {
-      $('body').on('mouseover', '.has-svg-tooltip', function(e) {
-        var elem = e.target;
-        var text = elem.getAttribute('title');
-        var circ = elem.getBoundingClientRect();
-        showSvgTooltip(text, circ);
-      });
-
-      $('body').on('mouseout', '.has-svg-tooltip', function(e) {
-        hideSvgTooltip();
-      });
-    });
   </script>
 {% endblock %}

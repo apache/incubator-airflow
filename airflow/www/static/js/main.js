@@ -23,7 +23,7 @@ import {
   formatTimezone,
   isoDateToTimeEl,
   setDisplayedTimezone,
-} from './datetime-utils';
+} from './datetime_utils';
 
 window.isoDateToTimeEl = isoDateToTimeEl;
 

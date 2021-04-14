@@ -148,3 +148,29 @@ class TestTelegramOperator(unittest.TestCase):
             telegram_kwargs={"custom_arg": "value", "text": "some text, that will be ignored"},
         )
         assert ('text', 'chat_id') == hook.template_fields
+
+    @mock.patch('airflow.providers.telegram.operators.telegram.TelegramHook')
+    def test_should_return_templatized_text_field(self, mock_hook):
+        operator = TelegramOperator(
+            telegram_conn_id='telegram_default',
+            chat_id='-420913222',
+            task_id='telegram',
+            text="execution date is {{ ds }}",
+            telegram_kwargs={"custom_arg": "value", "text": "should be ignored"},
+        )
+        operator.render_template_fields({"ds": "2021-02-04"})
+        operator.execute()
+        assert operator.text == "execution date is 2021-02-04"
+        assert 'text' in operator.telegram_kwargs
+        assert operator.telegram_kwargs['text'] == "execution date is 2021-02-04"
+
+    def test_should_return_templatized_chat_id_field(self):
+        operator = TelegramOperator(
+            telegram_conn_id='telegram_default',
+            chat_id='{{ chat_id }}',
+            task_id='telegram',
+            text="text",
+            telegram_kwargs={"custom_arg": "value", "text": "should be ignored"},
+        )
+        operator.render_template_fields({"chat_id": "1234567"})
+        assert operator.chat_id == "1234567"

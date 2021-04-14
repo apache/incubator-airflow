@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
 
+import pytest
 from parameterized import parameterized
 
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
@@ -23,38 +23,39 @@ from airflow.models.errors import ImportError  # pylint: disable=redefined-built
 from airflow.security import permissions
 from airflow.utils import timezone
 from airflow.utils.session import provide_session
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_import_errors
 
 
-class TestBaseImportError(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)  # type:ignore
-        create_user(
-            cls.app,  # type: ignore
-            username="test",
-            role_name="Test",
-            permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_IMPORT_ERROR)],
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
+    create_user(
+        app,  # type:ignore
+        username="test",
+        role_name="Test",
+        permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_IMPORT_ERROR)],  # type: ignore
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
+    yield minimal_app_for_api
 
-    def setUp(self) -> None:
-        super().setUp()
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
+class TestBaseImportError:
+    timestamp = "2020-06-10T12:00"
+
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app) -> None:
+        self.app = configured_app
         self.client = self.app.test_client()  # type:ignore
-        self.timestamp = "2020-06-10T12:00"
+
         clear_db_import_errors()
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         clear_db_import_errors()
 
     @staticmethod
@@ -64,7 +65,6 @@ class TestBaseImportError(unittest.TestCase):
 
 
 class TestGetImportErrorEndpoint(TestBaseImportError):
-    @provide_session
     def test_response_200(self, session):
         import_error = ImportError(
             filename="Lorem_ipsum.py",
@@ -98,7 +98,6 @@ class TestGetImportErrorEndpoint(TestBaseImportError):
             "type": EXCEPTIONS_LINK_MAP[404],
         } == response.json
 
-    @provide_session
     def test_should_raises_401_unauthenticated(self, session):
         import_error = ImportError(
             filename="Lorem_ipsum.py",
@@ -120,7 +119,6 @@ class TestGetImportErrorEndpoint(TestBaseImportError):
 
 
 class TestGetImportErrorsEndpoint(TestBaseImportError):
-    @provide_session
     def test_get_import_errors(self, session):
         import_error = [
             ImportError(
@@ -156,7 +154,6 @@ class TestGetImportErrorsEndpoint(TestBaseImportError):
             "total_entries": 2,
         } == response_data
 
-    @provide_session
     def test_should_raises_401_unauthenticated(self, session):
         import_error = [
             ImportError(
@@ -206,7 +203,6 @@ class TestGetImportErrorsEndpointPagination(TestBaseImportError):
         import_ids = [pool["filename"] for pool in response.json["import_errors"]]
         assert import_ids == expected_import_error_ids
 
-    @provide_session
     def test_should_respect_page_size_limit_default(self, session):
         import_errors = [
             ImportError(
@@ -222,7 +218,6 @@ class TestGetImportErrorsEndpointPagination(TestBaseImportError):
         assert response.status_code == 200
         assert len(response.json['import_errors']) == 100
 
-    @provide_session
     @conf_vars({("api", "maximum_page_limit"): "150"})
     def test_should_return_conf_max_if_req_max_above_conf(self, session):
         import_errors = [

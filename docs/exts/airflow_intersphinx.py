@@ -53,6 +53,10 @@ def _generate_provider_intersphinx_mapping():
         doc_inventory = f'{DOCS_DIR}/_build/docs/{package_name}/{current_version}/objects.inv'
         cache_inventory = f'{DOCS_DIR}/_inventory_cache/{package_name}/objects.inv'
 
+        # Skip adding the mapping if the path does not exist
+        if not os.path.exists(doc_inventory) and not os.path.exists(cache_inventory):
+            continue
+
         airflow_mapping[package_name] = (
             # base URI
             provider_base_url,
@@ -67,14 +71,15 @@ def _generate_provider_intersphinx_mapping():
             f'/docs/apache-airflow/{current_version}/',
             (doc_inventory if os.path.exists(doc_inventory) else cache_inventory,),
         )
+    for pkg_name in ['apache-airflow-providers', 'docker-stack']:
+        if os.environ.get('AIRFLOW_PACKAGE_NAME') == pkg_name:
+            continue
+        doc_inventory = f'{DOCS_DIR}/_build/docs/{pkg_name}/objects.inv'
+        cache_inventory = f'{DOCS_DIR}/_inventory_cache/{pkg_name}/objects.inv'
 
-    if os.environ.get('AIRFLOW_PACKAGE_NAME') != 'apache-airflow-providers':
-        doc_inventory = f'{DOCS_DIR}/_build/docs/apache-airflow-providers/objects.inv'
-        cache_inventory = f'{DOCS_DIR}/_inventory_cache/apache-airflow-providers/objects.inv'
-
-        airflow_mapping['apache-airflow-providers'] = (
+        airflow_mapping[pkg_name] = (
             # base URI
-            '/docs/apache-airflow-providers/',
+            f'/docs/{pkg_name}/',
             (doc_inventory if os.path.exists(doc_inventory) else cache_inventory,),
         )
 

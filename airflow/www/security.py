@@ -66,13 +66,13 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
         (permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_BROWSE_MENU),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_DAG_RUN),
-        (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_DOCS_LINK),
-        (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_DOCS_MENU),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_JOB),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_AUDIT_LOG),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_PLUGIN),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_SLA_MISS),
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_TASK_INSTANCE),
+        (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_DOCS_MENU),
+        (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_DOCS_LINKS),
         (permissions.ACTION_CAN_THIS_FORM_GET, permissions.RESOURCE_RESET_MY_PASSWORD_VIEW),
         (permissions.ACTION_CAN_THIS_FORM_POST, permissions.RESOURCE_RESET_MY_PASSWORD_VIEW),
         (permissions.ACTION_RESETMYPASSWORD, permissions.RESOURCE_USER_DB_MODELVIEW),
@@ -474,15 +474,16 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
         :return: None.
         """
         perms = self.get_all_permissions()
-        dag_models = (
-            session.query(models.DagModel)
+        rows = (
+            session.query(models.DagModel.dag_id)
             .filter(or_(models.DagModel.is_active, models.DagModel.is_paused))
             .all()
         )
 
-        for dag in dag_models:
+        for row in rows:
+            dag_id = row[0]
             for perm_name in self.DAG_PERMS:
-                dag_resource_name = self.prefixed_dag_id(dag.dag_id)
+                dag_resource_name = self.prefixed_dag_id(dag_id)
                 if dag_resource_name and perm_name and (dag_resource_name, perm_name) not in perms:
                     self._merge_perm(perm_name, dag_resource_name)
 

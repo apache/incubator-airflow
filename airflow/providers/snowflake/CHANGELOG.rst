@@ -19,6 +19,20 @@
 Changelog
 ---------
 
+1.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Bumped snowflake-connector-python library to >=2.4.1 version and get rid of pytz library pinning``
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+* ``Prepare to release the next wave of providers: (#14487)``
+
 1.1.0
 .....
 

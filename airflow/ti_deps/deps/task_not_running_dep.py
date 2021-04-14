@@ -26,7 +26,7 @@ class TaskNotRunningDep(BaseTIDep):
     """Ensures that the task instance's state is not running."""
 
     NAME = "Task Instance Not Running"
-    IGNOREABLE = False
+    IGNORABLE = False
 
     def __eq__(self, other):
         return type(self) == type(other)  # pylint: disable=C0123

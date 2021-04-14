@@ -31,7 +31,7 @@ def send_email(
     bcc: Optional[Union[List[str], str]] = None,
     mime_subtype: str = 'mixed',
     mime_charset: str = 'utf-8',
-    conn_id: Optional[str] = None,
+    conn_id: str = 'aws_default',
     **kwargs,
 ) -> None:
     """Email backend for SES."""

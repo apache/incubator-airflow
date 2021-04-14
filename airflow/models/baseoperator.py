@@ -43,7 +43,11 @@ from typing import (
 
 import attr
 import jinja2
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
@@ -353,7 +357,7 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
         retries: Optional[int] = conf.getint('core', 'default_task_retries', fallback=0),
         retry_delay: timedelta = timedelta(seconds=300),
         retry_exponential_backoff: bool = False,
-        max_retry_delay: Optional[datetime] = None,
+        max_retry_delay: Optional[timedelta] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         depends_on_past: bool = False,
@@ -460,6 +464,13 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
             self.retry_delay = timedelta(seconds=retry_delay)  # noqa
         self.retry_exponential_backoff = retry_exponential_backoff
         self.max_retry_delay = max_retry_delay
+        if max_retry_delay:
+            if isinstance(max_retry_delay, timedelta):
+                self.max_retry_delay = max_retry_delay
+            else:
+                self.log.debug("Max_retry_delay isn't timedelta object, assuming secs")
+                self.max_retry_delay = timedelta(seconds=max_retry_delay)  # noqa
+
         self.params = params or {}  # Available in templates!
         self.priority_weight = priority_weight
         if not WeightRule.is_valid(weight_rule):

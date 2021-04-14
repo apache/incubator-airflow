@@ -25,8 +25,7 @@ from inspect import signature
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
-import yaml
-
+import airflow.utils.yaml as yaml
 from airflow.exceptions import (
     AirflowException,
     AirflowFileParseException,

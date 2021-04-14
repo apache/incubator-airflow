@@ -17,6 +17,8 @@
 # under the License.
 
 import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest import mock
 
 from airflow.providers.google.cloud.operators.gcs import (
@@ -28,6 +30,7 @@ from airflow.providers.google.cloud.operators.gcs import (
     GCSListObjectsOperator,
     GCSObjectCreateAclEntryOperator,
     GCSSynchronizeBucketsOperator,
+    GCSTimeSpanFileTransformOperator,
 )
 
 TASK_ID = "test-gcs-operator"
@@ -205,6 +208,156 @@ class TestGCSFileTransformOperator(unittest.TestCase):
             bucket_name=destination_bucket,
             object_name=destination_object,
             filename=destination,
+        )
+
+
+class TestGCSTimeSpanFileTransformOperatorDateInterpolation(unittest.TestCase):
+    def test_execute(self):
+        interp_dt = datetime(2015, 2, 1, 15, 16, 17, 345, tzinfo=timezone.utc)
+
+        assert GCSTimeSpanFileTransformOperator.interpolate_prefix(None, interp_dt) is None
+
+        assert (
+            GCSTimeSpanFileTransformOperator.interpolate_prefix("prefix_without_date", interp_dt)
+            == "prefix_without_date"
+        )
+
+        assert (
+            GCSTimeSpanFileTransformOperator.interpolate_prefix("prefix_with_year_%Y", interp_dt)
+            == "prefix_with_year_2015"
+        )
+
+        assert (
+            GCSTimeSpanFileTransformOperator.interpolate_prefix(
+                "prefix_with_year_month_day/%Y/%m/%d/", interp_dt
+            )
+            == "prefix_with_year_month_day/2015/02/01/"
+        )
+
+        assert (
+            GCSTimeSpanFileTransformOperator.interpolate_prefix(
+                "prefix_with_year_month_day_and_percent_%%/%Y/%m/%d/", interp_dt
+            )
+            == "prefix_with_year_month_day_and_percent_%/2015/02/01/"
+        )
+
+
+class TestGCSTimeSpanFileTransformOperator(unittest.TestCase):
+    @mock.patch("airflow.providers.google.cloud.operators.gcs.TemporaryDirectory")
+    @mock.patch("airflow.providers.google.cloud.operators.gcs.subprocess")
+    @mock.patch("airflow.providers.google.cloud.operators.gcs.GCSHook")
+    def test_execute(self, mock_hook, mock_subprocess, mock_tempdir):
+        source_bucket = TEST_BUCKET
+        source_prefix = "source_prefix"
+        source_gcp_conn_id = ""
+
+        destination_bucket = TEST_BUCKET + "_dest"
+        destination_prefix = "destination_prefix"
+        destination_gcp_conn_id = ""
+
+        transform_script = "script.py"
+
+        source = "source"
+        destination = "destination"
+
+        file1 = "file1"
+        file2 = "file2"
+
+        timespan_start = datetime(2015, 2, 1, 15, 16, 17, 345, tzinfo=timezone.utc)
+        timespan_end = timespan_start + timedelta(hours=1)
+        mock_dag = mock.Mock()
+        mock_dag.following_schedule = lambda x: x + timedelta(hours=1)
+        context = dict(
+            execution_date=timespan_start,
+            dag=mock_dag,
+        )
+
+        mock_tempdir.return_value.__enter__.side_effect = [source, destination]
+        mock_hook.return_value.list_by_timespan.return_value = [
+            f"{source_prefix}/{file1}",
+            f"{source_prefix}/{file2}",
+        ]
+
+        mock_subprocess.PIPE = "pipe"
+        mock_subprocess.STDOUT = "stdout"
+        mock_subprocess.Popen.return_value.stdout.readline = lambda: b""
+        mock_subprocess.Popen.return_value.wait.return_value = None
+        mock_subprocess.Popen.return_value.returncode = 0
+
+        op = GCSTimeSpanFileTransformOperator(
+            task_id=TASK_ID,
+            source_bucket=source_bucket,
+            source_prefix=source_prefix,
+            source_gcp_conn_id=source_gcp_conn_id,
+            destination_bucket=destination_bucket,
+            destination_prefix=destination_prefix,
+            destination_gcp_conn_id=destination_gcp_conn_id,
+            transform_script=transform_script,
+        )
+
+        with mock.patch.object(Path, 'glob') as path_glob:
+            path_glob.return_value.__iter__.return_value = [
+                Path(f"{destination}/{file1}"),
+                Path(f"{destination}/{file2}"),
+            ]
+            op.execute(context=context)
+
+        mock_hook.return_value.list_by_timespan.assert_called_once_with(
+            bucket_name=source_bucket,
+            timespan_start=timespan_start,
+            timespan_end=timespan_end,
+            prefix=source_prefix,
+        )
+
+        mock_hook.return_value.download.assert_has_calls(
+            [
+                mock.call(
+                    bucket_name=source_bucket,
+                    object_name=f"{source_prefix}/{file1}",
+                    filename=f"{source}/{source_prefix}/{file1}",
+                    chunk_size=None,
+                    num_max_attempts=1,
+                ),
+                mock.call(
+                    bucket_name=source_bucket,
+                    object_name=f"{source_prefix}/{file2}",
+                    filename=f"{source}/{source_prefix}/{file2}",
+                    chunk_size=None,
+                    num_max_attempts=1,
+                ),
+            ]
+        )
+
+        mock_subprocess.Popen.assert_called_once_with(
+            args=[
+                transform_script,
+                source,
+                destination,
+                timespan_start.replace(microsecond=0).isoformat(),
+                timespan_end.replace(microsecond=0).isoformat(),
+            ],
+            stdout="pipe",
+            stderr="stdout",
+            close_fds=True,
+        )
+
+        mock_hook.return_value.upload.assert_has_calls(
+            [
+                mock.call(
+                    bucket_name=destination_bucket,
+                    filename=f"{destination}/{file1}",
+                    object_name=f"{destination_prefix}/{file1}",
+                    chunk_size=None,
+                    num_max_attempts=1,
+                ),
+                mock.call(
+                    bucket_name=destination_bucket,
+                    filename=f"{destination}/{file2}",
+                    object_name=f"{destination_prefix}/{file2}",
+                    chunk_size=None,
+                    num_max_attempts=1,
+                ),
+            ]
         )
 
 

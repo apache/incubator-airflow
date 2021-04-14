@@ -146,10 +146,14 @@ def display_spelling_error_summary(spelling_errors: Dict[str, List[SpellingError
     print("=" * 50)
     print()
     msg = """
-If the spelling is correct, add the spelling to docs/spelling_wordlist.txt
-or use the spelling directive.
+If there are spelling errors in the summary above, and the spelling is
+correct, add the spelling to docs/spelling_wordlist.txt or use the
+spelling directive.
 Check https://sphinxcontrib-spelling.readthedocs.io/en/latest/customize.html#private-dictionaries
 for more details.
+
+If there are no spelling errors in the summary above, there might be an
+issue unrelated to spelling. Please review the traceback.
     """
     print(msg)
     print()

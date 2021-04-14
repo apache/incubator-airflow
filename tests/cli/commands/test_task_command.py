@@ -237,10 +237,10 @@ class TestCliTasks(unittest.TestCase):
 
         dag2 = DagBag().dags['example_python_operator']
         task2 = dag2.get_task(task_id='print_the_context')
-        defaut_date2 = timezone.make_aware(datetime(2016, 1, 9))
+        default_date2 = timezone.make_aware(datetime(2016, 1, 9))
         dag2.clear()
 
-        ti2 = TaskInstance(task2, defaut_date2)
+        ti2 = TaskInstance(task2, default_date2)
 
         ti2.set_state(State.SUCCESS)
         ti_start = ti2.start_date
@@ -253,7 +253,7 @@ class TestCliTasks(unittest.TestCase):
                         'tasks',
                         'states-for-dag-run',
                         'example_python_operator',
-                        defaut_date2.isoformat(),
+                        default_date2.isoformat(),
                         '--output',
                         "json",
                     ]
@@ -313,6 +313,8 @@ class TestCliTasks(unittest.TestCase):
         assert state == State.SUCCESS
 
 
+# For this test memory spins out of control on Python 3.6. TODO(potiuk): FIXME")
+@pytest.mark.quarantined
 class TestLogsfromTaskRunCommand(unittest.TestCase):
     def setUp(self) -> None:
         self.dag_id = "test_logging_dag"
@@ -352,7 +354,7 @@ class TestLogsfromTaskRunCommand(unittest.TestCase):
     def assert_log_line(self, text, logs_list, expect_from_logging_mixin=False):
         """
         Get Log Line and assert only 1 Entry exists with the given text. Also check that
-        "logging_mixin" line does not appear in that log line to avoid duplicate loggigng as below:
+        "logging_mixin" line does not appear in that log line to avoid duplicate logging as below:
 
         [2020-06-24 16:47:23,537] {logging_mixin.py:91} INFO - [2020-06-24 16:47:23,536] {python.py:135}
         """

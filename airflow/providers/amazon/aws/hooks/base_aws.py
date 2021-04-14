@@ -34,7 +34,11 @@ import botocore
 import botocore.session
 from botocore.config import Config
 from botocore.credentials import ReadOnlyCredentials
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from dateutil.tz import tzlocal
 
 from airflow.exceptions import AirflowException

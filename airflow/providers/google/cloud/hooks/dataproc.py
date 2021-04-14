@@ -209,7 +209,9 @@ class DataprocHook(GoogleBaseHook):
 
     def get_cluster_client(self, location: Optional[str] = None) -> ClusterControllerClient:
         """Returns ClusterControllerClient."""
-        client_options = {'api_endpoint': f'{location}-dataproc.googleapis.com:443'} if location else None
+        client_options = None
+        if location and location != 'global':
+            client_options = {'api_endpoint': f'{location}-dataproc.googleapis.com:443'}
 
         return ClusterControllerClient(
             credentials=self._get_credentials(), client_info=self.client_info, client_options=client_options
@@ -227,7 +229,9 @@ class DataprocHook(GoogleBaseHook):
 
     def get_job_client(self, location: Optional[str] = None) -> JobControllerClient:
         """Returns JobControllerClient."""
-        client_options = {'api_endpoint': f'{location}-dataproc.googleapis.com:443'} if location else None
+        client_options = None
+        if location and location != 'global':
+            client_options = {'api_endpoint': f'{location}-dataproc.googleapis.com:443'}
 
         return JobControllerClient(
             credentials=self._get_credentials(), client_info=self.client_info, client_options=client_options

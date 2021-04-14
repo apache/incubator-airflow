@@ -25,6 +25,8 @@ test -v AIRFLOW_INSTALL_USER_FLAG
 test -v AIRFLOW_PIP_VERSION
 test -v CONTINUE_ON_PIP_CHECK_FAILURE
 
+set -x
+
 # Installs additional dependencies passed as Argument to the Docker build command
 function install_additional_dependencies() {
     if [[ "${UPGRADE_TO_NEWER_DEPENDENCIES}" != "false" ]]; then

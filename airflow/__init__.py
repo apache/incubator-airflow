@@ -47,6 +47,7 @@ settings.initialize()
 
 login: Optional[Callable] = None
 
+PY36 = sys.version_info >= (3, 6)
 PY37 = sys.version_info >= (3, 7)
 PY38 = sys.version_info >= (3, 8)
 

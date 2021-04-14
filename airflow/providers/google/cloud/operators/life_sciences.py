@@ -39,7 +39,7 @@ class LifeSciencesRunPipelineOperator(BaseOperator):
     :type location: str
     :param project_id: ID of the Google Cloud project if None then
         default project_id is used.
-    :param project_id: str
+    :type project_id: str
     :param gcp_conn_id: The connection ID to use to connect to Google Cloud.
     :type gcp_conn_id: str
     :param api_version: API version used (for example v2beta).

@@ -18,7 +18,10 @@
 """Objects relating to sourcing connections from Google Cloud Secrets Manager"""
 from typing import Optional
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud._internal_client.secret_manager_client import _SecretManagerClient  # noqa

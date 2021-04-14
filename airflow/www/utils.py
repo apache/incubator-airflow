@@ -337,6 +337,8 @@ def wrapped_markdown(s, css_class=None):
     if s is None:
         return None
 
+    s = '\n'.join(line.lstrip() for line in s.split('\n'))
+
     return Markup(f'<div class="{css_class}" >' + markdown.markdown(s, extensions=['tables']) + "</div>")
 
 

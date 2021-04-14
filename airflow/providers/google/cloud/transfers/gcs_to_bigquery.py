@@ -157,6 +157,10 @@ class GCSToBigQueryOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type impersonation_chain: Union[str, Sequence[str]]
+    :param labels: [Optional] Labels for the BiqQuery table.
+    :type labels: dict
+    :param description: [Optional] Description for the BigQuery table.
+    :type description: str
     """
 
     template_fields = (
@@ -204,6 +208,8 @@ class GCSToBigQueryOperator(BaseOperator):
         encryption_configuration=None,
         location=None,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        labels=None,
+        description=None,
         **kwargs,
     ):
 
@@ -248,6 +254,9 @@ class GCSToBigQueryOperator(BaseOperator):
         self.encryption_configuration = encryption_configuration
         self.location = location
         self.impersonation_chain = impersonation_chain
+
+        self.labels = labels
+        self.description = description
 
     def execute(self, context):
         bq_hook = BigQueryHook(
@@ -300,6 +309,8 @@ class GCSToBigQueryOperator(BaseOperator):
                 encoding=self.encoding,
                 src_fmt_configs=self.src_fmt_configs,
                 encryption_configuration=self.encryption_configuration,
+                labels=self.labels,
+                description=self.description,
             )
         else:
             cursor.run_load(
@@ -323,6 +334,8 @@ class GCSToBigQueryOperator(BaseOperator):
                 time_partitioning=self.time_partitioning,
                 cluster_fields=self.cluster_fields,
                 encryption_configuration=self.encryption_configuration,
+                labels=self.labels,
+                description=self.description,
             )
 
         if cursor.use_legacy_sql:

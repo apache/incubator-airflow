@@ -29,15 +29,19 @@ class RedshiftToS3Operator(BaseOperator):
     """
     Executes an UNLOAD command to s3 as a CSV with headers
 
-    :param schema: reference to a specific schema in redshift database
-    :type schema: str
-    :param table: reference to a specific table in redshift database
-    :type table: str
     :param s3_bucket: reference to a specific S3 bucket
     :type s3_bucket: str
     :param s3_key: reference to a specific S3 key. If ``table_as_file_name`` is set
         to False, this param must include the desired file name
     :type s3_key: str
+    :param schema: reference to a specific schema in redshift database
+        Applicable when ``table`` param provided.
+    :type schema: str
+    :param table: reference to a specific table in redshift database
+        Used when ``select_query`` param not provided.
+    :type table: str
+    :param select_query: custom select query to fetch data from redshift database
+    :type select_query: str
     :param redshift_conn_id: reference to a specific redshift database
     :type redshift_conn_id: str
     :param aws_conn_id: reference to a specific S3 connection
@@ -63,7 +67,8 @@ class RedshiftToS3Operator(BaseOperator):
     :type autocommit: bool
     :param include_header: If set to True the s3 file contains the header columns.
     :type include_header: bool
-    :param table_as_file_name: If set to True, the s3 file will be named as the table
+    :param table_as_file_name: If set to True, the s3 file will be named as the table.
+        Applicable when ``table`` param provided.
     :type table_as_file_name: bool
     """
 
@@ -75,10 +80,11 @@ class RedshiftToS3Operator(BaseOperator):
     def __init__(  # pylint: disable=too-many-arguments
         self,
         *,
-        schema: str,
-        table: str,
         s3_bucket: str,
         s3_key: str,
+        schema: str = None,
+        table: str = None,
+        select_query: str = None,
         redshift_conn_id: str = 'redshift_default',
         aws_conn_id: str = 'aws_default',
         verify: Optional[Union[bool, str]] = None,
@@ -89,10 +95,10 @@ class RedshiftToS3Operator(BaseOperator):
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
+        self.s3_bucket = s3_bucket
+        self.s3_key = f'{s3_key}/{table}_' if (table and table_as_file_name) else s3_key
         self.schema = schema
         self.table = table
-        self.s3_bucket = s3_bucket
-        self.s3_key = s3_key
         self.redshift_conn_id = redshift_conn_id
         self.aws_conn_id = aws_conn_id
         self.verify = verify
@@ -100,6 +106,16 @@ class RedshiftToS3Operator(BaseOperator):
         self.autocommit = autocommit
         self.include_header = include_header
         self.table_as_file_name = table_as_file_name
+
+        self._select_query = None
+        if select_query:
+            self._select_query = select_query
+        elif self.schema and self.table:
+            self._select_query = f"SELECT * FROM {self.schema}.{self.table}"
+        else:
+            raise ValueError(
+                'Please provide both `schema` and `table` params or `select_query` to fetch the data.'
+            )
 
         if self.include_header and 'HEADER' not in [uo.upper().strip() for uo in self.unload_options]:
             self.unload_options = list(self.unload_options) + [
@@ -124,10 +140,10 @@ class RedshiftToS3Operator(BaseOperator):
         credentials = s3_hook.get_credentials()
         credentials_block = build_credentials_block(credentials)
         unload_options = '\n\t\t\t'.join(self.unload_options)
-        s3_key = f"{self.s3_key}/{self.table}_" if self.table_as_file_name else self.s3_key
-        select_query = f"SELECT * FROM {self.schema}.{self.table}"
 
-        unload_query = self._build_unload_query(credentials_block, select_query, s3_key, unload_options)
+        unload_query = self._build_unload_query(
+            credentials_block, self._select_query, self.s3_key, unload_options
+        )
 
         self.log.info('Executing UNLOAD command...')
         postgres_hook.run(unload_query, self.autocommit)

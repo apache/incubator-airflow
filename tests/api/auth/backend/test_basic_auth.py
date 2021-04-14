@@ -15,27 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import unittest
 from base64 import b64encode
 
+import pytest
 from flask_login import current_user
 from parameterized import parameterized
 
-from airflow.www.app import create_app
-from tests.test_utils.api_connexion_utils import assert_401
-from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_pools
 
 
-class TestBasicAuth(unittest.TestCase):
-    def setUp(self) -> None:
-        with conf_vars(
-            {
-                ("api", "auth_backend"): "airflow.api.auth.backend.basic_auth",
-                ('api', 'enable_experimental_api'): 'true',
-            }
-        ):
-            self.app = create_app(testing=True)
+class TestBasicAuth:
+    @pytest.fixture(autouse=True)
+    def set_attrs(self, minimal_app_for_experimental_api):
+        self.app = minimal_app_for_experimental_api
 
         self.appbuilder = self.app.appbuilder  # pylint: disable=no-member
         role_admin = self.appbuilder.sm.find_role("Admin")
@@ -55,23 +47,10 @@ class TestBasicAuth(unittest.TestCase):
         clear_db_pools()
 
         with self.app.test_client() as test_client:
-            response = test_client.get("/api/v1/pools", headers={"Authorization": token})
+            response = test_client.get("/api/experimental/pools", headers={"Authorization": token})
             assert current_user.email == "test@fab.org"
 
         assert response.status_code == 200
-        assert response.json == {
-            "pools": [
-                {
-                    "name": "default_pool",
-                    "slots": 128,
-                    "occupied_slots": 0,
-                    "running_slots": 0,
-                    "queued_slots": 0,
-                    "open_slots": 128,
-                },
-            ],
-            "total_entries": 1,
-        }
 
     @parameterized.expand(
         [
@@ -87,11 +66,9 @@ class TestBasicAuth(unittest.TestCase):
     )
     def test_malformed_headers(self, token):
         with self.app.test_client() as test_client:
-            response = test_client.get("/api/v1/pools", headers={"Authorization": token})
+            response = test_client.get("/api/experimental/pools", headers={"Authorization": token})
             assert response.status_code == 401
-            assert response.headers["Content-Type"] == "application/problem+json"
             assert response.headers["WWW-Authenticate"] == "Basic"
-            assert_401(response)
 
     @parameterized.expand(
         [
@@ -103,13 +80,10 @@ class TestBasicAuth(unittest.TestCase):
     )
     def test_invalid_auth_header(self, token):
         with self.app.test_client() as test_client:
-            response = test_client.get("/api/v1/pools", headers={"Authorization": token})
+            response = test_client.get("/api/experimental/pools", headers={"Authorization": token})
             assert response.status_code == 401
-            assert response.headers["Content-Type"] == "application/problem+json"
             assert response.headers["WWW-Authenticate"] == "Basic"
-            assert_401(response)
 
-    @conf_vars({('api', 'enable_experimental_api'): 'true'})
     def test_experimental_api(self):
         with self.app.test_client() as test_client:
             response = test_client.get("/api/experimental/pools", headers={"Authorization": "Basic"})

@@ -69,8 +69,11 @@ class LivyHook(HttpHook, LoggingMixin):
     conn_type = 'livy'
     hook_name = 'Apache Livy'
 
-    def __init__(self, livy_conn_id: str = default_conn_name) -> None:
+    def __init__(
+        self, livy_conn_id: str = default_conn_name, extra_options: Optional[Dict[str, Any]] = None
+    ) -> None:
         super().__init__(http_conn_id=livy_conn_id)
+        self.extra_options = extra_options or {}
 
     def get_conn(self, headers: Optional[Dict[str, Any]] = None) -> Any:
         """
@@ -92,7 +95,6 @@ class LivyHook(HttpHook, LoggingMixin):
         method: str = 'GET',
         data: Optional[Any] = None,
         headers: Optional[Dict[str, Any]] = None,
-        extra_options: Optional[Dict[Any, Any]] = None,
     ) -> Any:
         """
         Wrapper for HttpHook, allows to change method on the same HttpHook
@@ -105,20 +107,18 @@ class LivyHook(HttpHook, LoggingMixin):
         :type data: dict
         :param headers: headers
         :type headers: dict
-        :param extra_options: extra options
-        :type extra_options: dict
         :return: http response
         :rtype: requests.Response
         """
         if method not in ('GET', 'POST', 'PUT', 'DELETE', 'HEAD'):
             raise ValueError(f"Invalid http method '{method}'")
-        if extra_options is None:
-            extra_options = {'check_response': False}
+        if not self.extra_options:
+            self.extra_options = {'check_response': False}
 
         back_method = self.method
         self.method = method
         try:
-            result = self.run(endpoint, data, headers, extra_options)
+            result = self.run(endpoint, data, headers, self.extra_options)
         finally:
             self.method = back_method
         return result

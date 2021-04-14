@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import functools
 import json
 import logging
 import multiprocessing
@@ -30,12 +31,8 @@ from collections import OrderedDict
 
 # Ignored Mypy on configparser because it thinks the configparser module has no _UNSET attribute
 from configparser import _UNSET, ConfigParser, NoOptionError, NoSectionError  # type: ignore
-from distutils.version import StrictVersion
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union
-
-import yaml
-from cryptography.fernet import Fernet
+from typing import Dict, List, Optional, Union
 
 from airflow.exceptions import AirflowConfigException
 from airflow.secrets import DEFAULT_SECRETS_SEARCH_PATH, BaseSecretsBackend
@@ -89,15 +86,9 @@ def _get_config_value_from_secret_backend(config_key):
     return secrets_client.get_config(config_key)
 
 
-def _read_default_config_file(file_name: str) -> Tuple[str, str]:
+def _default_config_file_path(file_name: str):
     templates_dir = os.path.join(os.path.dirname(__file__), 'config_templates')
-    file_path = os.path.join(templates_dir, file_name)
-    with open(file_path, encoding='utf-8') as config_file:
-        return config_file.read(), file_path
-
-
-DEFAULT_CONFIG, DEFAULT_CONFIG_FILE_PATH = _read_default_config_file('default_airflow.cfg')
-TEST_CONFIG, TEST_CONFIG_FILE_PATH = _read_default_config_file('default_test.cfg')
+    return os.path.join(templates_dir, file_name)
 
 
 def default_config_yaml() -> dict:
@@ -106,10 +97,9 @@ def default_config_yaml() -> dict:
 
     :return: Python dictionary containing configs & their info
     """
-    templates_dir = os.path.join(os.path.dirname(__file__), 'config_templates')
-    file_path = os.path.join(templates_dir, "config.yml")
+    import airflow.utils.yaml as yaml
 
-    with open(file_path) as config_file:
+    with open(_default_config_file_path('config.yml')) as config_file:
         return yaml.safe_load(config_file)
 
 
@@ -239,11 +229,17 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
             raise AirflowConfigException(f"error: cannot use sqlite with the {self.get('core', 'executor')}")
         if is_sqlite:
             import sqlite3
+            from distutils.version import StrictVersion
+
+            from airflow.utils.docs import get_docs_url
 
             # Some of the features in storing rendered fields require sqlite version >= 3.15.0
             min_sqlite_version = '3.15.0'
             if StrictVersion(sqlite3.sqlite_version) < StrictVersion(min_sqlite_version):
-                raise AirflowConfigException(f"error: cannot use sqlite version < {min_sqlite_version}")
+                raise AirflowConfigException(
+                    f"error: sqlite C library version too old (< {min_sqlite_version}). "
+                    f"See {get_docs_url('howto/set-up-database.rst#setting-up-a-sqlite-database')}"
+                )
 
         if self.has_option('core', 'mp_start_method'):
             mp_start_method = self.get('core', 'mp_start_method')
@@ -640,6 +636,9 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
                 opt = self._get_env_var_option(section, key)
             except ValueError:
                 continue
+            if opt is None:
+                log.warning("Ignoring unknown env var '%s'", env_var)
+                continue
             if not display_sensitive and env_var != self._env_var_name('core', 'unit_test_mode'):
                 opt = '< hidden >'
             elif raw:
@@ -680,12 +679,15 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
 
         Note: this is not reversible.
         """
-        # override any custom settings with defaults
-        log.info("Overriding settings with defaults from %s", DEFAULT_CONFIG_FILE_PATH)
-        self.read_string(parameterized_config(DEFAULT_CONFIG))
+        # remove all sections, falling back to defaults
+        for section in self.sections():
+            self.remove_section(section)
+
         # then read test config
-        log.info("Reading default test configuration from %s", TEST_CONFIG_FILE_PATH)
-        self.read_string(parameterized_config(TEST_CONFIG))
+
+        path = _default_config_file_path('default_test.cfg')
+        log.info("Reading default test configuration from %s", path)
+        self.read_string(_parameterized_config_from_template('default_test.cfg'))
         # then read any "custom" test settings
         log.info("Reading test configuration from %s", TEST_CONFIG_FILE)
         self.read(TEST_CONFIG_FILE)
@@ -716,6 +718,22 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
                 stacklevel=3,
             )
 
+    def __getstate__(self):
+        return {
+            name: getattr(self, name)
+            for name in [
+                '_sections',
+                'is_validated',
+                'airflow_defaults',
+            ]
+        }
+
+    def __setstate__(self, state):
+        self.__init__()
+        config = state.pop('_sections')
+        self.read_dict(config)
+        self.__dict__.update(state)
+
 
 def get_airflow_home():
     """Get path to Airflow Home"""
@@ -729,32 +747,16 @@ def get_airflow_config(airflow_home):
     return expand_env_var(os.environ['AIRFLOW_CONFIG'])
 
 
-# Setting AIRFLOW_HOME and AIRFLOW_CONFIG from environment variables, using
-# "~/airflow" and "$AIRFLOW_HOME/airflow.cfg" respectively as defaults.
+def _parameterized_config_from_template(filename) -> str:
+    TEMPLATE_START = '# ----------------------- TEMPLATE BEGINS HERE -----------------------\n'
 
-AIRFLOW_HOME = get_airflow_home()
-AIRFLOW_CONFIG = get_airflow_config(AIRFLOW_HOME)
-pathlib.Path(AIRFLOW_HOME).mkdir(parents=True, exist_ok=True)
-
-
-# Set up dags folder for unit tests
-# this directory won't exist if users install via pip
-_TEST_DAGS_FOLDER = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'tests', 'dags'
-)
-if os.path.exists(_TEST_DAGS_FOLDER):
-    TEST_DAGS_FOLDER = _TEST_DAGS_FOLDER
-else:
-    TEST_DAGS_FOLDER = os.path.join(AIRFLOW_HOME, 'dags')
-
-# Set up plugins folder for unit tests
-_TEST_PLUGINS_FOLDER = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'tests', 'plugins'
-)
-if os.path.exists(_TEST_PLUGINS_FOLDER):
-    TEST_PLUGINS_FOLDER = _TEST_PLUGINS_FOLDER
-else:
-    TEST_PLUGINS_FOLDER = os.path.join(AIRFLOW_HOME, 'plugins')
+    path = _default_config_file_path(filename)
+    with open(path) as fh:
+        for line in fh:
+            if line != TEMPLATE_START:
+                continue
+            return parameterized_config(fh.read().strip())
+    raise RuntimeError(f"Template marker not found in {path!r}")
 
 
 def parameterized_config(template):
@@ -775,65 +777,93 @@ def get_airflow_test_config(airflow_home):
     return expand_env_var(os.environ['AIRFLOW_TEST_CONFIG'])
 
 
-TEST_CONFIG_FILE = get_airflow_test_config(AIRFLOW_HOME)
+def _generate_fernet_key():
+    from cryptography.fernet import Fernet
 
-# only generate a Fernet key if we need to create a new config file
-if not os.path.isfile(TEST_CONFIG_FILE) or not os.path.isfile(AIRFLOW_CONFIG):
-    FERNET_KEY = Fernet.generate_key().decode()
-else:
-    FERNET_KEY = ''
+    return Fernet.generate_key().decode()
 
-SECRET_KEY = b64encode(os.urandom(16)).decode('utf-8')
 
-TEMPLATE_START = '# ----------------------- TEMPLATE BEGINS HERE -----------------------'
-if not os.path.isfile(TEST_CONFIG_FILE):
-    log.info('Creating new Airflow config file for unit tests in: %s', TEST_CONFIG_FILE)
-    with open(TEST_CONFIG_FILE, 'w') as file:
-        cfg = parameterized_config(TEST_CONFIG)
-        file.write(cfg.split(TEMPLATE_START)[-1].strip())
-if not os.path.isfile(AIRFLOW_CONFIG):
-    log.info('Creating new Airflow config file in: %s', AIRFLOW_CONFIG)
-    with open(AIRFLOW_CONFIG, 'w') as file:
-        cfg = parameterized_config(DEFAULT_CONFIG)
-        cfg = cfg.split(TEMPLATE_START)[-1].strip()
-        file.write(cfg)
+def initialize_config():
+    """
+    Load the Airflow config files.
 
-log.info("Reading the config from %s", AIRFLOW_CONFIG)
+    Called for you automatically as part of the Airflow boot process.
+    """
+    global FERNET_KEY, AIRFLOW_HOME
 
-conf = AirflowConfigParser(default_config=parameterized_config(DEFAULT_CONFIG))
+    default_config = _parameterized_config_from_template('default_airflow.cfg')
 
-conf.read(AIRFLOW_CONFIG)
+    conf = AirflowConfigParser(default_config=default_config)
 
-if conf.has_option('core', 'AIRFLOW_HOME'):
-    msg = (
-        'Specifying both AIRFLOW_HOME environment variable and airflow_home '
-        'in the config file is deprecated. Please use only the AIRFLOW_HOME '
-        'environment variable and remove the config file entry.'
-    )
-    if 'AIRFLOW_HOME' in os.environ:
-        warnings.warn(msg, category=DeprecationWarning)
-    elif conf.get('core', 'airflow_home') == AIRFLOW_HOME:
-        warnings.warn(
-            'Specifying airflow_home in the config file is deprecated. As you '
-            'have left it at the default value you should remove the setting '
-            'from your airflow.cfg and suffer no change in behaviour.',
-            category=DeprecationWarning,
-        )
+    if conf.getboolean('core', 'unit_test_mode'):
+        # Load test config only
+        if not os.path.isfile(TEST_CONFIG_FILE):
+            from cryptography.fernet import Fernet
+
+            log.info('Creating new Airflow config file for unit tests in: %s', TEST_CONFIG_FILE)
+            pathlib.Path(AIRFLOW_HOME).mkdir(parents=True, exist_ok=True)
+
+            FERNET_KEY = Fernet.generate_key().decode()
+
+            with open(TEST_CONFIG_FILE, 'w') as file:
+                cfg = _parameterized_config_from_template('default_test.cfg')
+                file.write(cfg)
+
+        conf.load_test_config()
     else:
-        AIRFLOW_HOME = conf.get('core', 'airflow_home')
-        warnings.warn(msg, category=DeprecationWarning)
+        # Load normal config
+        if not os.path.isfile(AIRFLOW_CONFIG):
+            from cryptography.fernet import Fernet
 
+            log.info('Creating new Airflow config file in: %s', AIRFLOW_CONFIG)
+            pathlib.Path(AIRFLOW_HOME).mkdir(parents=True, exist_ok=True)
 
-WEBSERVER_CONFIG = AIRFLOW_HOME + '/webserver_config.py'
+            FERNET_KEY = Fernet.generate_key().decode()
 
-if not os.path.isfile(WEBSERVER_CONFIG):
-    log.info('Creating new FAB webserver config file in: %s', WEBSERVER_CONFIG)
-    DEFAULT_WEBSERVER_CONFIG, _ = _read_default_config_file('default_webserver_config.py')
-    with open(WEBSERVER_CONFIG, 'w') as file:
-        file.write(DEFAULT_WEBSERVER_CONFIG)
+            with open(AIRFLOW_CONFIG, 'w') as file:
+                file.write(default_config)
 
-if conf.getboolean('core', 'unit_test_mode'):
-    conf.load_test_config()
+        log.info("Reading the config from %s", AIRFLOW_CONFIG)
+
+        conf.read(AIRFLOW_CONFIG)
+
+        if conf.has_option('core', 'AIRFLOW_HOME'):
+            msg = (
+                'Specifying both AIRFLOW_HOME environment variable and airflow_home '
+                'in the config file is deprecated. Please use only the AIRFLOW_HOME '
+                'environment variable and remove the config file entry.'
+            )
+            if 'AIRFLOW_HOME' in os.environ:
+                warnings.warn(msg, category=DeprecationWarning)
+            elif conf.get('core', 'airflow_home') == AIRFLOW_HOME:
+                warnings.warn(
+                    'Specifying airflow_home in the config file is deprecated. As you '
+                    'have left it at the default value you should remove the setting '
+                    'from your airflow.cfg and suffer no change in behaviour.',
+                    category=DeprecationWarning,
+                )
+            else:
+                AIRFLOW_HOME = conf.get('core', 'airflow_home')
+                warnings.warn(msg, category=DeprecationWarning)
+
+        # They _might_ have set unit_test_mode in the airflow.cfg, we still
+        # want to respect that and then load the unittests.cfg
+        if conf.getboolean('core', 'unit_test_mode'):
+            conf.load_test_config()
+
+    # Make it no longer a proxy variable, just set it to an actual string
+    global WEBSERVER_CONFIG
+    WEBSERVER_CONFIG = AIRFLOW_HOME + '/webserver_config.py'
+
+    if not os.path.isfile(WEBSERVER_CONFIG):
+        import shutil
+
+        log.info('Creating new FAB webserver config file in: %s', WEBSERVER_CONFIG)
+        shutil.copy(_default_config_file_path('default_webserver_config.py'), WEBSERVER_CONFIG)
+
+    conf.validate()
+
+    return conf
 
 
 # Historical convenience functions to access config entries
@@ -1003,6 +1033,78 @@ def initialize_secrets_backends() -> List[BaseSecretsBackend]:
     return backend_list
 
 
+@functools.lru_cache(maxsize=None)
+def _DEFAULT_CONFIG():
+    path = _default_config_file_path('default_airflow.cfg')
+    with open(path) as fh:
+        return fh.read()
+
+
+@functools.lru_cache(maxsize=None)
+def _TEST_CONFIG():
+    path = _default_config_file_path('default_test.cfg')
+    with open(path) as fh:
+        return fh.read()
+
+
+_deprecated = {
+    'DEFAULT_CONFIG': _DEFAULT_CONFIG,
+    'TEST_CONFIG': _TEST_CONFIG,
+    'TEST_CONFIG_FILE_PATH': functools.partial(_default_config_file_path, ('default_test.cfg')),
+    'DEFAULT_CONFIG_FILE_PATH': functools.partial(_default_config_file_path, ('default_airflow.cfg')),
+}
+
+
+def __getattr__(name):
+    if name in _deprecated:
+        warnings.warn(
+            f"{__name__}.{name} is deprecated and will be removed in future",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _deprecated[name]()
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+# Setting AIRFLOW_HOME and AIRFLOW_CONFIG from environment variables, using
+# "~/airflow" and "$AIRFLOW_HOME/airflow.cfg" respectively as defaults.
+
+AIRFLOW_HOME = get_airflow_home()
+AIRFLOW_CONFIG = get_airflow_config(AIRFLOW_HOME)
+
+
+# Set up dags folder for unit tests
+# this directory won't exist if users install via pip
+_TEST_DAGS_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'tests', 'dags'
+)
+if os.path.exists(_TEST_DAGS_FOLDER):
+    TEST_DAGS_FOLDER = _TEST_DAGS_FOLDER
+else:
+    TEST_DAGS_FOLDER = os.path.join(AIRFLOW_HOME, 'dags')
+
+# Set up plugins folder for unit tests
+_TEST_PLUGINS_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'tests', 'plugins'
+)
+if os.path.exists(_TEST_PLUGINS_FOLDER):
+    TEST_PLUGINS_FOLDER = _TEST_PLUGINS_FOLDER
+else:
+    TEST_PLUGINS_FOLDER = os.path.join(AIRFLOW_HOME, 'plugins')
+
+
+TEST_CONFIG_FILE = get_airflow_test_config(AIRFLOW_HOME)
+
+SECRET_KEY = b64encode(os.urandom(16)).decode('utf-8')
+FERNET_KEY = ''  # Set only if needed when generating a new file
+WEBSERVER_CONFIG = ''  # Set by initialize_config
+
+conf = initialize_config()
 secrets_backend_list = initialize_secrets_backends()
 
-conf.validate()
+
+PY37 = sys.version_info >= (3, 7)
+if not PY37:
+    from pep562 import Pep562
+
+    Pep562(__name__)

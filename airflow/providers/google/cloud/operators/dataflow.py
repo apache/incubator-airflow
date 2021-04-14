@@ -84,7 +84,7 @@ class DataflowConfiguration:
         account from the list granting this role to the originating account (templated).
     :type impersonation_chain: Union[str, Sequence[str]]
     :param drain_pipeline: Optional, set to True if want to stop streaming job by draining it
-        instead of canceling during during killing task instance. See:
+        instead of canceling during killing task instance. See:
         https://cloud.google.com/dataflow/docs/guides/stopping-a-pipeline
     :type drain_pipeline: bool
     :param cancel_timeout: How long (in seconds) operator should wait for the pipeline to be
@@ -492,6 +492,7 @@ class DataflowTemplatedJobStartOperator(BaseOperator):
     :type template: str
     :param job_name: The 'jobName' to use when executing the DataFlow template
         (templated).
+    :type job_name: Optional[str]
     :param options: Map of job runtime environment options.
         It will update environment argument if passed.
 
@@ -529,7 +530,7 @@ class DataflowTemplatedJobStartOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type impersonation_chain: Union[str, Sequence[str]]
-    :type environment: Optional, Map of job runtime environment options.
+    :param environment: Optional, Map of job runtime environment options.
 
         .. seealso::
             For more information on possible configurations, look at the API documentation
@@ -729,7 +730,7 @@ class DataflowStartFlexTemplateOperator(BaseOperator):
         domain-wide delegation enabled.
     :type delegate_to: str
     :param drain_pipeline: Optional, set to True if want to stop streaming job by draining it
-        instead of canceling during during killing task instance. See:
+        instead of canceling during killing task instance. See:
         https://cloud.google.com/dataflow/docs/guides/stopping-a-pipeline
     :type drain_pipeline: bool
     :param cancel_timeout: How long (in seconds) operator should wait for the pipeline to be
@@ -849,7 +850,7 @@ class DataflowStartSqlJobOperator(BaseOperator):
         <gcloud beta dataflow sql query>`__
         command reference
 
-    :param options: dict
+    :type options: dict
     :param location: The location of the Dataflow job (for example europe-west1)
     :type location: str
     :param project_id: The ID of the GCP project that owns the job.
@@ -863,7 +864,7 @@ class DataflowStartSqlJobOperator(BaseOperator):
         domain-wide delegation enabled.
     :type delegate_to: str
     :param drain_pipeline: Optional, set to True if want to stop streaming job by draining it
-        instead of canceling during during killing task instance. See:
+        instead of canceling during killing task instance. See:
         https://cloud.google.com/dataflow/docs/guides/stopping-a-pipeline
     :type drain_pipeline: bool
     """
@@ -1006,7 +1007,7 @@ class DataflowCreatePythonJobOperator(BaseOperator):
         JOB_STATE_RUNNING state.
     :type poll_sleep: int
     :param drain_pipeline: Optional, set to True if want to stop streaming job by draining it
-        instead of canceling during during killing task instance. See:
+        instead of canceling during killing task instance. See:
         https://cloud.google.com/dataflow/docs/guides/stopping-a-pipeline
     :type drain_pipeline: bool
     :param cancel_timeout: How long (in seconds) operator should wait for the pipeline to be

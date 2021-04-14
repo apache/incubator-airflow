@@ -22,6 +22,7 @@ description: |
     `Hypertext Transfer Protocol (HTTP) <https://www.w3.org/Protocols/>`__
 
 versions:
+  - 1.1.1
   - 1.1.0
   - 1.0.0
 

@@ -330,7 +330,7 @@ class DagBag(LoggingMixin):
             if not might_contain_dag(zip_info.filename, safe_mode, current_zip_file):
                 # todo: create ignore list
                 # Don't want to spam user with skip messages
-                if not self.has_logged or True:
+                if not self.has_logged:
                     self.has_logged = True
                     self.log.info(
                         "File %s:%s assumed to contain no DAGs. Skipping.", filepath, zip_info.filename
@@ -525,7 +525,7 @@ class DagBag(LoggingMixin):
         from airflow.models.dag import DAG
         from airflow.models.serialized_dag import SerializedDagModel
 
-        def _serialze_dag_capturing_errors(dag, session):
+        def _serialize_dag_capturing_errors(dag, session):
             """
             Try to serialize the dag to the DB, but make a note of any errors.
 
@@ -561,7 +561,7 @@ class DagBag(LoggingMixin):
                 try:
                     # Write Serialized DAGs to DB, capturing errors
                     for dag in self.dags.values():
-                        serialize_errors.extend(_serialze_dag_capturing_errors(dag, session))
+                        serialize_errors.extend(_serialize_dag_capturing_errors(dag, session))
 
                     DAG.bulk_write_to_db(self.dags.values(), session=session)
                 except OperationalError:

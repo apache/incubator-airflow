@@ -206,6 +206,7 @@ class TestStackdriverHookMethods(unittest.TestCase):
         alert_policy_to_create.name = None
         alert_policy_to_create.creation_record = None
         alert_policy_to_create.mutation_record = None
+        # pylint: disable=unsubscriptable-object
         alert_policy_to_create.conditions[0].name = None
         mock_policy_client.return_value.create_alert_policy.assert_called_once_with(
             request=dict(

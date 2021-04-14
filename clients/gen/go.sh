@@ -16,18 +16,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-if [ "$#" -ne 2 ]; then
-    echo "USAGE: $0 SPEC_PATH OUTPUT_DIR"
-    exit 1
-fi
-
 CLIENTS_GEN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 readonly CLIENTS_GEN_DIR
+
+CLEANUP_DIRS=(api docs)
+readonly CLEANUP_DIRS
 
 # shellcheck source=./clients/gen/common.sh
 source "${CLIENTS_GEN_DIR}/common.sh"
 
-VERSION=1.0.0
+VERSION=1.1.0
 readonly VERSION
 
 go_config=(
@@ -35,48 +33,11 @@ go_config=(
     "enumClassPrefix=true"
 )
 
-SPEC_PATH=$(realpath "$1")
-readonly SPEC_PATH
-
-if [ ! -d "$2" ]; then
-    echo "$2 is not a valid directory or does not exist."
-    exit 1
-fi
-
-OUTPUT_DIR=$(realpath "$2")
-readonly  OUTPUT_DIR
-
-# create openapi ignore file to keep generated code clean
-cat <<EOF > "${OUTPUT_DIR}/.openapi-generator-ignore"
-.travis.yml
-git_push.sh
-EOF
-
-set -ex
-IFS=','
+validate_input "$@"
 
 gen_client go \
     --package-name airflow \
     --git-repo-id airflow-client-go/airflow \
     --additional-properties "${go_config[*]}"
 
-# patch generated client to support problem HTTP API
-# this patch can be removed after following upstream patch gets merged:
-# https://github.com/OpenAPITools/openapi-generator/pull/6793
-cd "${OUTPUT_DIR}" && patch -b <<'EOF'
---- client.go
-+++ client.go
-@@ -37,7 +37,7 @@ import (
- )
-
- var (
--	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?json)`)
-+	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?(?:problem\+)?json)`)
-	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
- )
-EOF
-
-cd "${OUTPUT_DIR}"
-
-# prepend license headers
-pre-commit run --all-files || true
+run_pre_commit

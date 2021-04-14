@@ -23,6 +23,25 @@ from tests.helm_template_generator import render_chart
 
 
 class WorkerTest(unittest.TestCase):
+    def test_should_add_extra_containers(self):
+        docs = render_chart(
+            values={
+                "executor": "CeleryExecutor",
+                "workers": {
+                    "extraContainers": [
+                        {
+                            "name": "test-container",
+                            "image": "test-registry/test-repo:test-tag",
+                            "imagePullPolicy": "Always",
+                        }
+                    ],
+                },
+            },
+            show_only=["templates/workers/worker-deployment.yaml"],
+        )
+
+        assert "test-container" == jmespath.search("spec.template.spec.containers[-1].name", docs[0])
+
     def test_should_add_extra_volume_and_extra_volume_mount(self):
         docs = render_chart(
             values={

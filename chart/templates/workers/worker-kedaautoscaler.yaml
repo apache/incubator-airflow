@@ -18,8 +18,8 @@
 ################################
 ## Airflow Worker KEDA Scaler
 #################################
-{{- if (and .Values.workers.keda.enabled ( or (eq .Values.executor "CeleryExecutor") (eq .Values.executor "CeleryKubernetesExecutor"))) }}
-apiVersion: keda.k8s.io/v1alpha1
+{{- if and .Values.workers.keda.enabled (has .Values.executor (list "CeleryExecutor" "CeleryKubernetesExecutor")) }}
+apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: {{ .Release.Name }}-worker
@@ -35,7 +35,8 @@ metadata:
 {{- end }}
 spec:
   scaleTargetRef:
-    deploymentName: {{ .Release.Name }}-worker
+    kind: {{ ternary "StatefulSet" "Deployment" .Values.workers.persistence.enabled }}
+    name: {{ .Release.Name }}-worker
   pollingInterval:  {{ .Values.workers.keda.pollingInterval }}   # Optional. Default: 30 seconds
   cooldownPeriod: {{ .Values.workers.keda.cooldownPeriod }}    # Optional. Default: 300 seconds
   maxReplicaCount: {{ .Values.workers.keda.maxReplicaCount }}   # Optional. Default: 100
@@ -43,6 +44,9 @@ spec:
     - type: postgresql
       metadata:
         targetQueryValue: "1"
-        connection: AIRFLOW_CONN_AIRFLOW_DB
-        query: "SELECT ceil(COUNT(*)::decimal / {{ .Values.config.celery.worker_concurrency }}) FROM task_instance WHERE state='running' OR state='queued'"
+        connectionFromEnv: AIRFLOW_CONN_AIRFLOW_DB
+        query: >-
+          SELECT ceil(COUNT(*)::decimal / {{ .Values.config.celery.worker_concurrency }})
+          FROM task_instance
+          WHERE state='running' OR state='queued'
 {{- end }}

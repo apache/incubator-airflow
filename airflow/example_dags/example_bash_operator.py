@@ -21,7 +21,8 @@
 from datetime import timedelta
 
 from airflow import DAG
-from airflow.operators.bash import EXIT_CODE_SKIP, BashOperator
+from airflow.hooks.subprocess import EXIT_CODE_SKIP
+from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.utils.dates import days_ago
 

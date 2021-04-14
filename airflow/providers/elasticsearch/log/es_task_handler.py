@@ -183,11 +183,11 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
             if (
                 cur_ts.diff(last_log_ts).in_minutes() >= 5
                 or 'max_offset' in metadata
-                and offset >= metadata['max_offset']
+                and int(offset) >= int(metadata['max_offset'])
             ):
                 metadata['end_of_log'] = True
 
-        if offset != next_offset or 'last_log_timestamp' not in metadata:
+        if int(offset) != int(next_offset) or 'last_log_timestamp' not in metadata:
             metadata['last_log_timestamp'] = str(cur_ts)
 
         # If we hit the end of the log, remove the actual end_of_log message

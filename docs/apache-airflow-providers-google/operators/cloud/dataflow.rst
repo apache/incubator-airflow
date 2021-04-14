@@ -91,7 +91,7 @@ Here is an example of creating and running a pipeline in Java with jar stored on
     :start-after: [START howto_operator_start_java_job_jar_on_gcs]
     :end-before: [END howto_operator_start_java_job_jar_on_gcs]
 
-Here is an example of creating and running a pipeline in Java with jar stored on GCS:
+Here is an example of creating and running a pipeline in Java with jar stored on local file system:
 
 .. exampleinclude:: /../../airflow/providers/google/cloud/example_dags/example_dataflow.py
     :language: python
@@ -180,7 +180,7 @@ To execute a streaming Dataflow job, ensure the streaming option is set (for Pyt
 source, such as Pub/Sub, in your pipeline (for Java).
 
 Setting argument ``drain_pipeline`` to ``True`` allows to stop streaming job by draining it
-instead of canceling during during killing task instance.
+instead of canceling during killing task instance.
 
 See the `Stopping a running pipeline
 <https://cloud.google.com/dataflow/docs/guides/stopping-a-pipeline>`_.

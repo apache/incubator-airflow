@@ -117,7 +117,7 @@ class TestGoogleDisplayVideo360GetReportOperator(TestCase):
         mock_gcs_hook,
         mock_xcom,
         mock_temp,
-        mock_reuqest,
+        mock_request,
         mock_shutil,
     ):
         report_id = "REPORT_ID"

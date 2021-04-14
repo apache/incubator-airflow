@@ -785,6 +785,7 @@ class BackfillJob(BaseJob):
             pickle_id = pickle.id
 
         executor = self.executor
+        executor.job_id = "backfill"
         executor.start()
 
         ti_status.total_runs = len(run_dates)  # total dag runs in backfill

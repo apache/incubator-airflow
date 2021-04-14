@@ -20,15 +20,47 @@
 
 CONSTRAINTS_DIR="/files/constraints-${PYTHON_MAJOR_MINOR_VERSION}"
 
-LATEST_CONSTRAINT_FILE="${CONSTRAINTS_DIR}/original-constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
-CURRENT_CONSTRAINT_FILE="${CONSTRAINTS_DIR}/constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+if [[ ${GENERATE_CONSTRAINTS_MODE} == "no-providers" ]]; then
+    AIRFLOW_CONSTRAINTS="constraints-no-providers"
+    NO_PROVIDERS_EXTRAS=$(python -c 'import setup; print(",".join(setup.CORE_EXTRAS_REQUIREMENTS.keys()))')
+    echo
+    echo "UnInstall All PIP packages."
+    echo
+    uninstall_all_pip_packages
+    echo
+    echo "Install airflow with [${NO_PROVIDERS_EXTRAS}] extras only (uninstall all packages first)."
+    echo
+    install_local_airflow_with_eager_upgrade "[${NO_PROVIDERS_EXTRAS}]"
+elif [[ ${GENERATE_CONSTRAINTS_MODE} == "source-providers" ]]; then
+    AIRFLOW_CONSTRAINTS="constraints-source-providers"
+    echo
+    echo "Providers are already installed from sources."
+    echo
+elif [[ ${GENERATE_CONSTRAINTS_MODE} == "pypi-providers" ]]; then
+    AIRFLOW_CONSTRAINTS="constraints"
+    echo
+    echo "Install all providers from PyPI so that they are included in the constraints."
+    echo
+    install_all_providers_from_pypi_with_eager_upgrade
+else
+    echo
+    echo "${COLOR_RED}Error! GENERATE_CONSTRAINTS_MODE has wrong value: '${GENERATE_CONSTRAINTS_MODE}' ${COLOR_RESET}"
+    echo
+    exit 1
+fi
+
+readonly AIRFLOW_CONSTRAINTS
+
+LATEST_CONSTRAINT_FILE="${CONSTRAINTS_DIR}/original-${AIRFLOW_CONSTRAINTS}-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+CURRENT_CONSTRAINT_FILE="${CONSTRAINTS_DIR}/${AIRFLOW_CONSTRAINTS}-${PYTHON_MAJOR_MINOR_VERSION}.txt"
 
 mkdir -pv "${CONSTRAINTS_DIR}"
 
-CONSTRAINTS_LOCATION="https://raw.githubusercontent.com/apache/airflow/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${PYTHON_MAJOR_MINOR_VERSION}.txt"
+CONSTRAINTS_LOCATION="https://raw.githubusercontent.com/${CONSTRAINTS_GITHUB_REPOSITORY}/${DEFAULT_CONSTRAINTS_BRANCH}/${AIRFLOW_CONSTRAINTS}-${PYTHON_MAJOR_MINOR_VERSION}.txt"
 readonly CONSTRAINTS_LOCATION
 
-curl --connect-timeout 60  --max-time 60 "${CONSTRAINTS_LOCATION}" --output "${LATEST_CONSTRAINT_FILE}"
+touch "${LATEST_CONSTRAINT_FILE}"
+curl --connect-timeout 60  --max-time 60 "${CONSTRAINTS_LOCATION}" --output "${LATEST_CONSTRAINT_FILE}" || true
 
 echo
 echo "Freezing constraints to ${CURRENT_CONSTRAINT_FILE}"

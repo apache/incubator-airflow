@@ -24,40 +24,124 @@ function decode(str) {
   return new DOMParser().parseFromString(str, "text/html").documentElement.textContent
 }
 
-$(document).ready(function () {
+/**
+ * Returns a map of connection type to its controls.
+ */
+function getConnTypesToControlsMap() {
+  const connTypesToControlsMap = new Map();
 
-  function connTypeChange(connectionType) {
-    $(".hide").removeClass("hide");
-    $.each($("[id^='extra__']"), function () {
-      $(this).parent().parent().addClass('hide')
+  const extraFormControls = Array.from(document.querySelectorAll("[id^='extra__'"));
+  extraFormControls.forEach(control => {
+    const connTypeEnd = control.id.indexOf('__', 'extra__'.length);
+    const connType = control.id.substring('extra__'.length, connTypeEnd);
+
+    const controls = connTypesToControlsMap.has(connType)
+      ? connTypesToControlsMap.get(connType)
+      : [];
+
+    controls.push(control.parentElement.parentElement);
+    connTypesToControlsMap.set(connType, controls);
+  });
+
+  return connTypesToControlsMap;
+}
+
+/**
+ * Returns the DOM element that contains the different controls.
+ */
+function getControlsContainer() {
+  return document.getElementById('conn_id')
+    .parentElement
+    .parentElement
+    .parentElement;
+}
+
+$(document).ready(function () {
+  const fieldBehavioursElem = document.getElementById('field_behaviours');
+  const config = JSON.parse(decode(fieldBehavioursElem.textContent));
+
+  // Save all DOM elements into a map on load.
+  const controlsContainer = getControlsContainer();
+  const connTypesToControlsMap = getConnTypesToControlsMap();
+
+  /**
+   * Changes the connection type.
+   * @param {string} connType The connection type to change to.
+   */
+  function changeConnType(connType) {
+    Array.from(connTypesToControlsMap.values()).forEach(controls => {
+      controls
+        .filter(control => control.parentElement === controlsContainer)
+        .forEach(control => controlsContainer.removeChild(control));
     });
-    $.each($("[id^='extra__" + connectionType + "__']"), function () {
-      $(this).parent().parent().removeClass('hide')
+
+    const controls = connTypesToControlsMap.get(connType) || [];
+    controls.forEach(control => controlsContainer.appendChild(control));
+
+    // Restore field behaviours.
+    restoreFieldBehaviours();
+
+    // Apply behaviours to fields.
+    applyFieldBehaviours(connType);
+  }
+
+  /**
+   * Restores the behaviour for all fields. Used to restore fields to a
+   * well-known state during the change of connection types.
+   */
+  function restoreFieldBehaviours() {
+    Array.from(document.querySelectorAll('label[data-origText]')).forEach(elem => {
+      elem.innerText = elem.dataset.origText;
+      delete elem.dataset.origText;
     });
-    $("label[orig_text]").each(function () {
-      $(this).text($(this).attr("orig_text"));
+
+    Array.from(document.querySelectorAll('.form-control')).forEach(elem => {
+      elem.placeholder = '';
+      elem.parentElement.parentElement.classList.remove('hide');
     });
-    $(".form-control").each(function(){$(this).attr('placeholder', '')});
-    let config = JSON.parse(decode($("#field_behaviours").text()))
-    if (config[connectionType] != undefined) {
-      $.each(config[connectionType].hidden_fields, function (i, field) {
-        $("#" + field).parent().parent().addClass('hide')
-      });
-      $.each(config[connectionType].relabeling, function (k, v) {
-        lbl = $("label[for='" + k + "']");
-        lbl.attr("orig_text", lbl.text());
-        $("label[for='" + k + "']").text(v);
-      });
-      $.each(config[connectionType].placeholders, function(k, v){
-        $("#" + k).attr('placeholder', v);
-      });
+  }
+
+  /**
+   * Applies special behaviour for fields. The behaviour is defined through
+   * config, passed by the server.
+   *
+   * @param {string} connType The connection type to apply.
+   */
+  function applyFieldBehaviours(connType) {
+    if (config[connType]) {
+      if (Array.isArray(config[connType].hidden_fields)) {
+        config[connType].hidden_fields.forEach(field => {
+          document.getElementById(field)
+            .parentElement
+            .parentElement
+            .classList
+            .add('hide');
+        });
+      }
+
+      if (config[connType].relabeling) {
+        Object.keys(config[connType].relabeling).forEach(field => {
+          const label = document.querySelector(`label[for='${field}']`);
+          label.dataset.origText = label.innerText;
+          label.innerText = config[connType].relabeling[field];
+        });
+      }
+
+      if (config[connType].placeholders) {
+        Object.keys(config[connType].placeholders).forEach(field => {
+          const placeholder = config[connType].placeholders[field];
+          document.getElementById(field).placeholder = placeholder;
+        });
+      }
     }
   }
 
-  var connectionType = $("#conn_type").val();
-  $("#conn_type").on('change', function (e) {
-    connectionType = $("#conn_type").val();
-    connTypeChange(connectionType);
+  const connTypeElem = document.getElementById('conn_type');
+  $(connTypeElem).on('change', (e) => {
+    connType = e.target.value;
+    changeConnType(connType);
   });
-  connTypeChange(connectionType);
+
+  // Initialize the form by setting a connection type.
+  changeConnType(connTypeElem.value);
 });

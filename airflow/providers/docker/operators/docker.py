@@ -121,6 +121,8 @@ class DockerOperator(BaseOperator):
     :param tty: Allocate pseudo-TTY to the container
         This needs to be set see logs of the Docker container.
     :type tty: bool
+    :param privileged: Give extended privileges to this container.
+    :type privileged: bool
     :param cap_add: Include container capabilities
     :type cap_add: list[str]
     """
@@ -164,6 +166,7 @@ class DockerOperator(BaseOperator):
         auto_remove: bool = False,
         shm_size: Optional[int] = None,
         tty: bool = False,
+        privileged: bool = False,
         cap_add: Optional[Iterable[str]] = None,
         extra_hosts: Optional[Dict[str, str]] = None,
         **kwargs,
@@ -198,6 +201,7 @@ class DockerOperator(BaseOperator):
         self.docker_conn_id = docker_conn_id
         self.shm_size = shm_size
         self.tty = tty
+        self.privileged = privileged
         self.cap_add = cap_add
         self.extra_hosts = extra_hosts
         if kwargs.get('xcom_push') is not None:
@@ -243,6 +247,7 @@ class DockerOperator(BaseOperator):
                     mem_limit=self.mem_limit,
                     cap_add=self.cap_add,
                     extra_hosts=self.extra_hosts,
+                    privileged=self.privileged,
                 ),
                 image=self.image,
                 user=self.user,

@@ -61,34 +61,40 @@ class DynamoDBToS3Operator(BaseOperator):
     To parallelize the replication, users can create multiple tasks of DynamoDBToS3Operator.
     For instance to replicate with parallelism of 2, create two tasks like:
 
-    .. code-block::
+    .. code-block:: python
 
-        op1 = DynamoDBToS3Operator(
-            task_id='replicator-1',
-            dynamodb_table_name='hello',
-            dynamodb_scan_kwargs={
-                'TotalSegments': 2,
-                'Segment': 0,
-            },
-            ...
-        )
+       op1 = DynamoDBToS3Operator(
+           task_id='replicator-1',
+           dynamodb_table_name='hello',
+           dynamodb_scan_kwargs={
+               'TotalSegments': 2,
+               'Segment': 0,
+           },
+           ...
+       )
 
-        op2 = DynamoDBToS3Operator(
-            task_id='replicator-2',
-            dynamodb_table_name='hello',
-            dynamodb_scan_kwargs={
-                'TotalSegments': 2,
-                'Segment': 1,
-            },
-            ...
-        )
+       op2 = DynamoDBToS3Operator(
+           task_id='replicator-2',
+           dynamodb_table_name='hello',
+           dynamodb_scan_kwargs={
+               'TotalSegments': 2,
+               'Segment': 1,
+           },
+           ...
+       )
 
     :param dynamodb_table_name: Dynamodb table to replicate data from
+    :type dynamodb_table_name: str
     :param s3_bucket_name: S3 bucket to replicate data to
+    :type s3_bucket_name: str
     :param file_size: Flush file to s3 if file size >= file_size
+    :type file_size: int
     :param dynamodb_scan_kwargs: kwargs pass to <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Table.scan>  # noqa: E501 pylint: disable=line-too-long
+    :type dynamodb_scan_kwargs: Optional[Dict[str, Any]]
     :param s3_key_prefix: Prefix of s3 object key
+    :type s3_key_prefix: Optional[str]
     :param process_func: How we transforms a dynamodb item to bytes. By default we dump the json
+    :type process_func: Callable[[Dict[str, Any]], bytes]
     """
 
     @apply_defaults

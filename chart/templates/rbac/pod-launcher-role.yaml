@@ -63,4 +63,11 @@ rules:
     verbs:
       - "create"
       - "get"
+  - apiGroups:
+      - ""
+    resources:
+      - "events"
+    verbs:
+      - "list"
+
 {{- end }}

@@ -244,7 +244,7 @@ class WasbHook(BaseHook):
         :param kwargs: Optional keyword arguments that `BlobClient.download_blob` takes.
         :type kwargs: object
         """
-        return self.download(container_name, blob_name, **kwargs).readall()
+        return self.download(container_name, blob_name, **kwargs).content_as_text()
 
     def upload(
         self,

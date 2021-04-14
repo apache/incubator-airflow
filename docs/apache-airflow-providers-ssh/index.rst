@@ -56,7 +56,7 @@ Package apache-airflow-providers-ssh
 `Secure Shell (SSH) <https://tools.ietf.org/html/rfc4251>`__
 
 
-Release: 1.1.0
+Release: 1.2.0
 
 Provider package
 ----------------
@@ -110,6 +110,14 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Added support for DSS, ECDSA, and Ed25519 private keys in SSHHook (#12467)``
 
 1.1.0
 .....

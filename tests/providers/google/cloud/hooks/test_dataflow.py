@@ -93,7 +93,7 @@ TEST_FLEX_PARAMETERS = {
     "containerSpecGcsPath": "gs://test-bucket/test-file",
     "jobName": 'test-job-name',
     "parameters": {
-        "inputSubscription": 'test-subsription',
+        "inputSubscription": 'test-subscription',
         "outputTable": "test-project:test-dataset.streaming_beam_sql",
     },
 }
@@ -163,7 +163,7 @@ class TestFallbackToVariables(unittest.TestCase):
     def test_raise_exception_on_positional_argument(self):
         mock_instance = mock.MagicMock()
 
-        class FixutureFallback:
+        class FixtureFallback:
             @_fallback_to_project_id_from_variables
             def test_fn(self, *args, **kwargs):
                 mock_instance(*args, **kwargs)
@@ -171,7 +171,7 @@ class TestFallbackToVariables(unittest.TestCase):
         with pytest.raises(
             AirflowException, match="You must use keyword arguments in this methods rather than positional"
         ):
-            FixutureFallback().test_fn({'project': "TEST"}, "TEST2")
+            FixtureFallback().test_fn({'project': "TEST"}, "TEST2")
 
 
 def mock_init(
@@ -205,7 +205,7 @@ class TestDataflowHook(unittest.TestCase):
         mock_beam_start_python_pipeline = self.dataflow_hook.beam_hook.start_python_pipeline
         mock_uuid.return_value = MOCK_UUID
         on_new_job_id_callback = MagicMock()
-        py_requirements = ["pands", "numpy"]
+        py_requirements = ["pandas", "numpy"]
         job_name = f"{JOB_NAME}-{MOCK_UUID_PREFIX}"
 
         with self.assertWarnsRegex(DeprecationWarning, "This method is deprecated"):
@@ -247,7 +247,7 @@ class TestDataflowHook(unittest.TestCase):
         mock_beam_start_python_pipeline = self.dataflow_hook.beam_hook.start_python_pipeline
         mock_uuid.return_value = MOCK_UUID
         on_new_job_id_callback = MagicMock()
-        py_requirements = ["pands", "numpy"]
+        py_requirements = ["pandas", "numpy"]
         job_name = f"{JOB_NAME}-{MOCK_UUID_PREFIX}"
 
         passed_variables = copy.deepcopy(DATAFLOW_VARIABLES_PY)
@@ -292,7 +292,7 @@ class TestDataflowHook(unittest.TestCase):
         mock_beam_start_python_pipeline = self.dataflow_hook.beam_hook.start_python_pipeline
         mock_uuid.return_value = MOCK_UUID
         on_new_job_id_callback = MagicMock()
-        py_requirements = ["pands", "numpy"]
+        py_requirements = ["pandas", "numpy"]
         job_name = f"{JOB_NAME}-{MOCK_UUID_PREFIX}"
 
         passed_variables = copy.deepcopy(DATAFLOW_VARIABLES_PY)
@@ -337,7 +337,7 @@ class TestDataflowHook(unittest.TestCase):
         mock_beam_start_python_pipeline = self.dataflow_hook.beam_hook.start_python_pipeline
         mock_uuid.return_value = MOCK_UUID
         on_new_job_id_callback = MagicMock()
-        py_requirements = ["pands", "numpy"]
+        py_requirements = ["pandas", "numpy"]
         job_name = f"{JOB_NAME}-{MOCK_UUID_PREFIX}"
 
         passed_variables = copy.deepcopy(DATAFLOW_VARIABLES_PY)

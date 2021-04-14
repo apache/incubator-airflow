@@ -84,7 +84,7 @@ class TestMovingCoreToContrib(TestCase):
                     # is used (=3 or =4 if @apply_defaults)
                     assert len(warnings) >= 1
                     assert any(warning.filename == __file__ for warning in warnings)
-                init_mock.assert_called_once_with()
+                init_mock.assert_called_once()
 
     @parameterized.expand(ALL)
     def test_is_subclass(self, parent_class_path, sub_class_path):

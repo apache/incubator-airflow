@@ -51,8 +51,8 @@ provider packages are automatically documented in the release notes of every pro
 
 .. note::
     We also provide ``apache-airflow-backport-providers`` packages that can be installed for Airflow 1.10.
-    Those are the same providers as for 2.0 but automatically back-ported to work for Airflow 1.10. Those
-    backport providers are going to be updated and released for 3 months after Apache Airflow 2.0 release.
+    Those are the same providers as for 2.0 but automatically back-ported to work for Airflow 1.10. The
+    last release of backport providers was done on March 17, 2021.
 
 
 Provider packages functionality
@@ -170,15 +170,10 @@ Using Backport Providers in Airflow 1.10
 I would like to upgrade the provider package. If I don't need to upgrade the Airflow version anymore,
 how do I know that this provider version is compatible with my Airflow version?**
 
-Backport Provider Packages (those are needed in 1.10.* Airflow series) are going to be released for
-3 months after the release. We will stop releasing new updates to the backport providers afterwards.
-You will be able to continue using the provider packages that you already use and unless you need to
-get some new release of the provider that is only released for 2.0, there is no need to upgrade
-Airflow. This might happen if for example the provider is migrated to use newer version of client
-libraries or when new features/operators/hooks are added to it. Those changes will only be
-backported to 1.10.* compatible backport providers up to 3 months after releasing Airflow 2.0.
-Also we expect more providers, changes and fixes added to the existing providers to come after the
-3 months pass. Eventually you will have to upgrade to Airflow 2.0 if you would like to make use of those.
+We have Backport Providers are compatible with 1.10 but they stopped being released on
+March 17, 2021. Since then, no new changes to providers for Airflow 2.0 are going to be
+released as backport packages. It's the highest time to upgrade to Airflow 2.0.
+
 When it comes to compatibility of providers with different Airflow 2 versions, each
 provider package will keep its own dependencies, and while we expect those providers to be generally
 backwards-compatible, particular versions of particular providers might introduce dependencies on

@@ -65,9 +65,10 @@ Google services including:
   - `Google Firebase <https://firebase.google.com/>`__
   - `Google Marketing Platform <https://marketingplatform.google.com/>`__
   - `Google Workspace <https://workspace.google.pl/>`__ (formerly Google Suite)
+  - `Google LevelDB <https://github.com/google/leveldb>`__
 
 
-Release: 2.0.0
+Release: 2.1.0
 
 Provider package
 ----------------
@@ -130,13 +131,14 @@ PIP package                             Version required
 ``grpcio-gcp``                          ``>=0.2.2``
 ``json-merge-patch``                    ``~=0.2``
 ``pandas-gbq``
+``plyvel``
 ======================================  ===================
 
 Cross provider package dependencies
 -----------------------------------
 
 Those are dependencies that might be needed in order to use all the features of the package.
-You need to install the specified backport providers package in order to use them.
+You need to install the specified provider packages in order to use them.
 
 You can install such cross-provider dependencies when installing from PyPI. For example:
 
@@ -184,6 +186,28 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+2.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Corrects order of argument in docstring in GCSHook.download method (#14497)``
+* ``Refactor SQL/BigQuery/Qubole/Druid Check operators (#12677)``
+* ``Add GoogleDriveToLocalOperator (#14191)``
+* ``Add 'exists_ok' flag to BigQueryCreateEmptyTable(Dataset)Operator (#14026)``
+* ``Add materialized view support for BigQuery (#14201)``
+* ``Add BigQueryUpdateTableOperator (#14149)``
+* ``Add param to CloudDataTransferServiceOperator (#14118)``
+* ``Add gdrive_to_gcs operator, drive sensor, additional functionality to drive hook  (#13982)``
+* ``Improve GCSToSFTPOperator paths handling (#11284)``
+
+Bug Fixes
+~~~~~~~~~
+
+* ``Fixes to dataproc operators and hook (#14086)``
+* ``#9803 fix bug in copy operation without wildcard  (#13919)``
 
 2.0.0
 .....

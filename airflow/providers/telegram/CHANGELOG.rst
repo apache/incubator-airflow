@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Fix the AttributeError with text field in TelegramOperator (#13990)``
+
 1.0.1
 .....
 

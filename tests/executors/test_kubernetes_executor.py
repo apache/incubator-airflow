@@ -34,6 +34,7 @@ try:
     from airflow.executors.kubernetes_executor import (
         AirflowKubernetesScheduler,
         KubernetesExecutor,
+        KubernetesJobWatcher,
         create_pod_id,
         get_base_pod_from_template,
     )
@@ -196,6 +197,26 @@ class TestKubernetesExecutor(unittest.TestCase):
 
     @mock.patch('airflow.executors.kubernetes_executor.KubernetesJobWatcher')
     @mock.patch('airflow.executors.kubernetes_executor.get_kube_client')
+    def test_invalid_executor_config(self, mock_get_kube_client, mock_kubernetes_job_watcher):
+        executor = self.kubernetes_executor
+        executor.start()
+
+        assert executor.event_buffer == {}
+        executor.execute_async(
+            key=('dag', 'task', datetime.utcnow(), 1),
+            queue=None,
+            command=['airflow', 'tasks', 'run', 'true', 'some_parameter'],
+            executor_config=k8s.V1Pod(
+                spec=k8s.V1PodSpec(
+                    containers=[k8s.V1Container(name="base", image="myimage", image_pull_policy="Always")]
+                )
+            ),
+        )
+
+        assert list(executor.event_buffer.values())[0][1] == "Invalid executor_config passed"
+
+    @mock.patch('airflow.executors.kubernetes_executor.KubernetesJobWatcher')
+    @mock.patch('airflow.executors.kubernetes_executor.get_kube_client')
     def test_change_state_running(self, mock_get_kube_client, mock_kubernetes_job_watcher):
         executor = self.kubernetes_executor
         executor.start()
@@ -293,8 +314,6 @@ class TestKubernetesExecutor(unittest.TestCase):
         """
         We should not adopt any tasks that were not assigned by the scheduler.
         This ensures that there is no contention over pod management.
-        @param mock_kube_client:
-        @return:
         """
 
         executor = self.kubernetes_executor
@@ -308,3 +327,94 @@ class TestKubernetesExecutor(unittest.TestCase):
         executor.adopt_launched_task(mock_kube_client, pod=pod, pod_ids=pod_ids)
         assert not mock_kube_client.patch_namespaced_pod.called
         assert pod_ids == {"foobar": {}}
+
+
+class TestKubernetesJobWatcher(unittest.TestCase):
+    def setUp(self):
+        self.watcher = KubernetesJobWatcher(
+            namespace="airflow",
+            multi_namespace_mode=False,
+            watcher_queue=mock.MagicMock(),
+            resource_version="0",
+            scheduler_job_id="123",
+            kube_config=mock.MagicMock(),
+        )
+        self.kube_client = mock.MagicMock()
+        self.core_annotations = {
+            "dag_id": "dag",
+            "task_id": "task",
+            "execution_date": "dt",
+            "try_number": "1",
+        }
+        self.pod = k8s.V1Pod(
+            metadata=k8s.V1ObjectMeta(
+                name="foo",
+                annotations={"airflow-worker": "bar", **self.core_annotations},
+                namespace="airflow",
+                resource_version="456",
+            ),
+            status=k8s.V1PodStatus(phase="Pending"),
+        )
+        self.events = []
+
+    def _run(self):
+        with mock.patch('airflow.executors.kubernetes_executor.watch') as mock_watch:
+            mock_watch.Watch.return_value.stream.return_value = self.events
+            latest_resource_version = self.watcher._run(
+                self.kube_client,
+                self.watcher.resource_version,
+                self.watcher.scheduler_job_id,
+                self.watcher.kube_config,
+            )
+            assert self.pod.metadata.resource_version == latest_resource_version
+
+    def assert_watcher_queue_called_once_with_state(self, state):
+        self.watcher.watcher_queue.put.assert_called_once_with(
+            (
+                self.pod.metadata.name,
+                self.watcher.namespace,
+                state,
+                self.core_annotations,
+                self.pod.metadata.resource_version,
+            )
+        )
+
+    def test_process_status_pending(self):
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+
+        self._run()
+        self.watcher.watcher_queue.put.assert_not_called()
+
+    def test_process_status_pending_deleted(self):
+        self.events.append({"type": 'DELETED', "object": self.pod})
+
+        self._run()
+        self.assert_watcher_queue_called_once_with_state(State.FAILED)
+
+    def test_process_status_failed(self):
+        self.pod.status.phase = "Failed"
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+
+        self._run()
+        self.assert_watcher_queue_called_once_with_state(State.FAILED)
+
+    def test_process_status_succeeded(self):
+        self.pod.status.phase = "Succeeded"
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+
+        self._run()
+        self.assert_watcher_queue_called_once_with_state(None)
+
+    def test_process_status_running(self):
+        self.pod.status.phase = "Running"
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+
+        self._run()
+        self.watcher.watcher_queue.put.assert_not_called()
+
+    def test_process_status_catchall(self):
+        self.pod.status.phase = "Unknown"
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+
+        self._run()
+        self.watcher.watcher_queue.put.assert_not_called()

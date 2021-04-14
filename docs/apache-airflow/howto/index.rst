@@ -34,6 +34,7 @@ configuring an Airflow environment.
     set-up-database
     operator/index
     customize-state-colors-ui
+    customize-dag-ui-page-instance-name
     custom-operator
     connection
     variable

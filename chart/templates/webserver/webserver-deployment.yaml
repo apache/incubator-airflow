@@ -58,6 +58,7 @@ spec:
         checksum/metadata-secret: {{ include (print $.Template.BasePath "/secrets/metadata-connection-secret.yaml") . | sha256sum }}
         checksum/pgbouncer-config-secret: {{ include (print $.Template.BasePath "/secrets/pgbouncer-config-secret.yaml") . | sha256sum }}
         checksum/airflow-config: {{ include (print $.Template.BasePath "/configmaps/configmap.yaml") . | sha256sum }}
+        checksum/webserver-config: {{ include (print $.Template.BasePath "/configmaps/webserver-configmap.yaml") . | sha256sum }}
         checksum/extra-configmaps: {{ include (print $.Template.BasePath "/configmaps/extra-configmaps.yaml") . | sha256sum }}
         checksum/extra-secrets: {{ include (print $.Template.BasePath "/secrets/extra-secrets.yaml") . | sha256sum }}
         {{- if .Values.airflowPodAnnotations }}
@@ -106,7 +107,7 @@ spec:
               subPath: airflow.cfg
               readOnly: true
 {{- if .Values.webserver.webserverConfig }}
-            - name: config
+            - name: webserver-config
               mountPath: {{ template "airflow_webserver_config_path" . }}
               subPath: webserver_config.py
               readOnly: true
@@ -158,10 +159,18 @@ spec:
           env:
           {{- include "custom_airflow_environment" . | indent 10 }}
           {{- include "standard_airflow_environment" . | indent 10 }}
+{{- if .Values.webserver.extraContainers }}
+{{- toYaml .Values.webserver.extraContainers | nindent 8 }}
+{{- end }}
       volumes:
         - name: config
           configMap:
             name: {{ template "airflow_config" . }}
+        {{- if .Values.webserver.webserverConfig }}
+        - name: webserver-config
+          configMap:
+            name: {{ .Release.Name }}-webserver-config
+        {{- end }}
         {{- if .Values.dags.persistence.enabled }}
         - name: dags
           persistentVolumeClaim:

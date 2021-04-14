@@ -37,6 +37,7 @@ from airflow.providers.google.cloud.hooks.cloud_storage_transfer_service import 
     HTTP_DATA_SOURCE,
     MINUTES,
     MONTH,
+    NAME,
     OBJECT_CONDITIONS,
     PROJECT_ID,
     SCHEDULE,
@@ -798,7 +799,8 @@ class CloudDataTransferServiceS3ToGCSOperator(BaseOperator):
     :param transfer_options: Optional transfer service transfer options; see
         https://cloud.google.com/storage-transfer/docs/reference/rest/v1/TransferSpec
     :type transfer_options: dict
-    :param wait: Wait for transfer to finish
+    :param wait: Wait for transfer to finish. It must be set to True, if
+        'delete_job_after_completion' is set to True.
     :type wait: bool
     :param timeout: Time to wait for the operation to end in seconds. Defaults to 60 seconds if not specified.
     :type timeout: Optional[Union[float, timedelta]]
@@ -811,6 +813,9 @@ class CloudDataTransferServiceS3ToGCSOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type google_impersonation_chain: Union[str, Sequence[str]]
+    :param delete_job_after_completion: If True, delete the job after complete.
+        If set to True, 'wait' must be set to True.
+    :type delete_job_after_completion: bool
     """
 
     template_fields = (
@@ -840,6 +845,7 @@ class CloudDataTransferServiceS3ToGCSOperator(BaseOperator):
         wait: bool = True,
         timeout: Optional[float] = None,
         google_impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        delete_job_after_completion: bool = False,
         **kwargs,
     ) -> None:
 
@@ -857,6 +863,12 @@ class CloudDataTransferServiceS3ToGCSOperator(BaseOperator):
         self.wait = wait
         self.timeout = timeout
         self.google_impersonation_chain = google_impersonation_chain
+        self.delete_job_after_completion = delete_job_after_completion
+        self._validate_inputs()
+
+    def _validate_inputs(self) -> None:
+        if self.delete_job_after_completion and not self.wait:
+            raise AirflowException("If 'delete_job_after_completion' is True, then 'wait' must also be True.")
 
     def execute(self, context) -> None:
         hook = CloudDataTransferServiceHook(
@@ -872,6 +884,8 @@ class CloudDataTransferServiceS3ToGCSOperator(BaseOperator):
 
         if self.wait:
             hook.wait_for_transfer_job(job, timeout=self.timeout)
+            if self.delete_job_after_completion:
+                hook.delete_transfer_job(job_name=job[NAME], project_id=self.project_id)
 
     def _create_body(self) -> dict:
         body = {
@@ -955,7 +969,8 @@ class CloudDataTransferServiceGCSToGCSOperator(BaseOperator):
     :param transfer_options: Optional transfer service transfer options; see
         https://cloud.google.com/storage-transfer/docs/reference/rest/v1/TransferSpec#TransferOptions
     :type transfer_options: dict
-    :param wait: Wait for transfer to finish; defaults to `True`
+    :param wait: Wait for transfer to finish. It must be set to True, if
+        'delete_job_after_completion' is set to True.
     :type wait: bool
     :param timeout: Time to wait for the operation to end in seconds. Defaults to 60 seconds if not specified.
     :type timeout: Optional[Union[float, timedelta]]
@@ -968,6 +983,9 @@ class CloudDataTransferServiceGCSToGCSOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type google_impersonation_chain: Union[str, Sequence[str]]
+    :param delete_job_after_completion: If True, delete the job after complete.
+        If set to True, 'wait' must be set to True.
+    :type delete_job_after_completion: bool
     """
 
     template_fields = (
@@ -996,6 +1014,7 @@ class CloudDataTransferServiceGCSToGCSOperator(BaseOperator):
         wait: bool = True,
         timeout: Optional[float] = None,
         google_impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        delete_job_after_completion: bool = False,
         **kwargs,
     ) -> None:
 
@@ -1012,6 +1031,12 @@ class CloudDataTransferServiceGCSToGCSOperator(BaseOperator):
         self.wait = wait
         self.timeout = timeout
         self.google_impersonation_chain = google_impersonation_chain
+        self.delete_job_after_completion = delete_job_after_completion
+        self._validate_inputs()
+
+    def _validate_inputs(self) -> None:
+        if self.delete_job_after_completion and not self.wait:
+            raise AirflowException("If 'delete_job_after_completion' is True, then 'wait' must also be True.")
 
     def execute(self, context) -> None:
         hook = CloudDataTransferServiceHook(
@@ -1028,6 +1053,8 @@ class CloudDataTransferServiceGCSToGCSOperator(BaseOperator):
 
         if self.wait:
             hook.wait_for_transfer_job(job, timeout=self.timeout)
+            if self.delete_job_after_completion:
+                hook.delete_transfer_job(job_name=job[NAME], project_id=self.project_id)
 
     def _create_body(self) -> dict:
         body = {

@@ -22,3 +22,10 @@ explicit_defaults_for_timestamp = 1
 secure_file_priv = "/var/lib/mysql"
 local_infile = 1
 innodb_print_all_deadlocks = 1
+
+# Optimizes memory usage during tests - by default it 132 MB but we need far less than that
+innodb_buffer_pool_size = 32M
+
+# Performance schema monitoring uses on its own a lot of memory. We save ~130 MB by disabling it
+performance_schema     = OFF
+performance-schema-instrument='memory/%=COUNTED'

@@ -133,7 +133,9 @@ class MySqlHook(DbApiHook):
 
         :return: a mysql connection object
         """
-        conn = self.connection or self.get_connection(self.mysql_conn_id)  # pylint: disable=no-member
+        conn = self.connection or self.get_connection(
+            getattr(self, self.conn_name_attr)
+        )  # pylint: disable=no-member
 
         client_name = conn.extra_dejson.get('client', 'mysqlclient')
 

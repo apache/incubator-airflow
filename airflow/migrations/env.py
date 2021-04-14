@@ -99,7 +99,15 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
+            if connection.dialect.name == 'mysql' and connection.dialect.server_version_info >= (5, 6):
+                connection.execute("select GET_LOCK('alembic',1800);")
+            if connection.dialect.name == 'postgresql':
+                context.get_context()._ensure_version_table()  # pylint: disable=protected-access
+                connection.execute("LOCK TABLE alembic_version IN ACCESS EXCLUSIVE MODE")
             context.run_migrations()
+            if connection.dialect.name == 'mysql' and connection.dialect.server_version_info >= (5, 6):
+                connection.execute("select RELEASE_LOCK('alembic');")
+            # for Postgres lock is released when transaction ends
 
 
 if context.is_offline_mode():

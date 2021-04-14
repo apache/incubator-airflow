@@ -23,7 +23,7 @@ from contextlib import contextmanager
 def with_group(title):
     """
     If used in GitHub Action, creates an expandable group in the GitHub Action log.
-    Otherwise, dispaly simple text groups.
+    Otherwise, display simple text groups.
 
     For more information, see:
     https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#grouping-log-lines

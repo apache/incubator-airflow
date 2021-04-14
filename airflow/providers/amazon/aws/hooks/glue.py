@@ -43,8 +43,10 @@ class AwsGlueJobHook(AwsBaseHook):
     :type num_of_dpus: int
     :param region_name: aws region name (example: us-east-1)
     :type region_name: Optional[str]
-    :param iam_role_name: AWS IAM Role for Glue Job
+    :param iam_role_name: AWS IAM Role for Glue Job Execution
     :type iam_role_name: Optional[str]
+    :param create_job_kwargs: Extra arguments for Glue Job Creation
+    :type create_job_kwargs: Optional[dict]
     """
 
     JOB_POLL_INTERVAL = 6  # polls job status after every JOB_POLL_INTERVAL seconds
@@ -60,9 +62,10 @@ class AwsGlueJobHook(AwsBaseHook):
         num_of_dpus: int = 10,
         region_name: Optional[str] = None,
         iam_role_name: Optional[str] = None,
+        create_job_kwargs: Optional[dict] = None,
         *args,
         **kwargs,
-    ):
+    ):  # pylint: disable=too-many-arguments
         self.job_name = job_name
         self.desc = desc
         self.concurrent_run_limit = concurrent_run_limit
@@ -73,6 +76,7 @@ class AwsGlueJobHook(AwsBaseHook):
         self.s3_bucket = s3_bucket
         self.role_name = iam_role_name
         self.s3_glue_logs = 'logs/glue-logs/'
+        self.create_job_kwargs = create_job_kwargs or {}
         kwargs['client_type'] = 'glue'
         super().__init__(*args, **kwargs)
 
@@ -181,6 +185,7 @@ class AwsGlueJobHook(AwsBaseHook):
                     Command={"Name": "glueetl", "ScriptLocation": self.script_location},
                     MaxRetries=self.retry_limit,
                     AllocatedCapacity=self.num_of_dpus,
+                    **self.create_job_kwargs,
                 )
                 return create_job_response['Name']
             except Exception as general_error:

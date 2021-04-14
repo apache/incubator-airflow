@@ -1,4 +1,7 @@
 {
+  "airbyte": [
+    "http"
+  ],
   "amazon": [
     "apache.hive",
     "exasol",
@@ -69,6 +72,9 @@
   ],
   "postgres": [
     "amazon"
+  ],
+  "salesforce": [
+    "tableau"
   ],
   "sftp": [
     "ssh"

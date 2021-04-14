@@ -255,10 +255,6 @@ body div.panel {
   padding: 0;
 }
 
-.blur {
-  filter: url(#blur-effect-1);
-}
-
 .legend-row {
   display: flex;
   align-items: center;

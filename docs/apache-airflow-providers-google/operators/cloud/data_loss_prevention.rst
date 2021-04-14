@@ -296,9 +296,24 @@ Unlike storage methods (Jobs) content method are synchronous, stateless methods.
 
 De-identify Content
 """""""""""""""""""
+De-identification is the process of removing identifying information from data.
+Configuration information defines how you want the sensitive data de-identified.
 
-To de-identify potentially sensitive info from a content item, you can use
+This config can either be saved and persisted in de-identification templates or defined in a :class:`~google.cloud.dlp_v2.types.DeidentifyConfig` object:
+
+.. literalinclude:: /../../airflow/providers/google/cloud/example_dags/example_dlp.py
+    :language: python
+    :start-after: [START dlp_deidentify_config_example]
+    :end-before: [END dlp_deidentify_config_example]
+
+To de-identify potentially sensitive information from a content item, you can use
 :class:`~airflow.providers.google.cloud.operators.cloud.dlp.CloudDLPDeidentifyContentOperator`.
+
+.. exampleinclude:: /../../airflow/providers/google/cloud/example_dags/example_dlp.py
+    :language: python
+    :dedent: 4
+    :start-after: [START _howto_operator_dlp_deidentify_content]
+    :end-before: [END _howto_operator_dlp_deidentify_content]
 
 .. _howto/operator:CloudDLPReidentifyContentOperator:
 

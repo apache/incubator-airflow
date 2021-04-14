@@ -20,8 +20,9 @@ import datetime
 import unittest
 
 from airflow import settings
-from airflow.models import DAG, TaskInstance as TI, clear_task_instances
+from airflow.models import DAG, TaskInstance as TI, TaskReschedule, clear_task_instances
 from airflow.operators.dummy import DummyOperator
+from airflow.sensors.python import PythonSensor
 from airflow.utils.session import create_session
 from airflow.utils.state import State
 from airflow.utils.types import DagRunType
@@ -137,6 +138,50 @@ class TestClearTasks(unittest.TestCase):
         assert ti0.max_tries == 1
         assert ti1.try_number == 2
         assert ti1.max_tries == 2
+
+    def test_clear_task_instances_with_task_reschedule(self):
+        """Test that TaskReschedules are deleted correctly when TaskInstances are cleared"""
+
+        with DAG(
+            'test_clear_task_instances_with_task_reschedule',
+            start_date=DEFAULT_DATE,
+            end_date=DEFAULT_DATE + datetime.timedelta(days=10),
+        ) as dag:
+            task0 = PythonSensor(task_id='0', python_callable=lambda: False, mode="reschedule")
+            task1 = PythonSensor(task_id='1', python_callable=lambda: False, mode="reschedule")
+
+        ti0 = TI(task=task0, execution_date=DEFAULT_DATE)
+        ti1 = TI(task=task1, execution_date=DEFAULT_DATE)
+
+        dag.create_dagrun(
+            execution_date=ti0.execution_date,
+            state=State.RUNNING,
+            run_type=DagRunType.SCHEDULED,
+        )
+
+        ti0.run()
+        ti1.run()
+
+        with create_session() as session:
+
+            def count_task_reschedule(task_id):
+                return (
+                    session.query(TaskReschedule)
+                    .filter(
+                        TaskReschedule.dag_id == dag.dag_id,
+                        TaskReschedule.task_id == task_id,
+                        TaskReschedule.execution_date == DEFAULT_DATE,
+                        TaskReschedule.try_number == 1,
+                    )
+                    .count()
+                )
+
+            assert count_task_reschedule(ti0.task_id) == 1
+            assert count_task_reschedule(ti1.task_id) == 1
+            qry = session.query(TI).filter(TI.dag_id == dag.dag_id, TI.task_id == ti0.task_id).all()
+            clear_task_instances(qry, session, dag=dag)
+            assert count_task_reschedule(ti0.task_id) == 0
+            assert count_task_reschedule(ti1.task_id) == 1
 
     def test_dag_clear(self):
         dag = DAG(

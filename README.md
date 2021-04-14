@@ -22,7 +22,7 @@
 [![PyPI version](https://badge.fury.io/py/apache-airflow.svg)](https://badge.fury.io/py/apache-airflow)
 [![GitHub Build](https://github.com/apache/airflow/workflows/CI%20Build/badge.svg)](https://github.com/apache/airflow/actions)
 [![Coverage Status](https://img.shields.io/codecov/c/github/apache/airflow/master.svg)](https://codecov.io/github/apache/airflow?branch=master)
-[![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![License](https://img.shields.io/:license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/apache-airflow.svg)](https://pypi.org/project/apache-airflow/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/apache/airflow.svg)](https://hub.docker.com/r/apache/airflow)
 [![Docker Stars](https://img.shields.io/docker/stars/apache/airflow.svg)](https://hub.docker.com/r/apache/airflow)
@@ -31,7 +31,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAirflow.svg?style=social&label=Follow)](https://twitter.com/ApacheAirflow)
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://s.apache.org/airflow-slack)
 
-[Apache Airflow](https://airflow.apache.org/docs/stable/) (or simply Airflow) is a platform to programmatically author, schedule, and monitor workflows.
+[Apache Airflow](https://airflow.apache.org/docs/apache-airflow/stable/) (or simply Airflow) is a platform to programmatically author, schedule, and monitor workflows.
 
 When workflows are defined as code, they become more maintainable, versionable, testable, and collaborative.
 
@@ -63,7 +63,7 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The 
 
 Airflow works best with workflows that are mostly static and slowly changing. When DAG structure is similar from one run to the next, it allows for clarity around unit of work and continuity. Other similar projects include [Luigi](https://github.com/spotify/luigi), [Oozie](https://oozie.apache.org/) and [Azkaban](https://azkaban.github.io/).
 
-Airflow is commonly used to process data, but has the opinion that tasks should ideally be idempotent (i.e. results of the task will be the same, and will not create duplicated data in a destination system), and should not pass large quantities of data from one task to the next (though tasks can pass metadata using Airflow's [Xcom feature](https://airflow.apache.org/docs/stable/concepts.html#xcoms)). For high-volume, data-intensive tasks, a best practice is to delegate to external services that specialize on that type of work.
+Airflow is commonly used to process data, but has the opinion that tasks should ideally be idempotent (i.e. results of the task will be the same, and will not create duplicated data in a destination system), and should not pass large quantities of data from one task to the next (though tasks can pass metadata using Airflow's [Xcom feature](https://airflow.apache.org/docs/apache-airflow/stable/concepts.html#xcoms)). For high-volume, data-intensive tasks, a best practice is to delegate to external services that specialize on that type of work.
 
 Airflow is not a streaming solution, but it is often used to process real-time data, pulling data off streams in batches.
 
@@ -87,7 +87,8 @@ Apache Airflow is tested with:
 | Kubernetes   | 1.16.9, 1.17.5, 1.18.6    | 1.16.9, 1.17.5, 1.18.6   | 1.16.9, 1.17.5, 1.18.6     |
 
 **Note:** MySQL 5.x versions are unable to or have limitations with
-running multiple schedulers -- please see the "Scheduler" docs. MariaDB is not tested/recommended.
+running multiple schedulers -- please see the [Scheduler docs](https://airflow.apache.org/docs/apache-airflow/stable/scheduler.html).
+MariaDB is not tested/recommended.
 
 **Note:** SQLite is used in Airflow tests. Do not use it in production. We recommend
 using the latest stable version of SQLite for local development.
@@ -98,7 +99,7 @@ As of Airflow 2.0 we agreed to certain rules we follow for Python support. They 
 release schedule of Python, nicely summarized in the
 [Python Developer's Guide](https://devguide.python.org/#status-of-python-branches)
 
-1. We finish support for python versions when they reach EOL (For python 3.6 it means that we will remove it
+1. We finish support for Python versions when they reach EOL (For Python 3.6 it means that we will remove it
    from being supported on 23.12.2021).
 
 2. The "oldest" supported version of Python is the default one. "Default" is only meaningful in terms of
@@ -115,11 +116,15 @@ release schedule of Python, nicely summarized in the
 
 ## Getting started
 
-Visit the official Airflow website documentation (latest **stable** release) for help with [installing Airflow](https://airflow.apache.org/installation.html), [getting started](https://airflow.apache.org/start.html), or walking through a more complete [tutorial](https://airflow.apache.org/tutorial.html).
+Visit the official Airflow website documentation (latest **stable** release) for help with
+[installing Airflow](https://airflow.apache.org/docs/apache-airflow/stable/installation.html),
+[getting started](https://airflow.apache.org/docs/apache-airflow/stable/start/index.html), or walking
+through a more complete [tutorial](https://airflow.apache.org/docs/apache-airflow/stable/tutorial.html).
 
 > Note: If you're looking for documentation for master branch (latest development branch): you can find it on [s.apache.org/airflow-docs](https://s.apache.org/airflow-docs/).
 
-For more information on Airflow's Roadmap or Airflow Improvement Proposals (AIPs), visit the [Airflow Wiki](https://cwiki.apache.org/confluence/display/AIRFLOW/Airflow+Home).
+For more information on Airflow Improvement Proposals (AIPs), visit
+the [Airflow Wiki](https://cwiki.apache.org/confluence/display/AIRFLOW/Airflow+Improvements+Proposals).
 
 Official Docker (container) images for Apache Airflow are described in [IMAGES.rst](IMAGES.rst).
 
@@ -135,9 +140,9 @@ produce unusable Airflow installation.
 In order to have repeatable installation, however, introduced in **Airflow 1.10.10** and updated in
 **Airflow 1.10.12** we also keep a set of "known-to-be-working" constraint files in the
 orphan `constraints-master`, `constraints-2-0` and `constraints-1-10` branches. We keep those "known-to-be-working"
-constraints files separately per major/minor python version.
+constraints files separately per major/minor Python version.
 You can use them as constraint files when installing Airflow from PyPI. Note that you have to specify
-correct Airflow tag/version/branch and python versions in the URL.
+correct Airflow tag/version/branch and Python versions in the URL.
 
 
 1. Installing just Airflow:
@@ -174,18 +179,19 @@ pip install apache-airflow[postgres,google]==2.0.1 \
  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.0.1/constraints-3.7.txt"
 ```
 
-For information on installing backport providers check [backport-providers.rst](docs/apache-airflow/backport-providers.rst).
+For information on installing provider packages check
+[providers](http://airflow.apache.org/docs/apache-airflow-providers/index.html).
 
 ## Official source code
 
-Apache Airflow is an [Apache Software Foundation](http://www.apache.org) (ASF) project,
+Apache Airflow is an [Apache Software Foundation](https://www.apache.org) (ASF) project,
 and our official source code releases:
 
-- Follow the [ASF Release Policy](http://www.apache.org/legal/release-policy.html)
+- Follow the [ASF Release Policy](https://www.apache.org/legal/release-policy.html)
 - Can be downloaded from [the ASF Distribution Directory](https://downloads.apache.org/airflow)
 - Are cryptographically signed by the release manager
 - Are officially voted on by the PMC members during the
-  [Release Approval Process](http://www.apache.org/legal/release-policy.html#release-approval)
+  [Release Approval Process](https://www.apache.org/legal/release-policy.html#release-approval)
 
 Following the ASF rules, the source packages released must be sufficient for a user to build and test the
 release provided they have access to the appropriate platform and tools.
@@ -244,7 +250,8 @@ Want to help build Apache Airflow? Check out our [contributing documentation](ht
 
 ## Who uses Apache Airflow?
 
-More than 350 organizations are using Apache Airflow [in the wild](https://github.com/apache/airflow/blob/master/INTHEWILD.md).
+More than 400 organizations are using Apache Airflow
+[in the wild](https://github.com/apache/airflow/blob/master/INTHEWILD.md).
 
 ## Who Maintains Apache Airflow?
 
@@ -252,7 +259,7 @@ Airflow is the work of the [community](https://github.com/apache/airflow/graphs/
 but the [core committers/maintainers](https://people.apache.org/committers-by-project.html#airflow)
 are responsible for reviewing and merging PRs as well as steering conversation around new feature requests.
 If you would like to become a maintainer, please review the Apache Airflow
-[committer requirements](https://github.com/apache/airflow/blob/master/CONTRIBUTING.rst#guidelines-to-become-an-airflow-committer).
+[committer requirements](https://github.com/apache/airflow/blob/master/COMMITTERS.rst#guidelines-to-become-an-airflow-committer).
 
 ## Can I use the Apache Airflow logo in my presentation?
 
@@ -265,5 +272,5 @@ If you would love to have Apache Airflow stickers, t-shirt etc. then check out
 
 ## Links
 
-- [Documentation](https://airflow.apache.org/docs/stable/)
+- [Documentation](https://airflow.apache.org/docs/apache-airflow/stable/)
 - [Chat](https://s.apache.org/airflow-slack)

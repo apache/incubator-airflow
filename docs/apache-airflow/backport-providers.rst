@@ -19,6 +19,13 @@
 Backport Providers
 ------------------
 
+.. warning::
+
+  We have stopped releasing the backport providers on March 17, 2021. Since then, no new changes to
+  providers for Airflow 2.0 are going to be released as backport packages.
+  It's the highest time to upgrade to Airflow 2.0.
+
+
 Context: Airflow 2.0 operators, hooks, and secrets
 ''''''''''''''''''''''''''''''''''''''''''''''''''
 
@@ -34,7 +41,7 @@ with the constraint that those packages can only be used in Python 3.6+ environm
 Installing Airflow 2.0 operators in Airflow 1.10
 ''''''''''''''''''''''''''''''''''''''''''''''''
 
-We released backport packages that can be installed for older Airflow versions. These backport packages will be
+We released Backport provider packages that can be installed for older Airflow versions. These packages will be
 released more frequently compared to the main Airflow 1.10.* releases.
 
 You will not have to upgrade your Airflow version to use those packages. You can find those packages on
@@ -58,7 +65,11 @@ In some rare cases the new operators will not be fully backwards compatible, you
 about those cases in `UPDATING.md <https://github.com/apache/airflow/blob/master/UPDATING.md>`_ where we
 explained all such cases.
 
-Switching early to the Airflow 2.0 operators while still running Airflow 1.10.x will make your migration much easier.
+Switching early to the Airflow 2.0 operators while still running Airflow 1.10.x will make your
+migration much easier.
+
+Note that as of 17 March 2021 the backport providers are not released any more, so you might find additional
+differences accumulating over time in the newer versions of the providers.
 
 Installing backport packages
 '''''''''''''''''''''''''''''
@@ -87,7 +98,7 @@ Backport providers only work when they are installed in the same namespace as th
 This is majority of cases when you simply run pip install - it installs all packages in the same folder
 (usually in ``/usr/local/lib/pythonX.Y/site-packages``). But when you install the ``apache-airflow`` and
 ``apache-airflow-backport-package-*`` using different methods (for example using ``pip install -e .`` or
-``pip install --user`` they might be installed in different namespaces.
+``pip install --user``) they might be installed in different namespaces.
 
 If that's the case, the provider packages will not be importable (the error in such case is
 ``ModuleNotFoundError: No module named 'airflow.providers'``).

@@ -16,11 +16,11 @@
 # under the License.
 
 import textwrap
-from contextlib import ExitStack
 from unittest.mock import patch
 
+import pytest
+
 from airflow.security import permissions
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
 from tests.test_utils.config import conf_vars
 
@@ -35,31 +35,28 @@ MOCK_CONF = {
 }
 
 
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
+    create_user(
+        app,  # type:ignore
+        username="test",
+        role_name="Test",
+        permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_CONFIG)],  # type: ignore
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+
+    with conf_vars({('webserver', 'expose_config'): 'True'}):
+        yield minimal_app_for_api
+
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
 class TestGetConfig:
-    @classmethod
-    def setup_class(cls) -> None:
-        cls.exit_stack = ExitStack()
-        cls.exit_stack.enter_context(conf_vars({('webserver', 'expose_config'): 'True'}))
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)  # type:ignore
-        create_user(
-            cls.app,  # type:ignore
-            username="test",
-            role_name="Test",
-            permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_CONFIG)],  # type: ignore
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
-
-        cls.client = None
-
-    @classmethod
-    def teardown_class(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
-
-        cls.exit_stack.close()
-
-    def setup_method(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app) -> None:
+        self.app = configured_app
         self.client = self.app.test_client()  # type:ignore
 
     @patch("airflow.api_connexion.endpoints.config_endpoint.conf.as_dict", return_value=MOCK_CONF)

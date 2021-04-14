@@ -1413,7 +1413,7 @@ class CloudDataCatalogListTagsOperator(BaseOperator):
     :type location: str
     :param entry_group: Required. The entry group of the tags to get.
     :type entry_group: str
-    :param entry_group: Required. The entry of the tags to get.
+    :param entry: Required. The entry of the tags to get.
     :type entry: str
     :param page_size: The maximum number of resources contained in the underlying API response. If page
         streaming is performed per- resource, this parameter does not affect the return value. If page

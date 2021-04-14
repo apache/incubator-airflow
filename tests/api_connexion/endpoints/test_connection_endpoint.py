@@ -14,50 +14,50 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
 
+import pytest
 from parameterized import parameterized
 
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
 from airflow.models import Connection
 from airflow.security import permissions
 from airflow.utils.session import provide_session
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_connections
 
 
-class TestConnectionEndpoint(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)  # type:ignore
-        create_user(
-            cls.app,  # type: ignore
-            username="test",
-            role_name="Test",
-            permissions=[
-                (permissions.ACTION_CAN_CREATE, permissions.RESOURCE_CONNECTION),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_CONNECTION),
-                (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CONNECTION),
-                (permissions.ACTION_CAN_DELETE, permissions.RESOURCE_CONNECTION),
-            ],
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
+    create_user(
+        app,  # type: ignore
+        username="test",
+        role_name="Test",
+        permissions=[
+            (permissions.ACTION_CAN_CREATE, permissions.RESOURCE_CONNECTION),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_CONNECTION),
+            (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CONNECTION),
+            (permissions.ACTION_CAN_DELETE, permissions.RESOURCE_CONNECTION),
+        ],
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
+    yield app
 
-    def setUp(self) -> None:
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
+class TestConnectionEndpoint:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app) -> None:
+        self.app = configured_app
         self.client = self.app.test_client()  # type:ignore
         # we want only the connection created here for this test
         clear_db_connections(False)
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         clear_db_connections()
 
     def _create_connection(self, session):
@@ -67,7 +67,6 @@ class TestConnectionEndpoint(unittest.TestCase):
 
 
 class TestDeleteConnection(TestConnectionEndpoint):
-    @provide_session
     def test_delete_should_respond_204(self, session):
         connection_model = Connection(conn_id='test-connection', conn_type='test_type')
 
@@ -107,7 +106,6 @@ class TestDeleteConnection(TestConnectionEndpoint):
 
 
 class TestGetConnection(TestConnectionEndpoint):
-    @provide_session
     def test_should_respond_200(self, session):
         connection_model = Connection(
             conn_id='test-connection-id',
@@ -155,7 +153,6 @@ class TestGetConnection(TestConnectionEndpoint):
 
 
 class TestGetConnections(TestConnectionEndpoint):
-    @provide_session
     def test_should_respond_200(self, session):
         connection_model_1 = Connection(conn_id='test-connection-id-1', conn_type='test_type')
         connection_model_2 = Connection(conn_id='test-connection-id-2', conn_type='test_type')
@@ -243,7 +240,6 @@ class TestGetConnectionsPagination(TestConnectionEndpoint):
         conn_ids = [conn["connection_id"] for conn in response.json["connections"] if conn]
         assert conn_ids == expected_conn_ids
 
-    @provide_session
     def test_should_respect_page_size_limit_default(self, session):
         connection_models = self._create_connections(200)
         session.add_all(connection_models)
@@ -255,7 +251,6 @@ class TestGetConnectionsPagination(TestConnectionEndpoint):
         assert response.json["total_entries"] == 200
         assert len(response.json["connections"]) == 100
 
-    @provide_session
     def test_limit_of_zero_should_return_default(self, session):
         connection_models = self._create_connections(200)
         session.add_all(connection_models)
@@ -267,7 +262,6 @@ class TestGetConnectionsPagination(TestConnectionEndpoint):
         assert response.json["total_entries"] == 200
         assert len(response.json["connections"]) == 100
 
-    @provide_session
     @conf_vars({("api", "maximum_page_limit"): "150"})
     def test_should_return_conf_max_if_req_max_above_conf(self, session):
         connection_models = self._create_connections(200)
@@ -301,7 +295,6 @@ class TestPatchConnection(TestConnectionEndpoint):
         )
         assert response.status_code == 200
 
-    @provide_session
     def test_patch_should_respond_200_with_update_mask(self, session):
         self._create_connection(session)
         test_connection = "test-connection-id"
@@ -440,7 +433,6 @@ class TestPatchConnection(TestConnectionEndpoint):
             'type': EXCEPTIONS_LINK_MAP[404],
         } == response.json
 
-    @provide_session
     def test_should_raises_401_unauthenticated(self, session):
         self._create_connection(session)
 
@@ -453,7 +445,6 @@ class TestPatchConnection(TestConnectionEndpoint):
 
 
 class TestPostConnection(TestConnectionEndpoint):
-    @provide_session
     def test_post_should_respond_200(self, session):
         payload = {"connection_id": "test-connection-id", "conn_type": 'test_type'}
         response = self.client.post(

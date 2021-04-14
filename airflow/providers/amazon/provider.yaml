@@ -22,6 +22,7 @@ description: |
     Amazon integration (including `Amazon Web Services (AWS) <https://aws.amazon.com/>`__).
 
 versions:
+  - 1.2.0
   - 1.1.0
   - 1.0.0
 
@@ -104,6 +105,8 @@ integrations:
   - integration-name: Amazon Simple Storage Service (S3)
     external-doc-url: https://aws.amazon.com/s3/
     logo: /integration-logos/aws/Amazon-Simple-Storage-Service-S3_light-bg@4x.png
+    how-to-guide:
+      - /docs/apache-airflow-providers-amazon/operators/s3.rst
     tags: [aws]
   - integration-name: Amazon Web Services
     external-doc-url: https://aws.amazon.com/
@@ -166,6 +169,7 @@ operators:
   - integration-name: Amazon Simple Storage Service (S3)
     python-modules:
       - airflow.providers.amazon.aws.operators.s3_bucket
+      - airflow.providers.amazon.aws.operators.s3_bucket_tagging
       - airflow.providers.amazon.aws.operators.s3_copy_object
       - airflow.providers.amazon.aws.operators.s3_delete_objects
       - airflow.providers.amazon.aws.operators.s3_file_transform
@@ -355,6 +359,9 @@ transfers:
   - source-integration-name: Exasol
     target-integration-name: Amazon Simple Storage Service (S3)
     python-module: airflow.providers.amazon.aws.transfers.exasol_to_s3
+  - source-integration-name: File Transfer Protocol (FTP)
+    target-integration-name: Amazon Simple Storage Service (S3)
+    python-module: airflow.providers.amazon.aws.transfers.ftp_to_s3
 
 hook-class-names:
   - airflow.providers.amazon.aws.hooks.s3.S3Hook

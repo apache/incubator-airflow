@@ -37,8 +37,15 @@ function verbosity::restore_exit_on_error_status() {
 }
 
 # In case "VERBOSE" is set to "true" (--verbose flag in Breeze) all docker commands run will be
-# printed before execution
+# printed before execution. In case of DRY_RUN_DOCKER flag set to "true"
+# show the command to execute instead of executing them
 function docker {
+    if [[ ${DRY_RUN_DOCKER} != "false" ]]; then
+        echo
+        echo "${COLOR_YELLOW}docker" "${@}" "${COLOR_RESET}"
+        echo
+        return
+    fi
     verbosity::store_exit_on_error_status
     if [[ ${VERBOSE:="false"} == "true" && \
         # do not print echo if VERBOSE_COMMAND is set (set -x does it already)

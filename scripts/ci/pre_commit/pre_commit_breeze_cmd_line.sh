@@ -49,13 +49,16 @@ readonly FORCE_SCREEN_WIDTH
 export VERBOSE="false"
 readonly VERBOSE
 
+export BREEZE_REDIRECT="false"
+
 ./breeze help-all | sed 's/^/  /' | sed 's/ *$//' >>"${TMP_FILE}"
 
-MAX_LEN=$(awk '{ print length($0); }' "${TMP_FILE}" | sort -n | tail -1 )
+MAX_LEN_FOUND=$(awk '{ print length($0); }' "${TMP_FILE}" | sort -n | tail -1 )
 
+MAX_LEN_EXPECTED=$((MAX_SCREEN_WIDTH + 2))
 # 2 spaces added in front of the width for .rst formatting
-if (( MAX_LEN > MAX_SCREEN_WIDTH + 2 )); then
-    cat "${TMP_FILE}"
+if (( MAX_LEN_FOUND > MAX_LEN_EXPECTED )); then
+    awk "length(\$0) > ${MAX_LEN_EXPECTED}" <"${TMP_FILE}"
     echo
     echo "ERROR! Some lines in generate breeze help-all command are too long. See above ^^"
     echo

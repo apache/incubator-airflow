@@ -33,7 +33,7 @@ need access to the DAG files. Both the scheduler and webserver parse the DAG fil
 With **DAG Serialization** we aim to decouple the webserver from DAG parsing
 which would make the Webserver very light-weight.
 
-As shown in the image above, when using the this feature,
+As shown in the image above, when using this feature,
 the :class:`~airflow.jobs.scheduler_job.DagFileProcessorProcess` in the Scheduler
 parses the DAG files, serializes them in JSON format and saves them in the Metadata DB
 as :class:`~airflow.models.serialized_dag.SerializedDagModel` model.
@@ -41,7 +41,7 @@ as :class:`~airflow.models.serialized_dag.SerializedDagModel` model.
 The Webserver now instead of having to parse the DAG file again, reads the
 serialized DAGs in JSON, de-serializes them and create the DagBag and uses it
 to show in the UI. And the Scheduler does not need the actual DAG for making Scheduling decisions,
-instead of using the DAG files, we use Serialized DAGs that contain all the information needing to
+instead of using the DAG files, we use Serialized DAGs that contain all the information needed to
 schedule the DAGs from Airflow 2.0.0 (this was done as part of :ref:`Scheduler HA <scheduler:ha>`).
 
 One of the key features that is implemented as the part of DAG Serialization is that

@@ -29,6 +29,8 @@ versions:
 integrations:
   - integration-name: Hadoop Distributed File System (HDFS)
     external-doc-url: https://hadoop.apache.org/docs/r1.2.1/hdfs_design.html
+    how-to-guide:
+      - /docs/apache-airflow-providers-apache-hdfs/operators.rst
     logo: /integration-logos/apache/hadoop.png
     tags: [apache]
   - integration-name: WebHDFS

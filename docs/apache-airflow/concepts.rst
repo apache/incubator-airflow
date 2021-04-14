@@ -99,7 +99,7 @@ logical workflow.
 Scope
 -----
 
-Airflow will load any ``DAG`` object it can import from a DAGfile. Critically,
+Airflow will load any ``DAG`` object it can import from a DAG file. Critically,
 that means the DAG must appear in ``globals()``. Consider the following two
 DAGs. Only ``dag_1`` will be loaded; the other one only appears in a local
 scope.
@@ -134,7 +134,7 @@ any of its operators. This makes it easy to apply a common parameter to many ope
 
     dag = DAG('my_dag', default_args=default_args)
     op = DummyOperator(task_id='dummy', dag=dag)
-    print(op.owner) # Airflow
+    print(op.owner) # airflow
 
 .. _concepts:context_manager:
 
@@ -160,9 +160,9 @@ TaskFlow API
 .. versionadded:: 2.0.0
 
 Airflow 2.0 adds a new style of authoring dags called the TaskFlow API which removes a lot of the boilerplate
-around creating PythonOperators, managing dependencies between task and accessing XCom values. (During
+around creating PythonOperators, managing dependencies between task and accessing XCom values (During
 development this feature was called "Functional DAGs", so if you see or hear any references to that, it's the
-same thing)
+same thing).
 
 Outputs and inputs are sent between tasks using :ref:`XCom values <concepts:xcom>`. In addition, you can wrap
 functions as tasks using the :ref:`task decorator <concepts:task_decorator>`. Airflow will also automatically
@@ -178,7 +178,7 @@ Example DAG built with the TaskFlow API
 
     # Using default connection as it's set to httpbin.org by default
     get_ip = SimpleHttpOperator(
-        task_id='get_ip', endpoint='get', method='GET', xcom_push=True
+        task_id='get_ip', endpoint='get', method='GET', do_xcom_push=True
     )
 
     @dag.task(multiple_outputs=True)
@@ -197,6 +197,9 @@ Example DAG built with the TaskFlow API
         subject=email_info['subject'],
         html_content=email_info['body']
     )
+
+To retrieve current Task execution context dictionary and use it in the function check:
+:ref:`Accessing context <concepts:accessing_context>`.
 
 DAG decorator
 -------------
@@ -221,7 +224,7 @@ Example DAG with decorator:
     :end-before: [END dag_decorator_usage]
 
 .. note:: Note that Airflow will only load DAGs that appear in ``globals()`` as noted in :ref:`scope section <concepts:scope>`.
-  This means you need to make sure to have a variable for your returned DAG is in the module scope.
+  This means you need to make sure to have a variable for your returned DAG in the module scope.
   Otherwise Airflow won't detect your decorated DAG.
 
 .. _concepts:executor_config:
@@ -229,7 +232,7 @@ Example DAG with decorator:
 ``executor_config``
 ===================
 
-The ``executor_config`` is an argument placed into operators that allow airflow users to override tasks
+The ``executor_config`` is an argument placed into operators that allow Airflow users to override tasks
 before launch. Currently this is primarily used by the :class:`KubernetesExecutor`, but will soon be available
 for other overrides.
 
@@ -252,7 +255,7 @@ execution_date
 The ``execution_date`` is the *logical* date and time which the DAG Run, and its task instances, are running for.
 
 This allows task instances to process data for the desired *logical* date & time.
-While a task_instance or DAG run might have an *actual* start date of now,
+While a task instance or DAG run might have an *actual* start date of now,
 their *logical* date might be 3 months ago because we are busy reloading something.
 
 In the prior example the ``execution_date`` was 2016-01-01 for the first DAG Run and 2016-01-02 for the second.
@@ -357,6 +360,8 @@ This is going to produce ``task__1``, ``task__2``, ``task__3``, ``task__4``. But
 no longer the same ``task__3`` as before. This may create confusion when analyzing history logs / DagRuns of a DAG
 that changed over time.
 
+.. _concepts:accessing_context:
+
 Accessing current context
 -------------------------
 
@@ -375,6 +380,8 @@ using ``@task`` decorator.
 
 Current context is accessible only during the task execution. The context is not accessible during
 ``pre_execute`` or ``post_execute``. Calling this method outside execution context will raise an error.
+
+The context dictionary contains the keys mentioned in the table: :doc:`macros-ref`.
 
 Task Instances
 ==============
@@ -454,7 +461,7 @@ This is a subtle but very important point: in general, if two operators need to
 share information, like a filename or small amount of data, you should consider
 combining them into a single operator. If it absolutely can't be avoided,
 Airflow does have a feature for operator cross-communication called XCom that is
-described in the section :ref:`XComs <concepts:xcom>`
+described in the section :ref:`XComs <concepts:xcom>`.
 
 Airflow provides many built-in operators for many common tasks, including:
 
@@ -530,7 +537,7 @@ There are currently 3 different modes for how a sensor operates:
 
 How to use:
 
-For ``poke|schedule`` mode, you can configure them at the task level by supplying the ``mode`` parameter,
+For ``poke|reschedule`` mode, you can configure them at the task level by supplying the ``mode`` parameter,
 i.e. ``S3KeySensor(task_id='check-bucket', mode='reschedule', ...)``.
 
 For ``smart sensor``, you need to configure it in ``airflow.cfg``, for example:
@@ -545,7 +552,7 @@ For ``smart sensor``, you need to configure it in ``airflow.cfg``, for example:
     shards = 5
     sensors_enabled = NamedHivePartitionSensor, MetastorePartitionSensor
 
-For more information on how to configure ``smart-sensor`` and its architecture, see:
+For more information on how to configure ``smart sensor`` and its architecture, see:
 :doc:`Smart Sensor Architecture and Configuration<smart-sensor>`
 
 DAG Assignment
@@ -655,10 +662,10 @@ Relationship Builders
 
 *Moved in Airflow 2.0*
 
-In Airflow 2.0 those two methods moved from ``airflow.utils.helpers`` to ``airflow.models.baseoperator``.
-
 ``chain`` and ``cross_downstream`` function provide easier ways to set relationships
 between operators in specific situation.
+
+In Airflow 2.0 those two methods moved from ``airflow.utils.helpers`` to ``airflow.models.baseoperator``.
 
 When setting a relationship between two lists,
 if we want all operators in one list to be upstream to all operators in the other,
@@ -736,7 +743,7 @@ be conceptualized like this:
 - Operator: A class that acts as a template for carrying out some work.
 - Task: Defines work by implementing an operator, written in Python.
 - Task Instance: An instance of a task - that has been assigned to a DAG and has a
-  state associated with a specific DAG run (i.e for a specific execution_date).
+  state associated with a specific DAG run (i.e. for a specific execution_date).
 - execution_date: The logical date and time for a DAG Run and its Task Instances.
 
 By combining ``DAGs`` and ``Operators`` to create ``TaskInstances``, you can
@@ -804,7 +811,7 @@ UI. As slots free up, queued tasks start running based on the
 
 Note that if tasks are not given a pool, they are assigned to a default
 pool ``default_pool``.  ``default_pool`` is initialized with 128 slots and
-can changed through the UI or CLI (though it cannot be removed).
+can be changed through the UI or CLI (though it cannot be removed).
 
 To combine Pools with SubDAGs see the `SubDAGs`_ section.
 
@@ -1634,7 +1641,7 @@ A ``.airflowignore`` file specifies the directories or files in ``DAG_FOLDER``
 or ``PLUGINS_FOLDER`` that Airflow should intentionally ignore.
 Each line in ``.airflowignore`` specifies a regular expression pattern,
 and directories or files whose names (not DAG id) match any of the patterns
-would be ignored (under the hood,``Pattern.search()`` is used to match the pattern).
+would be ignored (under the hood, ``Pattern.search()`` is used to match the pattern).
 Overall it works like a ``.gitignore`` file.
 Use the ``#`` character to indicate a comment; all characters
 on a line following a ``#`` will be ignored.

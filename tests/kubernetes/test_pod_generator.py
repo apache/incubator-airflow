@@ -293,7 +293,7 @@ class TestPodGenerator(unittest.TestCase):
         }
         assert (
             result_from_pod == expected_from_pod
-        ), "There was a discrepency between KubernetesExecutor and pod_override"
+        ), "There was a discrepancy between KubernetesExecutor and pod_override"
 
         assert {
             'apiVersion': 'v1',

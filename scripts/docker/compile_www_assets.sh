@@ -17,8 +17,7 @@
 # under the License.
 # shellcheck disable=SC2086
 set -euo pipefail
-
-test -v PYTHON_MAJOR_MINOR_VERSION
+set -x
 
 # Installs additional dependencies passed as Argument to the Docker build command
 function compile_www_assets() {
@@ -29,7 +28,7 @@ function compile_www_assets() {
     md5sum_file="static/dist/sum.md5"
     readonly md5sum_file
     local airflow_site_package
-    airflow_site_package="/root/.local/lib/python${PYTHON_MAJOR_MINOR_VERSION}/site-packages/airflow"
+    airflow_site_package="$(python -m site --user-site)"
     local www_dir=""
     if [[ -f "${airflow_site_package}/www_rbac/package.json" ]]; then
         www_dir="${airflow_site_package}/www_rbac"

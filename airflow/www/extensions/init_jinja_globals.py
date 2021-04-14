@@ -43,7 +43,7 @@ def init_jinja_globals(app):
         default_ui_timezone = server_timezone
 
     expose_hostname = conf.getboolean('webserver', 'EXPOSE_HOSTNAME', fallback=True)
-    hosstname = socket.getfqdn() if expose_hostname else 'redact'
+    hostname = socket.getfqdn() if expose_hostname else 'redact'
 
     try:
         airflow_version = airflow.__version__
@@ -57,7 +57,7 @@ def init_jinja_globals(app):
         extra_globals = {
             'server_timezone': server_timezone,
             'default_ui_timezone': default_ui_timezone,
-            'hostname': hosstname,
+            'hostname': hostname,
             'navbar_color': conf.get('webserver', 'NAVBAR_COLOR'),
             'log_fetch_delay_sec': conf.getint('webserver', 'log_fetch_delay_sec', fallback=2),
             'log_auto_tailing_offset': conf.getint('webserver', 'log_auto_tailing_offset', fallback=30),

@@ -112,7 +112,6 @@ pytest markers. They can be found in any of those packages and they can be selec
 pylint custom command line options. See `TESTING.rst <TESTING.rst>`_ for details but those are:
 
 * Integration - tests that require external integration images running in docker-compose
-* Heisentests - tests that are vulnerable to some side effects and are better to be run on their own
 * Quarantined - tests that are flaky and need to be fixed
 * Postgres - tests that require Postgres database. They are only run when backend is Postgres
 * MySQL - tests that require MySQL database. They are only run when backend is MySQL
@@ -165,7 +164,7 @@ The logic implemented for the changes works as follows:
       all changed files. In case there are any files changed, then we assume that some unknown files
       changed (likely from the core of airflow) and in this case we enable all test types above and the
       Core test types - simply because we do not want to risk to miss anything.
-   h) In all cases where tests are enabled we also add Heisentests, Integration and - depending on
+   h) In all cases where tests are enabled we also add Integration and - depending on
       the backend used = Postgres or MySQL types of tests.
 
 10) Quarantined tests are always run when tests are run - we need to run them often to observe how
@@ -174,7 +173,7 @@ The logic implemented for the changes works as follows:
 
 11) There is a special case of static checks. In case the above logic determines that the CI image
     needs to be build, we run long and more comprehensive version of static checks - including Pylint,
-    MyPy, Flake8. And those tests are run on all files, no matter how many files changed.
+    Mypy, Flake8. And those tests are run on all files, no matter how many files changed.
     In case the image is not built, we run only simpler set of changes - the longer static checks
     that require CI image are skipped, and we only run the tests on the files that changed in the incoming
     commit - unlike pylint/flake8/mypy, those static checks are per-file based and they should not miss any
@@ -237,7 +236,7 @@ As explained above the approval and matrix tests workflow works according to the
     :align: center
     :alt: Full tests are needed for the PR
 
-4) If this or another committer "request changes" in in a  previously approved PR with "full tests needed"
+4) If this or another committer "request changes" in a previously approved PR with "full tests needed"
    label, the bot automatically removes the label, moving it back to "run only default set of parameters"
    mode. For PRs touching core of airflow once the PR gets approved back, the label will be restored.
    If it was manually set by the committer, it has to be restored manually.
@@ -248,7 +247,7 @@ As explained above the approval and matrix tests workflow works according to the
       for the PRs and they provide good "notification" for the committer to act on a PR that was recently
       approved.
 
-The PR approval workflow is possible thanks two two custom GitHub Actions we've developed:
+The PR approval workflow is possible thanks to two custom GitHub Actions we've developed:
 
 * `Get workflow origin <https://github.com/potiuk/get-workflow-origin/>`_
 * `Label when approved <https://github.com/TobKed/label-when-approved-action>`_

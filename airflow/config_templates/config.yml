@@ -63,8 +63,9 @@
     - name: sql_alchemy_conn
       description: |
         The SqlAlchemy connection string to the metadata database.
-        SqlAlchemy supports many different database engine, more information
-        their website
+        SqlAlchemy supports many different database engines.
+        More information here:
+        http://airflow.apache.org/docs/apache-airflow/stable/howto/set-up-database.html#database-uri
       version_added: ~
       type: string
       sensitive: true
@@ -471,14 +472,18 @@
       default: "False"
     - name: logging_level
       description: |
-        Logging level
+        Logging level.
+
+        Supported values: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG``.
       version_added: ~
       type: string
       example: ~
       default: "INFO"
     - name: fab_logging_level
       description: |
-        Logging level for Flask-appbuilder UI
+        Logging level for Flask-appbuilder UI.
+
+        Supported values: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG``.
       version_added: ~
       type: string
       example: ~
@@ -1061,14 +1066,6 @@
       type: string
       example: ~
       default: "LR"
-    - name: demo_mode
-      description: |
-        Puts the webserver in demonstration mode; blurs the names of Operators for
-        privacy.
-      version_added: ~
-      type: string
-      example: ~
-      default: "False"
     - name: log_fetch_timeout_sec
       description: |
         The amount of time (in secs) webserver will wait for initial handshake
@@ -1236,6 +1233,13 @@
       type: integer
       example: ~
       default: "43200"
+    - name: instance_name
+      description: |
+        Sets a custom page title for the DAGs overview page and site title for all pages
+      version_added: 2.1.0
+      type: string
+      example: ~
+      default:
 
 - name: email
   description: |

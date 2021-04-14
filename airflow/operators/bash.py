@@ -15,20 +15,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-
 import os
-import signal
-from subprocess import PIPE, STDOUT, Popen
-from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Optional
 
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
+
 from airflow.exceptions import AirflowException, AirflowSkipException
+from airflow.hooks.subprocess import EXIT_CODE_SKIP, SubprocessHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from airflow.utils.operator_helpers import context_to_airflow_vars
-
-EXIT_CODE_SKIP = 127
 
 
 class BashOperator(BaseOperator):
@@ -137,7 +136,6 @@ class BashOperator(BaseOperator):
         output_encoding: str = 'utf-8',
         **kwargs,
     ) -> None:
-
         super().__init__(**kwargs)
         self.bash_command = bash_command
         self.env = env
@@ -146,14 +144,13 @@ class BashOperator(BaseOperator):
             raise AirflowException("'xcom_push' was deprecated, use 'BaseOperator.do_xcom_push' instead")
         self.sub_process = None
 
-    def execute(self, context):
-        """
-        Execute the bash command in a temporary directory
-        which will be cleaned afterwards
-        """
-        self.log.info('Tmp dir root location: \n %s', gettempdir())
+    @cached_property
+    def subprocess_hook(self):
+        """Returns hook for running the bash command"""
+        return SubprocessHook()
 
-        # Prepare env for child process.
+    def get_env(self, context):
+        """Builds the set of environment variables to be exposed for the bash command"""
         env = self.env
         if env is None:
             env = os.environ.copy()
@@ -164,45 +161,20 @@ class BashOperator(BaseOperator):
             '\n'.join([f"{k}={v}" for k, v in airflow_context_vars.items()]),
         )
         env.update(airflow_context_vars)
+        return env
 
-        with TemporaryDirectory(prefix='airflowtmp') as tmp_dir:
+    def execute(self, context):
+        env = self.get_env(context)
+        result = self.subprocess_hook.run_command(
+            command=['bash', '-c', self.bash_command],
+            env=env,
+            output_encoding=self.output_encoding,
+        )
+        if result.exit_code == EXIT_CODE_SKIP:
+            raise AirflowSkipException(f"Bash command returned exit code {EXIT_CODE_SKIP}. Skipping.")
+        elif result.exit_code != 0:
+            raise AirflowException('Bash command failed. The command returned a non-zero exit code.')
+        return result.output
 
-            def pre_exec():
-                # Restore default signal disposition and invoke setsid
-                for sig in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
-                    if hasattr(signal, sig):
-                        signal.signal(getattr(signal, sig), signal.SIG_DFL)
-                os.setsid()
-
-            self.log.info('Running command: %s', self.bash_command)
-
-            self.sub_process = Popen(  # pylint: disable=subprocess-popen-preexec-fn
-                ['bash', "-c", self.bash_command],
-                stdout=PIPE,
-                stderr=STDOUT,
-                cwd=tmp_dir,
-                env=env,
-                preexec_fn=pre_exec,
-            )
-
-            self.log.info('Output:')
-            line = ''
-            for raw_line in iter(self.sub_process.stdout.readline, b''):
-                line = raw_line.decode(self.output_encoding).rstrip()
-                self.log.info("%s", line)
-
-            self.sub_process.wait()
-
-            self.log.info('Command exited with return code %s', self.sub_process.returncode)
-
-            if self.sub_process.returncode == EXIT_CODE_SKIP:
-                raise AirflowSkipException(f"Bash returned exit code {EXIT_CODE_SKIP}. Skipping task")
-            elif self.sub_process.returncode != 0:
-                raise AirflowException('Bash command failed. The command returned a non-zero exit code.')
-
-        return line
-
-    def on_kill(self):
-        self.log.info('Sending SIGTERM signal to bash process group')
-        if self.sub_process and hasattr(self.sub_process, 'pid'):
-            os.killpg(os.getpgid(self.sub_process.pid), signal.SIGTERM)
+    def on_kill(self) -> None:
+        self.subprocess_hook.send_sigterm()

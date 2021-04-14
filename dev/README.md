@@ -35,7 +35,7 @@
 The Apache Airflow releases are one of the two types:
 
 * Releases of the Apache Airflow package
-* Releases of the Backport Providers Packages
+* Releases of the Providers Packages
 
 ## Apache Airflow Package
 
@@ -47,10 +47,10 @@ They contain sources for:
  * Dockerfile and corresponding scripts that build and use an official DockerImage
  * Breeze development environment that helps with building images and testing locally
    apache airflow built from sources
+ * Provider packages - containing Airflow's providers - separate package per each service Airflow integrates
+   with.
 
-In the future (Airflow 2.0) this package will be split into separate "core" and "providers" packages that
-will be distributed separately, following the mechanisms introduced in Backport Package Providers. We also
-plan to release the official Helm Chart sources that will allow the user to install Apache Airflow
+We also plan to release the official Helm Chart sources that will allow the user to install Apache Airflow
 via helm 3.0 chart in a distributed fashion.
 
 The Source releases are the only "official" Apache Software Foundation releases, and they are distributed
@@ -74,45 +74,35 @@ Detailed instruction of releasing Provider Packages can be found in the
 The Provider packages are packages (per provider) that make it possible to easily install Hooks,
 Operators, Sensors, and Secrets for different providers (external services used by Airflow).
 
-There are also Backport Provider Packages that allow to use the Operators, Hooks, Secrets from the 2.0
-version of Airflow in the 1.10.* series.
-
 Once you release the packages, you can simply install them with:
 
 ```
 pip install apache-airflow-providers-<PROVIDER>[<EXTRAS>]
 ```
 
-for regular providers and
-
-```
-pip install apache-airflow-backport-providers-<PROVIDER>[<EXTRAS>]
-```
-
-for backport providers.
-
 Where `<PROVIDER>` is the provider id and `<EXTRAS>` are optional extra packages to install.
 You can find the provider packages dependencies and extras in the README.md files in each provider
 package (in `airflow/providers/<PROVIDER>` folder) as well as in the PyPI installation page.
 
-Backport providers are a great way to migrate your DAGs to Airflow-2.0 compatible DAGs. You can
-switch to the new Airflow-2.0 packages in your DAGs, long before you attempt to migrate
-airflow to 2.0 line.
-
 The sources released in SVN allow to build all the provider packages by the user, following the
 instructions and scripts provided. Those are also "official_source releases" as described in the
 [ASF Release Policy](http://www.apache.org/legal/release-policy.html) and they are available
-via [Official Apache Download for providers](https://downloads.apache.org/airflow/providers/) and
-[Official Apache Download for backport-providers](https://downloads.apache.org/airflow/backport-providers/)
+via [Official Apache Download for providers](https://downloads.apache.org/airflow/providers/).
 
 The full provider's list can be found here:
 [Provider Packages Reference](https://s.apache.org/airflow-docs)
 
-There are also convenience packages released as "apache-airflow-providers" and
-"apache-airflow-backport-providers" separately in PyPI.
-You can find all backport providers via:
-[PyPI query for providers](https://pypi.org/search/?q=apache-airflow-providers) and
+There are also convenience packages released as "apache-airflow-providers"separately in PyPI.
+[PyPI query for providers](https://pypi.org/search/?q=apache-airflow-providers)
+
+We also have legacy backport providers available for Airflow 1.10.* series:
+[Official Apache Download for backport-providers](https://downloads.apache.org/airflow/backport-providers/)
+
+And available in PyPI:
 [PyPI query for backport providers](https://pypi.org/search/?q=apache-airflow-backport-providers).
+
+Note that Backport Providers for Airflow 1.10.* series are not released any more. The last release
+of Backport Providers was done  on March 17, 2021.
 
 Detailed instruction of releasing Provider Packages can be found in the
 [README_RELEASE_PROVIDER_PACKAGES.md](README_RELEASE_PROVIDER_PACKAGES.md)

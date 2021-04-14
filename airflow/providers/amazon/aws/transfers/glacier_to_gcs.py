@@ -63,7 +63,7 @@ class GlacierToGCSOperator(BaseOperator):
         If set as a sequence, the identities from the list must grant
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
-    :type impersonation_chain: Union[str, Sequence[str]]
+    :type google_impersonation_chain: Union[str, Sequence[str]]
     """
 
     template_fields = ("vault_name", "bucket_name", "object_name")

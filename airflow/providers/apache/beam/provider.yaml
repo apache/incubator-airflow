@@ -22,6 +22,7 @@ description: |
     `Apache Beam <https://beam.apache.org/>`__.
 
 versions:
+  - 1.0.1
   - 1.0.0
 
 integrations:
@@ -40,6 +41,3 @@ hooks:
   - integration-name: Apache Beam
     python-modules:
       - airflow.providers.apache.beam.hooks.beam
-
-hook-class-names:
-  - airflow.providers.apache.beam.hooks.beam.BeamHook

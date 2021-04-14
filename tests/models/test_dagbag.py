@@ -323,27 +323,27 @@ class TestDagBag(unittest.TestCase):
             from airflow.operators.dummy import DummyOperator
             from airflow.operators.subdag import SubDagOperator
 
-            dag_name = 'master'
+            dag_name = 'parent'
             default_args = {'owner': 'owner1', 'start_date': datetime.datetime(2016, 1, 1)}
             dag = DAG(dag_name, default_args=default_args)
 
-            # master:
+            # parent:
             #     A -> opSubDag_0
-            #          master.opsubdag_0:
+            #          parent.opsubdag_0:
             #              -> subdag_0.task
             #     A -> opSubDag_1
-            #          master.opsubdag_1:
+            #          parent.opsubdag_1:
             #              -> subdag_1.task
 
             with dag:
 
                 def subdag_0():
-                    subdag_0 = DAG('master.op_subdag_0', default_args=default_args)
+                    subdag_0 = DAG('parent.op_subdag_0', default_args=default_args)
                     DummyOperator(task_id='subdag_0.task', dag=subdag_0)
                     return subdag_0
 
                 def subdag_1():
-                    subdag_1 = DAG('master.op_subdag_1', default_args=default_args)
+                    subdag_1 = DAG('parent.op_subdag_1', default_args=default_args)
                     DummyOperator(task_id='subdag_1.task', dag=subdag_1)
                     return subdag_1
 
@@ -374,58 +374,58 @@ class TestDagBag(unittest.TestCase):
             from airflow.operators.dummy import DummyOperator
             from airflow.operators.subdag import SubDagOperator
 
-            dag_name = 'master'
+            dag_name = 'parent'
             default_args = {'owner': 'owner1', 'start_date': datetime.datetime(2016, 1, 1)}
             dag = DAG(dag_name, default_args=default_args)
 
-            # master:
+            # parent:
             #     A -> op_subdag_0
-            #          master.op_subdag_0:
+            #          parent.op_subdag_0:
             #              -> opSubDag_A
-            #                 master.op_subdag_0.opSubdag_A:
+            #                 parent.op_subdag_0.opSubdag_A:
             #                     -> subdag_a.task
             #              -> opSubdag_B
-            #                 master.op_subdag_0.opSubdag_B:
+            #                 parent.op_subdag_0.opSubdag_B:
             #                     -> subdag_b.task
             #     A -> op_subdag_1
-            #          master.op_subdag_1:
+            #          parent.op_subdag_1:
             #              -> opSubdag_C
-            #                 master.op_subdag_1.opSubdag_C:
+            #                 parent.op_subdag_1.opSubdag_C:
             #                     -> subdag_c.task
             #              -> opSubDag_D
-            #                 master.op_subdag_1.opSubdag_D:
+            #                 parent.op_subdag_1.opSubdag_D:
             #                     -> subdag_d.task
 
             with dag:
 
                 def subdag_a():
-                    subdag_a = DAG('master.op_subdag_0.opSubdag_A', default_args=default_args)
+                    subdag_a = DAG('parent.op_subdag_0.opSubdag_A', default_args=default_args)
                     DummyOperator(task_id='subdag_a.task', dag=subdag_a)
                     return subdag_a
 
                 def subdag_b():
-                    subdag_b = DAG('master.op_subdag_0.opSubdag_B', default_args=default_args)
+                    subdag_b = DAG('parent.op_subdag_0.opSubdag_B', default_args=default_args)
                     DummyOperator(task_id='subdag_b.task', dag=subdag_b)
                     return subdag_b
 
                 def subdag_c():
-                    subdag_c = DAG('master.op_subdag_1.opSubdag_C', default_args=default_args)
+                    subdag_c = DAG('parent.op_subdag_1.opSubdag_C', default_args=default_args)
                     DummyOperator(task_id='subdag_c.task', dag=subdag_c)
                     return subdag_c
 
                 def subdag_d():
-                    subdag_d = DAG('master.op_subdag_1.opSubdag_D', default_args=default_args)
+                    subdag_d = DAG('parent.op_subdag_1.opSubdag_D', default_args=default_args)
                     DummyOperator(task_id='subdag_d.task', dag=subdag_d)
                     return subdag_d
 
                 def subdag_0():
-                    subdag_0 = DAG('master.op_subdag_0', default_args=default_args)
+                    subdag_0 = DAG('parent.op_subdag_0', default_args=default_args)
                     SubDagOperator(task_id='opSubdag_A', dag=subdag_0, subdag=subdag_a())
                     SubDagOperator(task_id='opSubdag_B', dag=subdag_0, subdag=subdag_b())
                     return subdag_0
 
                 def subdag_1():
-                    subdag_1 = DAG('master.op_subdag_1', default_args=default_args)
+                    subdag_1 = DAG('parent.op_subdag_1', default_args=default_args)
                     SubDagOperator(task_id='opSubdag_C', dag=subdag_1, subdag=subdag_c())
                     SubDagOperator(task_id='opSubdag_D', dag=subdag_1, subdag=subdag_d())
                     return subdag_1

@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
     helper = GCPComputeTestHelper()
     gcp_authenticator = GcpAuthenticator(GCP_COMPUTE_KEY)
-    helper.log.info(f'Starting action: {action}')
+    helper.log.info("Starting action: %s", action)
 
     gcp_authenticator.gcp_store_authentication()
     try:
@@ -210,4 +210,4 @@ if __name__ == '__main__':
     finally:
         gcp_authenticator.gcp_restore_authentication()
 
-    helper.log.info(f'Finishing action: {action}')
+    helper.log.info("Finishing action: %s", action)
