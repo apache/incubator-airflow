@@ -98,8 +98,8 @@ The dependency list is automatically used during PyPI packages generation.
 
 Cross-dependencies between provider packages are converted into extras - if you need functionality from
 the other provider package you can install it adding [extra] after the
-``apache-airflow-backport-providers-PROVIDER`` for example:
-``pip install apache-airflow-backport-providers-google[amazon]`` in case you want to use GCP
+``apache-airflow-providers-PROVIDER`` for example:
+``pip install apache-airflow-providers-google[amazon]`` in case you want to use GCP
 transfer operators from Amazon ECS.
 
 If you add a new dependency between different providers packages, it will be detected automatically during
@@ -231,19 +231,6 @@ providers.
 
 You can read more about out approach for tests in `TESTING.rst <TESTING.rst>`_ but here
 are some highlights.
-
-
-Backport providers
-------------------
-
-You can also build backport provider packages for Airflow 1.10. They aim to provide a bridge when users
-of Airflow 1.10 want to migrate to Airflow 2.0. The backport packages are named similarly to the
-provider packages, but with "backport" added:
-
-* ``apache-airflow-backport-provider-*``
-
-Those backport providers are automatically refactored to work with Airflow 1.10.* and have a few
-limitations described in those packages.
 
 Naming Conventions for provider packages
 ----------------------------------------
