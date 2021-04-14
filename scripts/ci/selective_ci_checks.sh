@@ -103,8 +103,18 @@ function output_all_basic_variables() {
         initialization::ga_output mysql-versions \
             "$(initialization::parameters_to_json "${MYSQL_VERSION}")"
     fi
-
     initialization::ga_output default-mysql-version "${MYSQL_VERSION}"
+
+    if [[ ${FULL_TESTS_NEEDED_LABEL} == "true" ]]; then
+        initialization::ga_output mssql-versions \
+            "$(initialization::parameters_to_json "${CURRENT_MSSQL_VERSIONS[@]}")"
+    else
+        initialization::ga_output mssql-versions \
+            "$(initialization::parameters_to_json "${MSSQL_VERSION}")"
+    fi
+    initialization::ga_output default-mssql-version "${MSSQL_VERSION}"
+
+
 
     initialization::ga_output kind-versions \
         "$(initialization::parameters_to_json "${CURRENT_KIND_VERSIONS[@]}")"
@@ -117,6 +127,7 @@ function output_all_basic_variables() {
     if [[ ${FULL_TESTS_NEEDED_LABEL} == "true" ]]; then
         initialization::ga_output postgres-exclude '[{ "python-version": "3.6" }]'
         initialization::ga_output mysql-exclude '[{ "python-version": "3.7" }]'
+        initialization::ga_output mssql-exclude '[{ "python-version": "3.7" }]'
         initialization::ga_output sqlite-exclude '[{ "python-version": "3.8" }]'
     else
         initialization::ga_output postgres-exclude '[]'
