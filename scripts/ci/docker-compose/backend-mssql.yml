@@ -29,5 +29,3 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Airflow123
-    ports:
-      - "${MSSQL_HOST_PORT}:1433"
