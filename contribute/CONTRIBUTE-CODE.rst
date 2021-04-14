@@ -201,7 +201,7 @@ Depending on the "scope" of your changes, your Pull Request will be sent through
    of queue slots. Those automated workflows determine the "scope" of changes in your PR and send it through the right path:
 
   * In case of a "no-code" change, approval will generate a comment that the PR can be merged and no
-     tests are needed. This is usually when the change modifies some non-documentation related .rst
+     tests are needed. This is usually when the change modifies some non-documentation related RST
      files, such as this file. No Python tests are run and no CI images are built for such PR. Unless there's a long queue of jobs,
      these changes can typically be approved and merged soon after the PR is submitted.
 
@@ -603,7 +603,7 @@ If this function is designed to be called by "end-users" (i.e. DAG authors) then
       ...
       # You SHOULD not commit the session here. The wrapper will take care of commit()/rollback() if exception
 
-Don't use time() for duration calcuations
+Don't use time() for duration calculations
 -----------------------------------------
 
 If you wish to compute the time difference between two events with in the same process, use

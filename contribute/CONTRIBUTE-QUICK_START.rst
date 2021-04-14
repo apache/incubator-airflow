@@ -374,8 +374,7 @@ Using Breeze
              alt="Accessing local airflow">
       </div>
 
-3. Setup mysql database in
-MySQL Workbench with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
+3. Setup mysql database in MySQL Workbench with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
    blank(leave empty), default schema ``airflow``.
 
    .. raw:: html
