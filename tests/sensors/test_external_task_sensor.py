@@ -416,6 +416,53 @@ def dag_bag_ext():
     return dag_bag
 
 
+@pytest.fixture
+def dag_bag_parent_child():
+    """
+    Create a DagBag with two DAGs looking like this. task_1 of child_dag_1 on day 1 depends on
+    task_0 of parent_dag_0 on day 1. Therefore, when task_0 of parent_dag_0 on day 1 and day 2
+    are cleared, parent_dag_0 DagRuns need to be set to running on both days, but child_dag_1
+    only needs to be set to running on day 1.
+
+                   day 1   day 2
+
+     parent_dag_0  task_0  task_0
+                     |
+                     |
+                     v
+     child_dag_1   task_1  task_1
+
+    """
+    dag_bag = DagBag(dag_folder=DEV_NULL, include_examples=False)
+
+    day_1 = DEFAULT_DATE
+
+    dag_0 = DAG("parent_dag_0", start_date=day_1, schedule_interval=None)
+    task_0 = ExternalTaskMarker(
+        task_id="task_0",
+        external_dag_id="child_dag_1",
+        external_task_id="task_1",
+        execution_date=day_1.isoformat(),
+        recursion_depth=3,
+        dag=dag_0,
+    )
+
+    dag_1 = DAG("child_dag_1", start_date=day_1, schedule_interval=None)
+    _ = ExternalTaskSensor(
+        task_id="task_1",
+        external_dag_id=dag_0.dag_id,
+        external_task_id=task_0.task_id,
+        execution_date_fn=lambda execution_date: day_1 if execution_date == day_1 else [],
+        mode='reschedule',
+        dag=dag_1,
+    )
+
+    for dag in [dag_0, dag_1]:
+        dag_bag.bag_dag(dag=dag, root_dag=dag)
+
+    return dag_bag
+
+
 def run_tasks(dag_bag, execution_date=DEFAULT_DATE):
     """
     Run all tasks in the DAGs in the given dag_bag. Return the TaskInstance objects as a dict
@@ -462,6 +509,55 @@ def test_external_task_marker_transitive(dag_bag_ext):
     ti_b_3 = tis["task_b_3"]
     assert_ti_state_equal(ti_a_0, State.NONE)
     assert_ti_state_equal(ti_b_3, State.NONE)
+
+
+# pylint: disable=redefined-outer-name
+def test_external_task_marker_clear_activate(dag_bag_parent_child):
+    """
+    Test clearing tasks across DAGs and make sure the right DagRuns are activated.
+    """
+    from airflow.utils.session import create_session
+    from airflow.utils.types import DagRunType
+
+    dag_bag = dag_bag_parent_child
+    day_1 = DEFAULT_DATE
+    day_2 = DEFAULT_DATE + timedelta(days=1)
+
+    run_tasks(dag_bag, execution_date=day_1)
+    run_tasks(dag_bag, execution_date=day_2)
+
+    with create_session() as session:
+        for dag in dag_bag.dags.values():
+            for execution_date in [day_1, day_2]:
+                dagrun = dag.create_dagrun(
+                    State.RUNNING, execution_date, run_type=DagRunType.MANUAL, session=session
+                )
+                dagrun.set_state(State.SUCCESS)
+                session.add(dagrun)
+
+        session.commit()
+
+    # Assert that dagruns of all the affected dags are set to SUCCESS before tasks are cleared.
+    for dag in dag_bag.dags.values():
+        for execution_date in [day_1, day_2]:
+            dagrun = dag.get_dagrun(execution_date=execution_date)
+            assert dagrun.state == State.SUCCESS
+
+    dag_0 = dag_bag.get_dag("parent_dag_0")
+    task_0 = dag_0.get_task("task_0")
+    clear_tasks(dag_bag, dag_0, task_0, start_date=day_1, end_date=day_2)
+
+    # Assert that dagruns of all the affected dags are set to RUNNING after tasks are cleared.
+    # Unaffected dagruns should be left as SUCCESS.
+    dagrun_0_1 = dag_bag.get_dag('parent_dag_0').get_dagrun(execution_date=day_1)
+    dagrun_0_2 = dag_bag.get_dag('parent_dag_0').get_dagrun(execution_date=day_2)
+    dagrun_1_1 = dag_bag.get_dag('child_dag_1').get_dagrun(execution_date=day_1)
+    dagrun_1_2 = dag_bag.get_dag('child_dag_1').get_dagrun(execution_date=day_2)
+
+    assert dagrun_0_1.state == State.RUNNING
+    assert dagrun_0_2.state == State.RUNNING
+    assert dagrun_1_1.state == State.RUNNING
+    assert dagrun_1_2.state == State.SUCCESS
 
 
 def test_external_task_marker_future(dag_bag_ext):
