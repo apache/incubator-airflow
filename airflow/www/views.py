@@ -88,6 +88,7 @@ from airflow.api.common.experimental.mark_tasks import (
     set_dag_run_state_to_failed,
     set_dag_run_state_to_success,
 )
+from airflow.cli.commands.provider_command import _remove_rst_syntax
 from airflow.configuration import AIRFLOW_CONFIG, conf
 from airflow.exceptions import AirflowException
 from airflow.executors.executor_loader import ExecutorLoader
@@ -3106,6 +3107,51 @@ class PluginView(AirflowBaseView):
         return self.render_template(
             'airflow/plugin.html',
             plugins=plugins,
+            title=title,
+            doc_url=doc_url,
+        )
+
+
+class ProvidersModelView(AirflowBaseView):
+    """View to show Airflow Providers"""
+
+    default_view = 'list'
+
+    class_permission_name = permissions.RESOURCE_PROVIDERS
+
+    method_permission_name = {
+        'list': 'read',
+    }
+
+    base_permissions = [
+        permissions.ACTION_CAN_READ,
+        permissions.ACTION_CAN_ACCESS_MENU,
+    ]
+
+    @expose('/providers')
+    @auth.has_access(
+        [
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_PLUGIN),
+        ]
+    )
+    def list(self):
+        """List providers."""
+        providers_manager = ProvidersManager()
+
+        providers = []
+        for pi in providers_manager.providers.values():
+            provider_data = {
+                "package_name": pi[1]["package-name"],
+                "description": _remove_rst_syntax(pi[1]["description"]),
+                "version": pi[0],
+            }
+            providers.append(provider_data)
+
+        title = "Providers"
+        doc_url = get_docs_url("apache-airflow-providers/index.html")
+        return self.render_template(
+            'airflow/providers.html',
+            providers=providers,
             title=title,
             doc_url=doc_url,
         )

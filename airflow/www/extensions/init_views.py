@@ -92,6 +92,9 @@ def init_appbuilder_views(app):
         views.PluginView, permissions.RESOURCE_PLUGIN, category=permissions.RESOURCE_ADMIN_MENU
     )
     appbuilder.add_view(
+        views.ProvidersModelView, permissions.RESOURCE_PROVIDERS, category=permissions.RESOURCE_ADMIN_MENU
+    )
+    appbuilder.add_view(
         views.PoolModelView, permissions.RESOURCE_POOL, category=permissions.RESOURCE_ADMIN_MENU
     )
     appbuilder.add_view(
