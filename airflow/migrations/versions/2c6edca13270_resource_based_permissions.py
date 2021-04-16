@@ -285,26 +285,26 @@ mapping = {
 
 
 def remap_permissions():
-    """Apply Map Airflow view permissions."""
+    """Apply Map Airflow permissions."""
     appbuilder = create_app(config={'FAB_UPDATE_PERMS': False}).appbuilder
     for old, new in mapping.items():
-        (old_view_name, old_perm_name) = old
-        old_pvm = appbuilder.sm.find_permission_view_menu(old_perm_name, old_view_name)
-        if not old_pvm:
+        (old_resource_name, old_action_name) = old
+        old_permission = appbuilder.sm.get_permission(old_action_name, old_resource_name)
+        if not old_permission:
             continue
-        for new_perm_name, new_view_name in new:
-            new_pvm = appbuilder.sm.add_permission_view_menu(new_perm_name, new_view_name)
+        for new_action_name, new_resource_name in new:
+            new_permission = appbuilder.sm.create_permission(new_action_name, new_resource_name)
             for role in appbuilder.sm.get_all_roles():
-                if appbuilder.sm.exist_permission_on_roles(old_view_name, old_perm_name, [role.id]):
-                    appbuilder.sm.add_permission_role(role, new_pvm)
-                    appbuilder.sm.del_permission_role(role, old_pvm)
-        appbuilder.sm.del_permission_view_menu(old_perm_name, old_view_name)
+                if appbuilder.sm.exist_permission_on_roles(old_resource_name, old_action_name, [role.id]):
+                    appbuilder.sm.add_permission_to_role(role, new_permission)
+                    appbuilder.sm.remove_permission_from_role(role, old_permission)
+        appbuilder.sm.delete_permission(old_action_name, old_resource_name)
 
-        if not appbuilder.sm.find_permission(old_perm_name):
+        if not appbuilder.sm.get_action(old_action_name):
             continue
-        view_menus = appbuilder.sm.get_all_view_menu()
-        if not any(appbuilder.sm.find_permission_view_menu(old_perm_name, view.name) for view in view_menus):
-            appbuilder.sm.del_permission(old_perm_name)
+        resources = appbuilder.sm.get_all_resources()
+        if not any(appbuilder.sm.get_permission(old_action_name, resource.name) for resource in resources):
+            appbuilder.sm.delete_action(old_action_name)
 
 
 def upgrade():

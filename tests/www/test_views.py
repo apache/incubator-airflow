@@ -2075,7 +2075,7 @@ class TestDagACLView(TestBase):
                 password='dag_test',
             )
 
-        # create an user without permission
+        # create a user without permissions
         dag_no_role = self.appbuilder.sm.add_role('dag_acl_faker')
         if username == 'dag_faker' and not self.appbuilder.sm.find_user(username='dag_faker'):
             self.appbuilder.sm.add_user(
@@ -2087,7 +2087,7 @@ class TestDagACLView(TestBase):
                 password='dag_faker',
             )
 
-        # create an user with only read permission
+        # create a user with only read access
         dag_read_only_role = self.appbuilder.sm.add_role('dag_acl_read_only')
         if username == 'dag_read_only' and not self.appbuilder.sm.find_user(username='dag_read_only'):
             self.appbuilder.sm.add_user(
@@ -2099,7 +2099,7 @@ class TestDagACLView(TestBase):
                 password='dag_read_only',
             )
 
-        # create an user that has all dag access
+        # create a user that has all dag access
         all_dag_role = self.appbuilder.sm.add_role('all_dag_role')
         if username == 'all_dag_user' and not self.appbuilder.sm.find_user(username='all_dag_user'):
             self.appbuilder.sm.add_user(
@@ -2116,50 +2116,50 @@ class TestDagACLView(TestBase):
     def add_permission_for_role(self):
         self.logout()
         self.login(username='test', password='test')
-        website_permission = self.appbuilder.sm.find_permission_view_menu(
+        website_permission = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE
         )
 
         dag_tester_role = self.appbuilder.sm.find_role('dag_acl_tester')
-        edit_perm_on_dag = self.appbuilder.sm.find_permission_view_menu(
+        edit_perm_on_dag = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_EDIT, 'DAG:example_bash_operator'
         )
-        self.appbuilder.sm.add_permission_role(dag_tester_role, edit_perm_on_dag)
-        read_perm_on_dag = self.appbuilder.sm.find_permission_view_menu(
+        self.appbuilder.sm.add_permission_to_role(dag_tester_role, edit_perm_on_dag)
+        read_perm_on_dag = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_READ, 'DAG:example_bash_operator'
         )
-        self.appbuilder.sm.add_permission_role(dag_tester_role, read_perm_on_dag)
-        self.appbuilder.sm.add_permission_role(dag_tester_role, website_permission)
+        self.appbuilder.sm.add_permission_to_role(dag_tester_role, read_perm_on_dag)
+        self.appbuilder.sm.add_permission_to_role(dag_tester_role, website_permission)
 
         all_dag_role = self.appbuilder.sm.find_role('all_dag_role')
-        edit_perm_on_all_dag = self.appbuilder.sm.find_permission_view_menu(
+        edit_perm_on_all_dag = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_EDIT, permissions.RESOURCE_DAG
         )
-        self.appbuilder.sm.add_permission_role(all_dag_role, edit_perm_on_all_dag)
-        read_perm_on_all_dag = self.appbuilder.sm.find_permission_view_menu(
+        self.appbuilder.sm.add_permission_to_role(all_dag_role, edit_perm_on_all_dag)
+        read_perm_on_all_dag = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG
         )
-        self.appbuilder.sm.add_permission_role(all_dag_role, read_perm_on_all_dag)
-        read_perm_on_task_instance = self.appbuilder.sm.find_permission_view_menu(
+        self.appbuilder.sm.add_permission_to_role(all_dag_role, read_perm_on_all_dag)
+        read_perm_on_task_instance = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE
         )
-        self.appbuilder.sm.add_permission_role(all_dag_role, read_perm_on_task_instance)
-        self.appbuilder.sm.add_permission_role(all_dag_role, website_permission)
+        self.appbuilder.sm.add_permission_to_role(all_dag_role, read_perm_on_task_instance)
+        self.appbuilder.sm.add_permission_to_role(all_dag_role, website_permission)
 
         role_user = self.appbuilder.sm.find_role('User')
-        self.appbuilder.sm.add_permission_role(role_user, read_perm_on_all_dag)
-        self.appbuilder.sm.add_permission_role(role_user, edit_perm_on_all_dag)
-        self.appbuilder.sm.add_permission_role(role_user, website_permission)
+        self.appbuilder.sm.add_permission_to_role(role_user, read_perm_on_all_dag)
+        self.appbuilder.sm.add_permission_to_role(role_user, edit_perm_on_all_dag)
+        self.appbuilder.sm.add_permission_to_role(role_user, website_permission)
 
-        read_only_perm_on_dag = self.appbuilder.sm.find_permission_view_menu(
+        read_only_perm_on_dag = self.appbuilder.sm.get_permission(
             permissions.ACTION_CAN_READ, 'DAG:example_bash_operator'
         )
         dag_read_only_role = self.appbuilder.sm.find_role('dag_acl_read_only')
-        self.appbuilder.sm.add_permission_role(dag_read_only_role, read_only_perm_on_dag)
-        self.appbuilder.sm.add_permission_role(dag_read_only_role, website_permission)
+        self.appbuilder.sm.add_permission_to_role(dag_read_only_role, read_only_perm_on_dag)
+        self.appbuilder.sm.add_permission_to_role(dag_read_only_role, website_permission)
 
         dag_acl_faker_role = self.appbuilder.sm.find_role('dag_acl_faker')
-        self.appbuilder.sm.add_permission_role(dag_acl_faker_role, website_permission)
+        self.appbuilder.sm.add_permission_to_role(dag_acl_faker_role, website_permission)
 
     def test_permission_exist(self):
         self.create_user_and_login(
@@ -2171,11 +2171,11 @@ class TestDagACLView(TestBase):
             ],
         )
 
-        test_view_menu = self.appbuilder.sm.find_view_menu('DAG:example_bash_operator')
-        perms_views = self.appbuilder.sm.find_permissions_view_menu(test_view_menu)
-        assert len(perms_views) == 2
+        resource = self.appbuilder.sm.get_resource('DAG:example_bash_operator')
+        perms = self.appbuilder.sm.get_resource_permissions(resource)
+        assert len(perms) == 2
 
-        perms = [str(perm) for perm in perms_views]
+        perms = [str(perm) for perm in perms]
         expected_perms = [
             'can read on DAG:example_bash_operator',
             'can edit on DAG:example_bash_operator',
@@ -2703,7 +2703,7 @@ class TestDagACLView(TestBase):
     def test_duration_failure(self):
         url = 'duration?days=30&dag_id=example_bash_operator'
         self.logout()
-        # login as an user without permissions
+        # login as a user without permissions
         self.login(username='dag_faker', password='dag_faker')
         resp = self.client.get(url, follow_redirects=True)
         self.check_content_not_in_response('example_bash_operator', resp)
@@ -2725,7 +2725,7 @@ class TestDagACLView(TestBase):
     def test_tries_failure(self):
         url = 'tries?days=30&dag_id=example_bash_operator'
         self.logout()
-        # login as an user without permissions
+        # login as a user without permissions
         self.login(username='dag_faker', password='dag_faker')
         resp = self.client.get(url, follow_redirects=True)
         self.check_content_not_in_response('example_bash_operator', resp)

@@ -190,10 +190,8 @@ class TestSecurity(unittest.TestCase):
         self.security_manager.bulk_sync_roles(mock_roles)
         role = self.security_manager.find_role(role_name)
 
-        perm = self.security_manager.find_permission_view_menu(
-            permissions.ACTION_CAN_EDIT, permissions.RESOURCE_ROLE
-        )
-        self.security_manager.add_permission_role(role, perm)
+        perm = self.security_manager.get_permission(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_ROLE)
+        self.security_manager.add_permission_to_role(role, perm)
         role_perms_len = len(role.permissions)
 
         self.security_manager.bulk_sync_roles(mock_roles)
@@ -313,12 +311,10 @@ class TestSecurity(unittest.TestCase):
             user = mock.MagicMock()
             user.is_anonymous = True
 
-            perms_views = set()
+            perms = set()
             for role in self.security_manager.get_user_roles(user):
-                perms_views.update(
-                    {(perm_view.permission.name, perm_view.view_menu.name) for perm_view in role.permissions}
-                )
-            assert perms_views == viewer_role_perms
+                perms.update({(perm.permission.name, perm.view_menu.name) for perm in role.permissions})
+            assert perms == viewer_role_perms
 
     @mock.patch('airflow.www.security.AirflowSecurityManager.get_user_roles')
     def test_get_current_user_permissions(self, mock_get_user_roles):
@@ -346,7 +342,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_get_accessible_dag_ids(self):
         role_name = 'MyRole1'
-        permission_action = [permissions.ACTION_CAN_READ]
+        action = [permissions.ACTION_CAN_READ]
         dag_id = 'dag_id'
         username = "ElUser"
 
@@ -365,17 +361,17 @@ class TestSecurity(unittest.TestCase):
         self.session.commit()
 
         self.security_manager.sync_perm_for_dag(  # type: ignore  # pylint: disable=no-member
-            dag_id, access_control={role_name: permission_action}
+            dag_id, access_control={role_name: action}
         )
 
         assert self.security_manager.get_accessible_dag_ids(user) == {'dag_id'}
 
     def test_dont_get_inaccessible_dag_ids_for_dag_resource_permission(self):
         # In this test case,
-        # get_readable_dag_ids() don't return DAGs to which the user has CAN_EDIT permission
+        # get_readable_dag_ids() don't return DAGs to which the user has CAN_EDIT action
         username = "Monsieur User"
         role_name = "MyRole1"
-        permission_action = [permissions.ACTION_CAN_EDIT]
+        action = [permissions.ACTION_CAN_EDIT]
         dag_id = "dag_id"
 
         user = api_connexion_utils.create_user(
@@ -392,7 +388,7 @@ class TestSecurity(unittest.TestCase):
         self.session.commit()
 
         self.security_manager.sync_perm_for_dag(  # type: ignore  # pylint: disable=no-member
-            dag_id, access_control={role_name: permission_action}
+            dag_id, access_control={role_name: action}
         )
 
         assert self.security_manager.get_readable_dag_ids(user) == set()
@@ -404,16 +400,16 @@ class TestSecurity(unittest.TestCase):
         mock_has_view_access.return_value = True
         assert self.security_manager.has_access('perm', 'view', user)
 
-    def test_sync_perm_for_dag_creates_permissions_on_view_menus(self):
+    def test_sync_perm_for_dag_creates_permissions_on_resources(self):
         test_dag_id = 'TEST_DAG'
         prefixed_test_dag_id = f'DAG:{test_dag_id}'
         self.security_manager.sync_perm_for_dag(test_dag_id, access_control=None)
         assert (
-            self.security_manager.find_permission_view_menu(permissions.ACTION_CAN_READ, prefixed_test_dag_id)
+            self.security_manager.get_permission(permissions.ACTION_CAN_READ, prefixed_test_dag_id)
             is not None
         )
         assert (
-            self.security_manager.find_permission_view_menu(permissions.ACTION_CAN_EDIT, prefixed_test_dag_id)
+            self.security_manager.get_permission(permissions.ACTION_CAN_EDIT, prefixed_test_dag_id)
             is not None
         )
 
@@ -461,9 +457,9 @@ class TestSecurity(unittest.TestCase):
             )
 
     def test_access_control_with_invalid_permission(self):
-        invalid_permissions = [
-            'can_varimport',  # a real permission, but not a member of DAG_PERMS
-            'can_eat_pudding',  # clearly not a real permission
+        invalid_actions = [
+            'can_varimport',  # a real action, but not a member of DAG_PERMS
+            'can_eat_pudding',  # clearly not a real action
         ]
         username = "LaUser"
         user = api_connexion_utils.create_user(
@@ -471,13 +467,13 @@ class TestSecurity(unittest.TestCase):
             username=username,
             role_name='team-a',
         )
-        for permission in invalid_permissions:
+        for action in invalid_actions:
             self.expect_user_is_in_role(user, rolename='team-a')
             with pytest.raises(AirflowException) as ctx:
-                self.security_manager._sync_dag_view_permissions(
-                    'access_control_test', access_control={'team-a': {permission}}
+                self.security_manager.sync_perm_for_dag(
+                    'access_control_test', access_control={'team-a': {action}}
                 )
-            assert "invalid permissions" in str(ctx.value)
+            assert "invalid actions" in str(ctx.value)
 
     def test_access_control_is_set_on_init(self):
         username = 'access_control_is_set_on_init'
@@ -533,14 +529,14 @@ class TestSecurity(unittest.TestCase):
                 perms=[permissions.ACTION_CAN_EDIT], dag_id='access_control_test', user=user
             )
 
-    def test_no_additional_dag_permission_views_created(self):
+    def test_no_additional_dag_permission_roles_created(self):
         ab_perm_view_role = sqla_models.assoc_permissionview_role
 
         self.security_manager.sync_roles()
-        num_pv_before = self.db.session().query(ab_perm_view_role).count()
+        num_permission_roles_before = self.db.session().query(ab_perm_view_role).count()
         self.security_manager.sync_roles()
-        num_pv_after = self.db.session().query(ab_perm_view_role).count()
-        assert num_pv_before == num_pv_after
+        num_permission_roles_after = self.db.session().query(ab_perm_view_role).count()
+        assert num_permission_roles_before == num_permission_roles_after
 
     def test_override_role_vm(self):
         test_security_manager = MockSecurityManager(appbuilder=self.appbuilder)
@@ -616,17 +612,17 @@ class TestSecurity(unittest.TestCase):
 
         assert ('can_read', 'Connections') in perms
 
-    def test_get_all_non_dag_permissionviews(self):
+    def test_get_all_non_dag_permissions(self):
         with assert_queries_count(1):
-            pvs = self.security_manager._get_all_non_dag_permissionviews()
+            perms = self.security_manager._get_all_non_dag_permissions()
 
-        assert isinstance(pvs, dict)
-        for (perm_name, viewmodel_name), perm_view in pvs.items():
-            assert isinstance(perm_name, str)
-            assert isinstance(viewmodel_name, str)
-            assert isinstance(perm_view, self.security_manager.permissionview_model)
+        assert isinstance(perms, dict)
+        for (action_name, resource_name), permission in perms.items():
+            assert isinstance(action_name, str)
+            assert isinstance(resource_name, str)
+            assert isinstance(permission, self.security_manager.permissionview_model)
 
-        assert ('can_read', 'Connections') in pvs
+        assert ('can_read', 'Connections') in perms
 
     def test_get_all_roles_with_permissions(self):
         with assert_queries_count(1):

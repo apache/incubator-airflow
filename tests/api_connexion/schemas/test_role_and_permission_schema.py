@@ -58,7 +58,7 @@ class TestRoleCollectionItemSchema:
         role_obj = role_schema.load(role)
         assert role_obj == {
             'name': 'Test',
-            'permissions': [{'view_menu': {'name': 'Connections'}, 'permission': {'name': 'can_create'}}],
+            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
         }
 
 

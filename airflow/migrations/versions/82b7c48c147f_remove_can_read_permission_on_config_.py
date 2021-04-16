@@ -36,13 +36,13 @@ depends_on = None
 
 
 def upgrade():
-    """Remove can_read permission on config resource for User and Viewer role"""
+    """Remove can_read action on config resource for User and Viewer role"""
     log = logging.getLogger()
     handlers = log.handlers[:]
 
     appbuilder = create_app(config={'FAB_UPDATE_PERMS': False}).appbuilder
     roles_to_modify = [role for role in appbuilder.sm.get_all_roles() if role.name in ["User", "Viewer"]]
-    can_read_on_config_perm = appbuilder.sm.find_permission_view_menu(
+    can_read_on_config_perm = appbuilder.sm.get_permission(
         permissions.ACTION_CAN_READ, permissions.RESOURCE_CONFIG
     )
 
@@ -50,16 +50,16 @@ def upgrade():
         if appbuilder.sm.exist_permission_on_roles(
             permissions.RESOURCE_CONFIG, permissions.ACTION_CAN_READ, [role.id]
         ):
-            appbuilder.sm.del_permission_role(role, can_read_on_config_perm)
+            appbuilder.sm.remove_permission_from_role(role, can_read_on_config_perm)
 
     log.handlers = handlers
 
 
 def downgrade():
-    """Add can_read permission on config resource for User and Viewer role"""
+    """Add can_read action on config resource for User and Viewer role"""
     appbuilder = create_app(config={'FAB_UPDATE_PERMS': False}).appbuilder
     roles_to_modify = [role for role in appbuilder.sm.get_all_roles() if role.name in ["User", "Viewer"]]
-    can_read_on_config_perm = appbuilder.sm.find_permission_view_menu(
+    can_read_on_config_perm = appbuilder.sm.get_permission(
         permissions.ACTION_CAN_READ, permissions.RESOURCE_CONFIG
     )
 
@@ -67,4 +67,4 @@ def downgrade():
         if not appbuilder.sm.exist_permission_on_roles(
             permissions.RESOURCE_CONFIG, permissions.ACTION_CAN_READ, [role.id]
         ):
-            appbuilder.sm.add_permission_role(role, can_read_on_config_perm)
+            appbuilder.sm.add_permission_to_role(role, can_read_on_config_perm)

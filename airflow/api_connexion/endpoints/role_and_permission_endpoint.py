@@ -41,9 +41,9 @@ def _check_action_and_resource(sm, perms):
     This function is intended for use in the REST API because it raise 400
     """
     for item in perms:
-        if not sm.find_permission(item[0]):
+        if not sm.get_action(item[0]):
             raise BadRequest(detail=f"The specified action: '{item[0]}' was not found")
-        if not sm.find_view_menu(item[1]):
+        if not sm.get_resource(item[1]):
             raise BadRequest(detail=f"The specified resource: '{item[1]}' was not found")
 
 

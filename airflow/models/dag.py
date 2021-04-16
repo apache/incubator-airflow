@@ -191,7 +191,7 @@ class DAG(LoggingMixin):
     :param on_success_callback: Much like the ``on_failure_callback`` except
         that it is executed when the dag succeeds.
     :type on_success_callback: callable
-    :param access_control: Specify optional DAG-level permissions, e.g.,
+    :param access_control: Specify optional DAG-level actions, e.g.,
         "{'role1': {'can_read'}, 'role2': {'can_read', 'can_edit'}}"
     :type access_control: dict
     :param is_paused_upon_creation: Specifies if the dag is paused when created for the first time.
@@ -409,9 +409,9 @@ class DAG(LoggingMixin):
     @staticmethod
     def _upgrade_outdated_dag_access_control(access_control=None):
         """
-        Looks for outdated dag level permissions (can_dag_read and can_dag_edit) in DAG
+        Looks for outdated dag level actions (can_dag_read and can_dag_edit) in DAG
         access_controls (for example, {'role1': {'can_dag_read'}, 'role2': {'can_dag_read', 'can_dag_edit'}})
-        and replaces them with updated permissions (can_read and can_edit).
+        and replaces them with updated actions (can_read and can_edit).
         """
         if not access_control:
             return None
