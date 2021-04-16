@@ -1448,7 +1448,7 @@ class TestDag(unittest.TestCase):
 
         assert dag.next_dagrun_after_date(date) is None
 
-    def test_next_dagrun_after_date_catcup(self):
+    def test_next_dagrun_after_date_catchup(self):
         """
         Test to check that a DAG with catchup = False only schedules beginning now, not back to the start date
         """

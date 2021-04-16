@@ -65,6 +65,8 @@ from airflow.models.dagrun import DagRun
 from airflow.models.taskinstance import Context, TaskInstance, clear_task_instances
 from airflow.security import permissions
 from airflow.stats import Stats
+from airflow.timetables.base import TimeRestriction
+from airflow.timetables.compat import OnceTimeTable
 from airflow.utils import timezone
 from airflow.utils.dates import cron_presets, date_range as utils_date_range
 from airflow.utils.file import correct_maybe_zipped
@@ -533,10 +535,7 @@ class DAG(LoggingMixin):
             "automated" DagRuns for this dag (scheduled or backfill, but not
             manual)
         """
-        if (
-            self.schedule_interval == "@once" and date_last_automated_dagrun
-        ) or self.schedule_interval is None:
-            # Manual trigger, or already created the run for @once, can short circuit
+        if self.schedule_interval is None:  # Manual trigger can short circuit
             return (None, None)
         next_execution_date = self.next_dagrun_after_date(date_last_automated_dagrun)
 
@@ -548,6 +547,23 @@ class DAG(LoggingMixin):
             return (next_execution_date, next_execution_date)
 
         return (next_execution_date, self.following_schedule(next_execution_date))
+
+    def _format_time_restriction(self) -> TimeRestriction:
+        start_dates = [t.start_date for t in self.tasks if t.start_date]
+        if self.start_date is not None:
+            start_dates.append(self.start_date)
+        if start_dates:
+            restriction_earliest = min(start_dates)
+        else:
+            restriction_earliest = None
+        end_dates = [t.end_date for t in self.tasks if t.end_date]
+        if self.end_date is not None:
+            end_dates.append(self.end_date)
+        if end_dates:
+            restriction_latest = max(end_dates)
+        else:
+            restriction_latest = None
+        return TimeRestriction(restriction_earliest, restriction_latest)
 
     def next_dagrun_after_date(self, date_last_automated_dagrun: Optional[pendulum.DateTime]):
         """
@@ -563,12 +579,17 @@ class DAG(LoggingMixin):
         if not self.schedule_interval or self.is_subdag:
             return None
 
-        # don't schedule @once again
-        if self.schedule_interval == '@once' and date_last_automated_dagrun:
-            return None
+        if self.schedule_interval == "@once":
+            next_info = OnceTimeTable().next_dagrun_info(
+                date_last_automated_dagrun,
+                self._format_time_restriction(),
+            )
+            if next_info is None:
+                return None
+            return next_info.run_after
 
         # don't do scheduler catchup for dag's that don't have dag.catchup = True
-        if not (self.catchup or self.schedule_interval == '@once'):
+        if not self.catchup:
             # The logic is that we move start_date up until
             # one period before, so that timezone.utcnow() is AFTER
             # the period end, and the job can be created...
