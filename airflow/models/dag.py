@@ -611,69 +611,15 @@ class DAG(LoggingMixin):
             return None
 
         time_table = self._create_time_table()
-        if time_table is not None:
-            next_info = time_table.next_dagrun_info(
-                coerce_datetime(date_last_automated_dagrun),
-                self._format_time_restriction(),
-            )
-            if next_info is None:
-                return None
-            return next_info.data_interval.start
-
-        # don't do scheduler catchup for dag's that don't have dag.catchup = True
-        if not self.catchup:
-            # The logic is that we move start_date up until
-            # one period before, so that timezone.utcnow() is AFTER
-            # the period end, and the job can be created...
-            now = timezone.utcnow()
-            next_start = self.following_schedule(now)
-            last_start = self.previous_schedule(now)
-            if next_start <= now or isinstance(self.schedule_interval, timedelta):
-                new_start = last_start
-            else:
-                new_start = self.previous_schedule(last_start)
-
-            if self.start_date:
-                if new_start >= self.start_date:
-                    self.start_date = new_start
-            else:
-                self.start_date = new_start
-
-        next_run_date = None
-        if not date_last_automated_dagrun:
-            # First run
-            task_start_dates = [t.start_date for t in self.tasks if t.start_date]
-            if task_start_dates:
-                next_run_date = self.normalize_schedule(min(task_start_dates))
-                self.log.debug("Next run date based on tasks %s", next_run_date)
-        else:
-            next_run_date = self.following_schedule(date_last_automated_dagrun)
-
-        if date_last_automated_dagrun and next_run_date:
-            while next_run_date <= date_last_automated_dagrun:
-                next_run_date = self.following_schedule(next_run_date)
-
-        # don't ever schedule prior to the dag's start_date
-        if self.start_date:
-            next_run_date = self.start_date if not next_run_date else max(next_run_date, self.start_date)
-            if next_run_date == self.start_date:
-                next_run_date = self.normalize_schedule(self.start_date)
-
-            self.log.debug("Dag start date: %s. Next run date: %s", self.start_date, next_run_date)
-
-        # Don't schedule a dag beyond its end_date (as specified by the dag param)
-        if next_run_date and self.end_date and next_run_date > self.end_date:
+        if time_table is None:
             return None
-
-        # Don't schedule a dag beyond its end_date (as specified by the task params)
-        # Get the min task end date, which may come from the dag.default_args
-        task_end_dates = [t.end_date for t in self.tasks if t.end_date]
-        if task_end_dates and next_run_date:
-            min_task_end_date = min(task_end_dates)
-            if next_run_date > min_task_end_date:
-                return None
-
-        return next_run_date
+        next_info = time_table.next_dagrun_info(
+            coerce_datetime(date_last_automated_dagrun),
+            self._format_time_restriction(),
+        )
+        if next_info is None:
+            return None
+        return next_info.data_interval.start
 
     def get_run_dates(self, start_date, end_date=None):
         """
