@@ -28,7 +28,7 @@ class DataInterval(NamedTuple):
     The represented interval is ``[start, end)``.
     """
 
-    begin: DateTime
+    start: DateTime
     end: DateTime
 
 
@@ -46,16 +46,6 @@ class TimeRestriction(NamedTuple):
     earliest: Optional[DateTime]
     latest: Optional[DateTime]
 
-    def restrict(self, value: Optional[DateTime]) -> Optional[DateTime]:
-        """Restrict given datetime."""
-        if value is None:
-            return None
-        if self.earliest is not None and value < self.earliest:
-            value = self.earliest
-        if self.latest is not None and value > self.latest:
-            return None
-        return value
-
 
 class DagRunInfo(NamedTuple):
     """Information to schedule a DagRun.
@@ -67,8 +57,23 @@ class DagRunInfo(NamedTuple):
     run_after: DateTime
     """The earliest time this DagRun is created and its tasks scheduled."""
 
-    data_interval: Optional[DataInterval]
+    data_interval: DataInterval
     """The data interval this DagRun to operate over, if applicable."""
+
+    @classmethod
+    def exact(cls, at: DateTime) -> "DagRunInfo":
+        """Represent a run on an exact time."""
+        return cls(run_after=at, data_interval=DataInterval(at, at))
+
+    @classmethod
+    def interval(cls, start: DateTime, end: DateTime) -> "DagRunInfo":
+        """Represent a run on a continuous schedule.
+
+        In such a schedule, each data interval starts right after the previous
+        one ends, and each run is scheduled right after the interval ends. This
+        applies to all schedules prior to AIP-39 except ``@once`` and ``None``.
+        """
+        return cls(run_after=end, data_interval=DataInterval(start, end))
 
 
 class TimeTableProtocol(Protocol):
@@ -81,8 +86,8 @@ class TimeTableProtocol(Protocol):
     ) -> Optional[DagRunInfo]:
         """Provide information to schedule the next DagRun.
 
-        :param last_automated_dagrun: The latest time the associated DAG was
-            last scheduled or backfilled to run (manual runs not considered).
+        :param last_automated_dagrun: The execution_date of the associated DAG's
+            last scheduled or backfilled run (manual runs not considered).
         :param later_than: The next DagRun must be scheduled later than this
             time. This is generally the earliest of ``DAG.start_date`` and each
             ``BaseOperator.start_date`` in the DAG. None means the next DagRun

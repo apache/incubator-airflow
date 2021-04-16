@@ -65,8 +65,8 @@ from airflow.models.dagrun import DagRun
 from airflow.models.taskinstance import Context, TaskInstance, clear_task_instances
 from airflow.security import permissions
 from airflow.stats import Stats
-from airflow.timetables.base import TimeRestriction
-from airflow.timetables.compat import OnceTimeTable
+from airflow.timetables.base import TimeRestriction, TimeTableProtocol
+from airflow.timetables.compat import CronDataIntervalTimeTable, DeltaDataIntervalTimeTable, OnceTimeTable
 from airflow.utils import timezone
 from airflow.utils.dates import cron_presets, date_range as utils_date_range
 from airflow.utils.file import correct_maybe_zipped
@@ -109,6 +109,21 @@ def get_last_dagrun(dag_id, session, include_externally_triggered=False):
         query = query.filter(DR.external_trigger == False)  # noqa pylint: disable=singleton-comparison
     query = query.order_by(DR.execution_date.desc())
     return query.first()
+
+
+def coerce_datetime(v: Union[None, datetime, pendulum.DateTime]) -> Optional[pendulum.DateTime]:
+    """Convert whatever is passed in to pendulum.DateTime.
+
+    This is for interfacing with the new ``timetables`` package, which
+    exclusively uses pendulum.DateTime internally.
+    """
+    if v is None:
+        return None
+    if isinstance(v, pendulum.DateTime):
+        return v
+    if v.tzinfo is None:
+        v = timezone.make_aware(v)
+    return pendulum.instance(v)
 
 
 @functools.total_ordering
@@ -553,17 +568,33 @@ class DAG(LoggingMixin):
         if self.start_date is not None:
             start_dates.append(self.start_date)
         if start_dates:
-            restriction_earliest = min(start_dates)
+            restriction_earliest = coerce_datetime(min(start_dates))
         else:
             restriction_earliest = None
         end_dates = [t.end_date for t in self.tasks if t.end_date]
         if self.end_date is not None:
             end_dates.append(self.end_date)
         if end_dates:
-            restriction_latest = max(end_dates)
+            restriction_latest = coerce_datetime(max(end_dates))
         else:
             restriction_latest = None
         return TimeRestriction(restriction_earliest, restriction_latest)
+
+    def _create_time_table(self) -> Optional[TimeTableProtocol]:
+        if self.schedule_interval is None:
+            return None
+        if self.schedule_interval == "@once":
+            return OnceTimeTable()
+        if not isinstance(self.schedule_interval, str):
+            return DeltaDataIntervalTimeTable(
+                self.schedule_interval,
+                catchup=self.catchup,
+            )
+        return CronDataIntervalTimeTable(
+            self.schedule_interval,
+            timezone=pendulum.timezone(self.timezone.name),
+            catchup=self.catchup,
+        )
 
     def next_dagrun_after_date(self, date_last_automated_dagrun: Optional[pendulum.DateTime]):
         """
@@ -579,14 +610,15 @@ class DAG(LoggingMixin):
         if not self.schedule_interval or self.is_subdag:
             return None
 
-        if self.schedule_interval == "@once":
-            next_info = OnceTimeTable().next_dagrun_info(
-                date_last_automated_dagrun,
+        time_table = self._create_time_table()
+        if time_table is not None:
+            next_info = time_table.next_dagrun_info(
+                coerce_datetime(date_last_automated_dagrun),
                 self._format_time_restriction(),
             )
             if next_info is None:
                 return None
-            return next_info.run_after
+            return next_info.data_interval.start
 
         # don't do scheduler catchup for dag's that don't have dag.catchup = True
         if not self.catchup:
