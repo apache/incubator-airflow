@@ -143,8 +143,8 @@ def clear_task_instances(
 
     :param tis: a list of task instances
     :param session: current session
-    :param dag_run_state: state to set DagRun to. If set to None, existing DagRun state
-        will not be changed.
+    :param dag_run_state: state to set DagRun to. If set to False, dagrun state will not
+        be changed.
     :param dag: DAG object
     """
     job_ids = []
@@ -206,7 +206,7 @@ def clear_task_instances(
         for job in session.query(BaseJob).filter(BaseJob.id.in_(job_ids)).all():  # noqa
             job.state = State.SHUTDOWN
 
-    if (dag_run_state is not None) and tis:
+    if (dag_run_state is not False) and tis:
         from airflow.models.dagrun import DagRun  # Avoid circular import
 
         dates_by_dag_id = defaultdict(set)
