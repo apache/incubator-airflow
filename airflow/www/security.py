@@ -23,7 +23,7 @@ from typing import Dict, Optional, Sequence, Set, Tuple
 from flask import current_app, g
 from flask_appbuilder.security.sqla import models as sqla_models
 from flask_appbuilder.security.sqla.manager import SecurityManager
-from flask_appbuilder.security.sqla.models import PermissionView, Role, User
+from flask_appbuilder.security.sqla.models import Permission, PermissionView, Role, User, ViewMenu
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
@@ -137,6 +137,8 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
         (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_TASK_RESCHEDULE),
         (permissions.ACTION_CAN_READ, permissions.RESOURCE_PASSWORD),
         (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_PASSWORD),
+        (permissions.ACTION_CAN_READ, permissions.RESOURCE_ROLE),
+        (permissions.ACTION_CAN_EDIT, permissions.RESOURCE_ROLE),
     ]
 
     # global resource for dag-level access
@@ -862,6 +864,25 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
                 return False
 
         return True
+
+    def reset_all_permissions(self):
+        """
+        Deletes all permission records and removes from roles,
+        then re-syncs them.
+
+        :return: None
+        :rtype: None
+        """
+        session = self.get_session
+        for role in self.get_all_roles():
+            role.permissions = []
+        session.commit()
+        session.query(PermissionView).delete()
+        session.query(ViewMenu).delete()
+        session.query(Permission).delete()
+        session.commit()
+
+        self.sync_roles()
 
 
 class ApplessAirflowSecurityManager(AirflowSecurityManager):

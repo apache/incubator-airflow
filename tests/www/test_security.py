@@ -86,8 +86,9 @@ class TestSecurity(unittest.TestCase):
         cls.app = application.create_app(testing=True)
         cls.appbuilder = cls.app.appbuilder  # pylint: disable=no-member
         cls.app.config['WTF_CSRF_ENABLED'] = False
-        cls.security_manager = cls.appbuilder.sm
         cls.delete_roles()
+        cls.security_manager = cls.appbuilder.sm
+        cls.security_manager.reset_all_permissions()
 
     def setUp(self):
         clear_db_runs()
@@ -100,7 +101,7 @@ class TestSecurity(unittest.TestCase):
 
     @classmethod
     def delete_roles(cls):
-        for role_name in ['team-a', 'MyRole1', 'MyRole5', 'Test_Role', 'MyRole3', 'MyRole2']:
+        for role_name in ['team-a', 'Test_Role', 'MyRole1', 'MyRole2', 'MyRole3', 'MyRole5', 'MyRole7']:
             api_connexion_utils.delete_role(cls.app, role_name)
 
     def expect_user_is_in_role(self, user, rolename):
@@ -196,7 +197,6 @@ class TestSecurity(unittest.TestCase):
 
         self.security_manager.bulk_sync_roles(mock_roles)
         new_role_perms_len = len(role.permissions)
-
         assert role_perms_len == new_role_perms_len
         assert new_role_perms_len == 1
 
@@ -473,7 +473,7 @@ class TestSecurity(unittest.TestCase):
                 self.security_manager.sync_perm_for_dag(
                     'access_control_test', access_control={'team-a': {action}}
                 )
-            assert "invalid actions" in str(ctx.value)
+            assert "invalid permissions" in str(ctx.value)
 
     def test_access_control_is_set_on_init(self):
         username = 'access_control_is_set_on_init'
