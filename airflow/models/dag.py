@@ -66,12 +66,8 @@ from airflow.models.taskinstance import Context, TaskInstance, clear_task_instan
 from airflow.security import permissions
 from airflow.stats import Stats
 from airflow.timetables.base import TimeRestriction, TimeTableProtocol
-from airflow.timetables.compat import (
-    CronDataIntervalTimeTable,
-    DeltaDataIntervalTimeTable,
-    NullTimeTable,
-    OnceTimeTable,
-)
+from airflow.timetables.interval import CronDataIntervalTimeTable, DeltaDataIntervalTimeTable
+from airflow.timetables.simple import NullTimeTable, OnceTimeTable
 from airflow.utils import timezone
 from airflow.utils.dates import cron_presets, date_range as utils_date_range
 from airflow.utils.file import correct_maybe_zipped
