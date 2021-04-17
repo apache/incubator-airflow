@@ -38,10 +38,8 @@ class AsanaHook(BaseHook):
         super().__init__(*args, **kwargs)
         self.connection = self.get_connection(conn_id)
         extras = self.connection.extra_dejson
-        default_workspace = extras.get("extra__asana__workspace")
-        self.workspace = None if default_workspace == "" else default_workspace
-        default_project = extras.get("extra__asana__project")
-        self.project = None if default_project == "" else default_project
+        self.workspace = extras.get("extra__asana__workspace") or None
+        self.project = extras.get("extra__asana__project") or None
 
     def get_conn(self) -> Client:
         return self.client
