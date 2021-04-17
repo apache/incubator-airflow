@@ -550,18 +550,21 @@ class DAG(LoggingMixin):
             "automated" DagRuns for this dag (scheduled or backfill, but not
             manual)
         """
-        if self.schedule_interval is None:  # Manual trigger can short circuit
-            return (None, None)
-        next_execution_date = self.next_dagrun_after_date(date_last_automated_dagrun)
-
-        if next_execution_date is None:
+        if not self.schedule_interval or self.is_subdag:
             return (None, None)
 
-        if self.schedule_interval == "@once":
-            # For "@once" it can be created "now"
-            return (next_execution_date, next_execution_date)
+        time_table = self._create_time_table()
+        if time_table is None:
+            return (None, None)
 
-        return (next_execution_date, self.following_schedule(next_execution_date))
+        next_info = time_table.next_dagrun_info(
+            coerce_datetime(date_last_automated_dagrun),
+            self._format_time_restriction(),
+        )
+        if next_info is None:
+            return (None, None)
+
+        return (next_info.data_interval.start, next_info.run_after)
 
     def _format_time_restriction(self) -> TimeRestriction:
         start_dates = [t.start_date for t in self.tasks if t.start_date]
@@ -595,31 +598,6 @@ class DAG(LoggingMixin):
             timezone=pendulum.timezone(self.timezone.name),
             catchup=self.catchup,
         )
-
-    def next_dagrun_after_date(self, date_last_automated_dagrun: Optional[pendulum.DateTime]):
-        """
-        Get the next execution date after the given ``date_last_automated_dagrun``, according to
-        schedule_interval, start_date, end_date etc.  This doesn't check max active run or any other
-        "concurrency" type limits, it only performs calculations based on the various date and interval fields
-        of this dag and it's tasks.
-
-        :param date_last_automated_dagrun: The execution_date of the last scheduler or
-            backfill triggered run for this dag
-        :type date_last_automated_dagrun: pendulum.Pendulum
-        """
-        if not self.schedule_interval or self.is_subdag:
-            return None
-
-        time_table = self._create_time_table()
-        if time_table is None:
-            return None
-        next_info = time_table.next_dagrun_info(
-            coerce_datetime(date_last_automated_dagrun),
-            self._format_time_restriction(),
-        )
-        if next_info is None:
-            return None
-        return next_info.data_interval.start
 
     def get_run_dates(self, start_date, end_date=None):
         """
