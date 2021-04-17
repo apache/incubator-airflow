@@ -130,6 +130,7 @@ class AsanaHook(BaseHook):
         merged_params = {}
         if self.project:
             merged_params["project"] = self.project
+        # Only use default workspace if user did not provide a project id
         elif self.workspace and not (search_parameters and ("project" in search_parameters)):
             merged_params["workspace"] = self.workspace
         if search_parameters:
