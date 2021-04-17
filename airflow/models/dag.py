@@ -66,7 +66,12 @@ from airflow.models.taskinstance import Context, TaskInstance, clear_task_instan
 from airflow.security import permissions
 from airflow.stats import Stats
 from airflow.timetables.base import TimeRestriction, TimeTableProtocol
-from airflow.timetables.compat import CronDataIntervalTimeTable, DeltaDataIntervalTimeTable, OnceTimeTable
+from airflow.timetables.compat import (
+    CronDataIntervalTimeTable,
+    DeltaDataIntervalTimeTable,
+    NullTimeTable,
+    OnceTimeTable,
+)
 from airflow.utils import timezone
 from airflow.utils.dates import cron_presets, date_range as utils_date_range
 from airflow.utils.file import correct_maybe_zipped
@@ -550,20 +555,14 @@ class DAG(LoggingMixin):
             "automated" DagRuns for this dag (scheduled or backfill, but not
             manual)
         """
-        if not self.schedule_interval or self.is_subdag:
+        if self.is_subdag:
             return (None, None)
-
-        time_table = self._create_time_table()
-        if time_table is None:
-            return (None, None)
-
-        next_info = time_table.next_dagrun_info(
+        next_info = self._create_time_table().next_dagrun_info(
             coerce_datetime(date_last_automated_dagrun),
             self._format_time_restriction(),
         )
         if next_info is None:
             return (None, None)
-
         return (next_info.data_interval.start, next_info.run_after)
 
     def _format_time_restriction(self) -> TimeRestriction:
@@ -583,9 +582,9 @@ class DAG(LoggingMixin):
             restriction_latest = None
         return TimeRestriction(restriction_earliest, restriction_latest)
 
-    def _create_time_table(self) -> Optional[TimeTableProtocol]:
+    def _create_time_table(self) -> TimeTableProtocol:
         if self.schedule_interval is None:
-            return None
+            return NullTimeTable()
         if self.schedule_interval == "@once":
             return OnceTimeTable()
         if not isinstance(self.schedule_interval, str):

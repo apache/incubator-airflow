@@ -24,6 +24,20 @@ from airflow.timetables.base import DagRunInfo, TimeRestriction, TimeTableProtoc
 from airflow.timetables.utils import Delta, DeltaSchedule, ScheduleProtocol, TimeZoneAwareCron
 
 
+class NullTimeTable(TimeTableProtocol):
+    """Time table that never schedules anything.
+
+    This corresponds to ``schedule_interval=None``.
+    """
+
+    def next_dagrun_info(
+        self,
+        last_automated_dagrun: Optional[DateTime],
+        between: TimeRestriction,
+    ) -> Optional[DagRunInfo]:
+        return None
+
+
 class OnceTimeTable(TimeTableProtocol):
     """Time table that schedules the execution once as soon as possible.
 
