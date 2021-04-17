@@ -34,7 +34,7 @@ class AsanaCreateTaskOperator(BaseOperator):
 
     :param conn_id: The Asana connection to use.
     :type conn_id: str
-    :param name: Name of the task.
+    :param name: Name of the Asana task.
     :type name: str
     :param task_parameters: Any of the optional task creation parameters.
         See https://developers.asana.com/docs/create-a-task for a complete list.
