@@ -47,18 +47,18 @@ class TestRoleCollectionItemSchema:
         deserialized_role = role_schema.dump(self.role)
         assert deserialized_role == {
             'name': 'Test',
-            'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
         }
 
     def test_deserialize(self):
         role = {
             'name': 'Test',
-            'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
         }
         role_obj = role_schema.load(role)
         assert role_obj == {
             'name': 'Test',
-            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+            'permissions': [{'view_menu': {'name': 'Connections'}, 'permission': {'name': 'can_create'}}],
         }
 
 
@@ -92,11 +92,11 @@ class TestRoleCollectionSchema:
             'roles': [
                 {
                     'name': 'Test1',
-                    'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+                    'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
                 },
                 {
                     'name': 'Test2',
-                    'actions': [{'resource': {'name': 'DAGs'}, 'action': {'name': 'can_edit'}}],
+                    'permissions': [{'resource': {'name': 'DAGs'}, 'action': {'name': 'can_edit'}}],
                 },
             ],
             'total_entries': 2,
