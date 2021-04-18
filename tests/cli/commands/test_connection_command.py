@@ -758,9 +758,9 @@ class TestCliImportConnections(unittest.TestCase):
         ):
             connection_command.connections_import(self.parser.parse_args(["connections", "import", filepath]))
 
-    @mock.patch('airflow.cli.commands.connection_command.load_connections_dict')
+    @mock.patch('airflow.secrets.local_filesystem._parse_secret_file')
     @mock.patch('os.path.exists')
-    def test_cli_connections_import_should_load_connections(self, mock_exists, mock_load_connections_dict):
+    def test_cli_connections_import_should_load_connections(self, mock_exists, mock_parse_secret_file):
         mock_exists.return_value = True
 
         # Sample connections to import
@@ -769,44 +769,43 @@ class TestCliImportConnections(unittest.TestCase):
                 "conn_type": "postgres",
                 "description": "new0 description",
                 "host": "host",
-                "is_encrypted": False,
-                "is_extra_encrypted": False,
                 "login": "airflow",
+                "password": "password",
                 "port": 5432,
                 "schema": "airflow",
+                "extra": "test",
             },
             "new1": {
                 "conn_type": "mysql",
                 "description": "new1 description",
                 "host": "host",
-                "is_encrypted": False,
-                "is_extra_encrypted": False,
                 "login": "airflow",
+                "password": "password",
                 "port": 3306,
                 "schema": "airflow",
+                "extra": "test",
             },
         }
 
-        # We're not testing the behavior of load_connections_dict, assume successfully reads JSON, YAML or env
-        mock_load_connections_dict.return_value = expected_connections
+        # The serialized connections are read in using _parse_secret_file, which returns a dictionary
+        mock_parse_secret_file.return_value = expected_connections
 
-        connection_command.connections_import(
-            self.parser.parse_args(["connections", "import", 'sample.json'])
-        )
+        connection_command.connections_import(self.parser.parse_args(["connections", "import", "dummy.json"]))
 
         # Verify that the imported connections match the expected, sample connections
         with create_session() as session:
             current_conns = session.query(Connection).all()
 
             comparable_attrs = [
+                "conn_id",
                 "conn_type",
                 "description",
                 "host",
-                "is_encrypted",
-                "is_extra_encrypted",
                 "login",
+                "password",
                 "port",
                 "schema",
+                "extra",
             ]
 
             current_conns_as_dicts = {
@@ -816,80 +815,81 @@ class TestCliImportConnections(unittest.TestCase):
             assert expected_connections == current_conns_as_dicts
 
     @provide_session
-    @mock.patch('airflow.cli.commands.connection_command.load_connections_dict')
+    @mock.patch('airflow.secrets.local_filesystem._parse_secret_file')
     @mock.patch('os.path.exists')
     def test_cli_connections_import_should_not_overwrite_existing_connections(
-        self, mock_exists, mock_load_connections_dict, session=None
+        self, mock_exists, mock_parse_secret_file, session=None
     ):
         mock_exists.return_value = True
 
-        # Add a pre-existing connection "new1"
+        # Add a pre-existing connection "new3"
         merge_conn(
             Connection(
-                conn_id="new1",
+                conn_id="new3",
                 conn_type="mysql",
                 description="mysql description",
                 host="mysql",
                 login="root",
-                password="",
+                password="password",
                 schema="airflow",
             ),
             session=session,
         )
 
-        # Sample connections to import, including a collision with "new1"
+        # Sample connections to import, including a collision with "new3"
         expected_connections = {
-            "new0": {
+            "new2": {
                 "conn_type": "postgres",
-                "description": "new0 description",
+                "description": "new2 description",
                 "host": "host",
-                "is_encrypted": False,
-                "is_extra_encrypted": False,
                 "login": "airflow",
+                "password": "password",
                 "port": 5432,
                 "schema": "airflow",
+                "extra": "test",
             },
-            "new1": {
+            "new3": {
                 "conn_type": "mysql",
-                "description": "new1 description",
+                "description": "new3 description",
                 "host": "host",
-                "is_encrypted": False,
-                "is_extra_encrypted": False,
                 "login": "airflow",
+                "password": "new password",
                 "port": 3306,
                 "schema": "airflow",
+                "extra": "test",
             },
         }
 
-        # We're not testing the behavior of load_connections_dict, assume successfully reads JSON, YAML or env
-        mock_load_connections_dict.return_value = expected_connections
+        # The serialized connections are read in using _parse_secret_file, which returns a dictionary
+        mock_parse_secret_file.return_value = expected_connections
 
         with redirect_stdout(io.StringIO()) as stdout:
             connection_command.connections_import(
-                self.parser.parse_args(["connections", "import", 'sample.json'])
+                self.parser.parse_args(["connections", "import", 'dummy.json'])
             )
 
-            assert 'Could not import connection new1: connection already exists.' in stdout.getvalue()
+            assert 'Could not import connection new3: connection already exists.' in stdout.getvalue()
 
         # Verify that the imported connections match the expected, sample connections
         current_conns = session.query(Connection).all()
 
         comparable_attrs = [
+            "conn_id",
             "conn_type",
             "description",
             "host",
-            "is_encrypted",
-            "is_extra_encrypted",
             "login",
+            "password",
             "port",
             "schema",
+            "extra",
         ]
 
         current_conns_as_dicts = {
             current_conn.conn_id: {attr: getattr(current_conn, attr) for attr in comparable_attrs}
             for current_conn in current_conns
         }
-        assert current_conns_as_dicts['new0'] == expected_connections['new0']
+        assert current_conns_as_dicts['new2'] == expected_connections['new2']
 
         # The existing connection's description should not have changed
-        assert current_conns_as_dicts['new1']['description'] == 'new1 description'
+        assert current_conns_as_dicts['new3']['description'] == 'mysql description'
