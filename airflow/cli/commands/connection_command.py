@@ -247,7 +247,7 @@ def connections_import(args):
 
 
 def _import_helper(filepath):
-    """Helps import connections from a file"""
+    """Load connections from a file and save them to the DB. On collision, skip."""
     connections_dict = _parse_file(filepath)
     with create_session() as session:
         for conn_id, conn_dict in connections_dict.items():

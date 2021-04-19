@@ -32,9 +32,9 @@ from airflow.secrets.local_filesystem import LocalFilesystemBackend
 
 @contextmanager
 def mock_local_file(content):
-    with mock.patch(
-        "airflow.utils.parse.open", mock.mock_open(read_data=content)
-    ) as file_mock, mock.patch("airflow.utils.parse.os.path.exists", return_value=True):
+    with mock.patch("airflow.utils.parse.open", mock.mock_open(read_data=content)) as file_mock, mock.patch(
+        "airflow.utils.parse.os.path.exists", return_value=True
+    ):
         yield file_mock
 
 

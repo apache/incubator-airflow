@@ -2,18 +2,15 @@
 import json
 import logging
 import os
-import warnings
 from collections import defaultdict
-from inspect import signature
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Tuple
 
 from airflow.utils.file import COMMENT_PATTERN
 import airflow.utils.yaml as yaml
 from airflow.exceptions import (
     AirflowException,
     AirflowFileParseException,
-    ConnectionNotUnique,
     FileSyntaxError,
 )
 
@@ -131,9 +128,7 @@ def _parse_file(file_path: str) -> Dict[str, Any]:
     :return: Map of key (e.g. connection ID) and value.
     """
     if not os.path.exists(file_path):
-        raise AirflowException(
-            f"File {file_path} was not found."
-        )
+        raise AirflowException(f"File {file_path} was not found.")
 
     log.debug("Parsing file: %s", file_path)
 
@@ -146,7 +141,9 @@ def _parse_file(file_path: str) -> Dict[str, Any]:
 
     contents_dict, parse_errors = FILE_PARSERS[ext](file_path)
 
-    log.debug("Parsed file: len(parse_errors)=%d, len(contents_dict)=%d", len(parse_errors), len(contents_dict))
+    log.debug(
+        "Parsed file: len(parse_errors)=%d, len(contents_dict)=%d", len(parse_errors), len(contents_dict)
+    )
 
     if parse_errors:
         raise AirflowFileParseException(

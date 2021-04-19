@@ -18,22 +18,15 @@
 """Objects relating to retrieving connections and variables from local file"""
 import json
 import logging
-import os
 import warnings
-from collections import defaultdict
 from inspect import signature
-from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
-import airflow.utils.yaml as yaml
 from airflow.exceptions import (
     AirflowException,
-    AirflowFileParseException,
     ConnectionNotUnique,
-    FileSyntaxError,
 )
 from airflow.secrets.base_secrets import BaseSecretsBackend
-from airflow.utils.file import COMMENT_PATTERN
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.parse import _parse_file
 
@@ -48,7 +41,6 @@ def get_connection_parameter_names() -> Set[str]:
     from airflow.models.connection import Connection
 
     return {k for k in signature(Connection.__init__).parameters.keys() if k != "self"}
-
 
 
 def _create_connection(conn_id: str, value: Any):

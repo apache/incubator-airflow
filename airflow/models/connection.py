@@ -378,7 +378,6 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
                 return conn
         raise AirflowNotFoundException(f"The conn_id `{conn_id}` isn't defined")
 
-
     @classmethod
     def from_dict(cls, conn_dict: Dict) -> 'Connection':
         """
