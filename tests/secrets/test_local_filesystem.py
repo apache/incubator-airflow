@@ -33,8 +33,8 @@ from airflow.secrets.local_filesystem import LocalFilesystemBackend
 @contextmanager
 def mock_local_file(content):
     with mock.patch(
-        "airflow.secrets.local_filesystem.open", mock.mock_open(read_data=content)
-    ) as file_mock, mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=True):
+        "airflow.utils.parse.open", mock.mock_open(read_data=content)
+    ) as file_mock, mock.patch("airflow.utils.parse.os.path.exists", return_value=True):
         yield file_mock
 
 
@@ -97,11 +97,11 @@ class TestLoadVariables(unittest.TestCase):
             variables = local_filesystem.load_variables("a.json")
             assert expected_variables == variables
 
-    @mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=False)
+    @mock.patch("airflow.utils.parse.os.path.exists", return_value=False)
     def test_missing_file(self, mock_exists):
         with pytest.raises(
             AirflowException,
-            match=re.escape("File a.json was not found. Check the configuration of your Secrets backend."),
+            match=re.escape("File a.json was not found."),
         ):
             local_filesystem.load_variables("a.json")
 
@@ -194,11 +194,11 @@ class TestLoadConnection(unittest.TestCase):
             with pytest.raises(AirflowException, match=re.escape(expected_connection_uris)):
                 local_filesystem.load_connections_dict("a.json")
 
-    @mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=False)
+    @mock.patch("airflow.utils.parse.os.path.exists", return_value=False)
     def test_missing_file(self, mock_exists):
         with pytest.raises(
             AirflowException,
-            match=re.escape("File a.json was not found. Check the configuration of your Secrets backend."),
+            match=re.escape("File a.json was not found."),
         ):
             local_filesystem.load_connections_dict("a.json")
 
