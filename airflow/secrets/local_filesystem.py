@@ -35,6 +35,7 @@ from airflow.exceptions import (
 from airflow.secrets.base_secrets import BaseSecretsBackend
 from airflow.utils.file import COMMENT_PATTERN
 from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.utils.parse import _parse_file
 
 log = logging.getLogger(__name__)
 
@@ -48,141 +49,6 @@ def get_connection_parameter_names() -> Set[str]:
 
     return {k for k in signature(Connection.__init__).parameters.keys() if k != "self"}
 
-
-def _parse_env_file(file_path: str) -> Tuple[Dict[str, List[str]], List[FileSyntaxError]]:
-    """
-    Parse a file in the ``.env`` format.
-
-    .. code-block:: text
-
-        MY_CONN_ID=my-conn-type://my-login:my-pa%2Fssword@my-host:5432/my-schema?param1=val1&param2=val2
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    secrets: Dict[str, List[str]] = defaultdict(list)
-    errors: List[FileSyntaxError] = []
-    for line_no, line in enumerate(content.splitlines(), 1):
-        if not line:
-            # Ignore empty line
-            continue
-
-        if COMMENT_PATTERN.match(line):
-            # Ignore comments
-            continue
-
-        var_parts: List[str] = line.split("=", 2)
-        if len(var_parts) != 2:
-            errors.append(
-                FileSyntaxError(
-                    line_no=line_no,
-                    message='Invalid line format. The line should contain at least one equal sign ("=").',
-                )
-            )
-            continue
-
-        key, value = var_parts
-        if not key:
-            errors.append(
-                FileSyntaxError(
-                    line_no=line_no,
-                    message="Invalid line format. Key is empty.",
-                )
-            )
-        secrets[key].append(value)
-    return secrets, errors
-
-
-def _parse_yaml_file(file_path: str) -> Tuple[Dict[str, List[str]], List[FileSyntaxError]]:
-    """
-    Parse a file in the YAML format.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    if not content:
-        return {}, [FileSyntaxError(line_no=1, message="The file is empty.")]
-    try:
-        secrets = yaml.safe_load(content)
-
-    except yaml.MarkedYAMLError as e:
-        return {}, [FileSyntaxError(line_no=e.problem_mark.line, message=str(e))]
-    if not isinstance(secrets, dict):
-        return {}, [FileSyntaxError(line_no=1, message="The file should contain the object.")]
-
-    return secrets, []
-
-
-def _parse_json_file(file_path: str) -> Tuple[Dict[str, Any], List[FileSyntaxError]]:
-    """
-    Parse a file in the JSON format.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    if not content:
-        return {}, [FileSyntaxError(line_no=1, message="The file is empty.")]
-    try:
-        secrets = json.loads(content)
-    except JSONDecodeError as e:
-        return {}, [FileSyntaxError(line_no=int(e.lineno), message=e.msg)]
-    if not isinstance(secrets, dict):
-        return {}, [FileSyntaxError(line_no=1, message="The file should contain the object.")]
-
-    return secrets, []
-
-
-FILE_PARSERS = {
-    "env": _parse_env_file,
-    "json": _parse_json_file,
-    "yaml": _parse_yaml_file,
-}
-
-
-def _parse_secret_file(file_path: str) -> Dict[str, Any]:
-    """
-    Based on the file extension format, selects a parser, and parses the file.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Map of secret key (e.g. connection ID) and value.
-    """
-    if not os.path.exists(file_path):
-        raise AirflowException(
-            f"File {file_path} was not found. Check the configuration of your Secrets backend."
-        )
-
-    log.debug("Parsing file: %s", file_path)
-
-    ext = file_path.rsplit(".", 2)[-1].lower()
-
-    if ext not in FILE_PARSERS:
-        raise AirflowException(
-            "Unsupported file format. The file must have the extension .env or .json or .yaml"
-        )
-
-    secrets, parse_errors = FILE_PARSERS[ext](file_path)
-
-    log.debug("Parsed file: len(parse_errors)=%d, len(secrets)=%d", len(parse_errors), len(secrets))
-
-    if parse_errors:
-        raise AirflowFileParseException(
-            "Failed to load the secret file.", file_path=file_path, parse_errors=parse_errors
-        )
-
-    return secrets
 
 
 def _create_connection(conn_id: str, value: Any):
@@ -235,7 +101,7 @@ def load_variables(file_path: str) -> Dict[str, str]:
     """
     log.debug("Loading variables from a text file")
 
-    secrets = _parse_secret_file(file_path)
+    secrets = _parse_file(file_path)
     invalid_keys = [key for key, values in secrets.items() if isinstance(values, list) and len(values) != 1]
     if invalid_keys:
         raise AirflowException(f'The "{file_path}" file contains multiple values for keys: {invalid_keys}')
@@ -265,7 +131,7 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
     """
     log.debug("Loading connection")
 
-    secrets: Dict[str, Any] = _parse_secret_file(file_path)
+    secrets: Dict[str, Any] = _parse_file(file_path)
     connection_by_conn_id = {}
     for key, secret_values in list(secrets.items()):
         if isinstance(secret_values, list):

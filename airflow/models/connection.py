@@ -377,3 +377,15 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
             if conn:
                 return conn
         raise AirflowNotFoundException(f"The conn_id `{conn_id}` isn't defined")
+
+
+    @classmethod
+    def from_dict(cls, conn_dict: Dict) -> 'Connection':
+        """
+        Create a connection from a dictionary.
+
+        :param conn_dict: dictionary representing a connection's attributes
+            e.g., {'conn_id': '', 'conn_type': '', 'login': '', ...}
+        :return: connection
+        """
+        return Connection(**conn_dict)

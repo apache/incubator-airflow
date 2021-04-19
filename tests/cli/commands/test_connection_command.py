@@ -758,9 +758,9 @@ class TestCliImportConnections(unittest.TestCase):
         ):
             connection_command.connections_import(self.parser.parse_args(["connections", "import", filepath]))
 
-    @mock.patch('airflow.secrets.local_filesystem._parse_secret_file')
+    @mock.patch('airflow.cli.commands.connection_command._parse_file')
     @mock.patch('os.path.exists')
-    def test_cli_connections_import_should_load_connections(self, mock_exists, mock_parse_secret_file):
+    def test_cli_connections_import_should_load_connections(self, mock_exists, mock_parse_file):
         mock_exists.return_value = True
 
         # Sample connections to import
@@ -787,8 +787,8 @@ class TestCliImportConnections(unittest.TestCase):
             },
         }
 
-        # The serialized connections are read in using _parse_secret_file, which returns a dictionary
-        mock_parse_secret_file.return_value = expected_connections
+        # The serialized connections are read in using _parse_file, which returns a dictionary
+        mock_parse_file.return_value = expected_connections
 
         connection_command.connections_import(self.parser.parse_args(["connections", "import", "dummy.json"]))
 
@@ -815,10 +815,10 @@ class TestCliImportConnections(unittest.TestCase):
             assert expected_connections == current_conns_as_dicts
 
     @provide_session
-    @mock.patch('airflow.secrets.local_filesystem._parse_secret_file')
+    @mock.patch('airflow.cli.commands.connection_command._parse_file')
     @mock.patch('os.path.exists')
     def test_cli_connections_import_should_not_overwrite_existing_connections(
-        self, mock_exists, mock_parse_secret_file, session=None
+        self, mock_exists, mock_parse_file, session=None
     ):
         mock_exists.return_value = True
 
@@ -860,8 +860,8 @@ class TestCliImportConnections(unittest.TestCase):
             },
         }
 
-        # The serialized connections are read in using _parse_secret_file, which returns a dictionary
-        mock_parse_secret_file.return_value = expected_connections
+        # The serialized connections are read in using _parse_file, which returns a dictionary
+        mock_parse_file.return_value = expected_connections
 
         with redirect_stdout(io.StringIO()) as stdout:
             connection_command.connections_import(
