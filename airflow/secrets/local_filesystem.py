@@ -22,10 +22,7 @@ import warnings
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
-from airflow.exceptions import (
-    AirflowException,
-    ConnectionNotUnique,
-)
+from airflow.exceptions import AirflowException, ConnectionNotUnique
 from airflow.secrets.base_secrets import BaseSecretsBackend
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.parse import _parse_file
