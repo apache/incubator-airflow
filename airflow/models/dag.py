@@ -113,10 +113,10 @@ def get_last_dagrun(dag_id, session, include_externally_triggered=False):
 
 
 def coerce_datetime(v: Union[None, datetime, pendulum.DateTime]) -> Optional[pendulum.DateTime]:
-    """Convert whatever is passed in to pendulum.DateTime.
+    """Convert whatever is passed in to ``pendulum.DateTime``.
 
     This is for interfacing with the new ``timetables`` package, which
-    exclusively uses pendulum.DateTime internally.
+    exclusively uses ``pendulum.DateTime`` internally.
     """
     if v is None:
         return None
