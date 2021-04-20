@@ -1228,9 +1228,7 @@ class TestSchedulerJob(unittest.TestCase):
         res = self.scheduler_job._executable_task_instances_to_queued(max_tis=1, session=session)
         session.flush()
         assert 1 == len(res)
-        res_keys = []
-        for ti in res:
-            res_keys.append(ti.key)
+        res_keys = [ti.key for ti in res]
         assert tis[1].key in res_keys
         session.rollback()
 
