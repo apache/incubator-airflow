@@ -449,6 +449,42 @@ class TestKubernetesPodOperator(unittest.TestCase):
 
         assert not self.client_mock.return_value.read_namespaced_pod.called
 
+    @mock.patch("airflow.providers.cncf.kubernetes.utils.pod_launcher.PodLauncher.start_pod")
+    @mock.patch("airflow.providers.cncf.kubernetes.utils.pod_launcher.PodLauncher.monitor_pod")
+    @mock.patch("airflow.kubernetes.kube_client.get_kube_client")
+    def test_no_describes_pod_on_failure_is_delete_operator_pod(self, mock_client, monitor_mock, start_mock):
+        from airflow.utils.state import State
+
+        name_base = 'test'
+
+        k = KubernetesPodOperator(
+            namespace='default',
+            image="ubuntu:16.04",
+            cmds=["bash", "-cx"],
+            arguments=["echo 10"],
+            labels={"foo": "bar"},
+            name=name_base,
+            is_delete_operator_pod=True,
+            task_id="task",
+            in_cluster=False,
+            do_xcom_push=False,
+            cluster_context='default',
+        )
+        monitor_mock.return_value = (State.FAILED, None)
+        failed_pod_status = 'failed'
+        read_namespaced_pod_mock = mock_client.return_value.read_namespaced_pod
+        read_namespaced_pod_mock.return_value = failed_pod_status
+
+        with pytest.raises(AirflowException) as ctx:
+            context = self.create_context(k)
+            k.execute(context=context)
+
+        assert (
+            str(ctx.value)
+            == f"Pod Launching failed: Pod {k.pod.metadata.name} returned a failure: {failed_pod_status}"
+        )
+        assert not mock_client.return_value.read_namespaced_pod.called
+
     def test_create_with_affinity(self):
         name_base = "test"
 
