@@ -49,11 +49,9 @@ class OnceTimeTable(TimeTableProtocol):
     ) -> Optional[DagRunInfo]:
         if last_automated_dagrun is not None:
             return None  # Already run, no more scheduling.
-        run_after = between.earliest
-        if run_after is None:
+        if between.earliest is None:
             return None
-        if between.earliest is not None and run_after < between.earliest:
-            run_after = between.earliest
+        run_after = between.earliest
         if between.latest is not None and run_after > between.latest:
             return None
         return DagRunInfo.exact(run_after)

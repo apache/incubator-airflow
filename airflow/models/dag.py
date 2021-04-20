@@ -579,20 +579,16 @@ class DAG(LoggingMixin):
         return TimeRestriction(restriction_earliest, restriction_latest)
 
     def _create_time_table(self) -> TimeTableProtocol:
-        if self.schedule_interval is None:
+        interval = self.schedule_interval
+        if interval is None:
             return NullTimeTable()
-        if self.schedule_interval == "@once":
+        if interval == "@once":
             return OnceTimeTable()
-        if not isinstance(self.schedule_interval, str):
-            return DeltaDataIntervalTimeTable(
-                self.schedule_interval,
-                catchup=self.catchup,
-            )
-        return CronDataIntervalTimeTable(
-            self.schedule_interval,
-            timezone=pendulum.timezone(self.timezone.name),
-            catchup=self.catchup,
-        )
+        if not isinstance(interval, str):
+            assert isinstance(interval, (timedelta, relativedelta))
+            return DeltaDataIntervalTimeTable(interval, self.catchup)
+        tz = pendulum.timezone(self.timezone.name)
+        return CronDataIntervalTimeTable(interval, tz, self.catchup)
 
     def get_run_dates(self, start_date, end_date=None):
         """

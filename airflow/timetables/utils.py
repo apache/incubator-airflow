@@ -34,6 +34,10 @@ Delta = typing.Union[datetime.timedelta, relativedelta]
 class ScheduleProtocol(Protocol):
     """Base protocol for schedules."""
 
+    def cancel_catchup(self, restriction: TimeRestriction) -> TimeRestriction:
+        """Fix time restriction to not perform catchup."""
+        raise NotImplementedError()
+
     def get_next(self, current: DateTime) -> DateTime:
         """Get the first schedule after the current time."""
         raise NotImplementedError()
@@ -151,8 +155,7 @@ class DeltaSchedule(ScheduleProtocol):
         This is slightly different from the cron version at terminal values.
         """
         earliest = restriction.earliest
-        current_time = DateTime.now(UTC)
-        new_start = self.get_prev(current_time)
+        new_start = self.get_prev(DateTime.now(UTC))
         if restriction.earliest is None:
             earliest = new_start
         else:
