@@ -44,6 +44,7 @@ from typing import (
     cast,
 )
 
+import cached_property
 import jinja2
 import pendulum
 from croniter import croniter
@@ -553,7 +554,7 @@ class DAG(LoggingMixin):
         """
         if self.is_subdag:
             return (None, None)
-        next_info = self._create_time_table().next_dagrun_info(
+        next_info = self.time_table.next_dagrun_info(
             coerce_datetime(date_last_automated_dagrun),
             self._format_time_restriction(),
         )
@@ -578,7 +579,8 @@ class DAG(LoggingMixin):
             restriction_latest = None
         return TimeRestriction(restriction_earliest, restriction_latest)
 
-    def _create_time_table(self) -> TimeTableProtocol:
+    @cached_property.cached_property
+    def time_table(self) -> TimeTableProtocol:
         interval = self.schedule_interval
         if interval is None:
             return NullTimeTable()
