@@ -33,16 +33,15 @@ class DataIntervalTimeTable(TimeTable):
     """
 
     _schedule: Schedule
-    _catchup: bool
+
+    def cancel_catchup(self, between: TimeRestriction) -> TimeRestriction:
+        return self._schedule.cancel_catchup(between)
 
     def next_dagrun_info(
         self,
         last_automated_dagrun: Optional[DateTime],
         between: TimeRestriction,
     ) -> Optional[DagRunInfo]:
-        if not self._catchup:
-            between = self._schedule.cancel_catchup(between)
-
         if last_automated_dagrun is None:
             # First run; schedule the run at the first available time matching
             # the schedule, and retrospectively create a data interval for it.
@@ -68,9 +67,8 @@ class CronDataIntervalTimeTable(DataIntervalTimeTable):
     Don't pass ``@once`` in here; use ``OnceTimeTable`` instead.
     """
 
-    def __init__(self, cron: str, timezone: Timezone, catchup: bool) -> None:
+    def __init__(self, cron: str, timezone: Timezone) -> None:
         self._schedule = CronSchedule(cron, timezone)
-        self._catchup = catchup
 
 
 class DeltaDataIntervalTimeTable(DataIntervalTimeTable):
@@ -81,6 +79,5 @@ class DeltaDataIntervalTimeTable(DataIntervalTimeTable):
     instance.
     """
 
-    def __init__(self, delta: Delta, catchup: bool) -> None:
+    def __init__(self, delta: Delta) -> None:
         self._schedule = DeltaSchedule(delta)
-        self._catchup = catchup

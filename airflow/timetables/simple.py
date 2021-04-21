@@ -28,6 +28,9 @@ class NullTimeTable(TimeTable):
     This corresponds to ``schedule_interval=None``.
     """
 
+    def cancel_catchup(self, between: TimeRestriction) -> TimeRestriction:
+        return between
+
     def next_dagrun_info(
         self,
         last_automated_dagrun: Optional[DateTime],
@@ -41,6 +44,9 @@ class OnceTimeTable(TimeTable):
 
     This corresponds to ``schedule_interval="@once"``.
     """
+
+    def cancel_catchup(self, between: TimeRestriction) -> TimeRestriction:
+        return between
 
     def next_dagrun_info(
         self,

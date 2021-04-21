@@ -79,6 +79,10 @@ class DagRunInfo(NamedTuple):
 class TimeTable(Protocol):
     """Protocol that all TimeTable classes are expected to implement."""
 
+    def cancel_catchup(self, between: TimeRestriction) -> TimeRestriction:
+        """Fix time restriction to not perform catchup."""
+        raise NotImplementedError()
+
     def next_dagrun_info(
         self,
         last_automated_dagrun: Optional[DateTime],

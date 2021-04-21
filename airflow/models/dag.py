@@ -543,9 +543,13 @@ class DAG(LoggingMixin):
         # function. We should fix whatever is doing that.
         if self.is_subdag:
             return (None, None)
-        next_info = self.time_table.next_dagrun_info(
+        time_table: TimeTable = self.time_table
+        restriction = self._format_time_restriction()
+        if not self.catchup:
+            restriction = time_table.cancel_catchup(restriction)
+        next_info = time_table.next_dagrun_info(
             timezone.coerce_datetime(date_last_automated_dagrun),
-            self._format_time_restriction(),
+            restriction,
         )
         if next_info is None:
             return (None, None)
@@ -577,9 +581,9 @@ class DAG(LoggingMixin):
             return OnceTimeTable()
         if not isinstance(interval, str):
             assert isinstance(interval, (timedelta, relativedelta))
-            return DeltaDataIntervalTimeTable(interval, self.catchup)
+            return DeltaDataIntervalTimeTable(interval)
         tz = pendulum.timezone(self.timezone.name)
-        return CronDataIntervalTimeTable(interval, tz, self.catchup)
+        return CronDataIntervalTimeTable(interval, tz)
 
     def get_run_dates(self, start_date, end_date=None):
         """
