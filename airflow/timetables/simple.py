@@ -19,10 +19,10 @@ from typing import Optional
 
 from pendulum import DateTime
 
-from airflow.timetables.base import DagRunInfo, TimeRestriction, TimeTableProtocol
+from airflow.timetables.base import DagRunInfo, TimeRestriction, TimeTable
 
 
-class NullTimeTable(TimeTableProtocol):
+class NullTimeTable(TimeTable):
     """Time table that never schedules anything.
 
     This corresponds to ``schedule_interval=None``.
@@ -36,7 +36,7 @@ class NullTimeTable(TimeTableProtocol):
         return None
 
 
-class OnceTimeTable(TimeTableProtocol):
+class OnceTimeTable(TimeTable):
     """Time table that schedules the execution once as soon as possible.
 
     This corresponds to ``schedule_interval="@once"``.

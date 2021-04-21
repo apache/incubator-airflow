@@ -20,11 +20,11 @@ from typing import Optional
 from pendulum import DateTime
 from pendulum.tz.timezone import Timezone
 
-from airflow.timetables.base import DagRunInfo, TimeRestriction, TimeTableProtocol
-from airflow.timetables.utils import Delta, DeltaSchedule, ScheduleProtocol, TimeZoneAwareCron
+from airflow.timetables.base import DagRunInfo, TimeRestriction, TimeTable
+from airflow.timetables.schedules import CronSchedule, Delta, DeltaSchedule, Schedule
 
 
-class DataIntervalTimeTable(TimeTableProtocol):
+class DataIntervalTimeTable(TimeTable):
     """Basis for time table implementations that schedule data intervals.
 
     This kind of time tables create periodic data intervals from an underlying
@@ -32,7 +32,7 @@ class DataIntervalTimeTable(TimeTableProtocol):
     and schedule a DagRun at the end of each interval.
     """
 
-    _schedule: ScheduleProtocol
+    _schedule: Schedule
     _catchup: bool
 
     def next_dagrun_info(
@@ -69,7 +69,7 @@ class CronDataIntervalTimeTable(DataIntervalTimeTable):
     """
 
     def __init__(self, cron: str, timezone: Timezone, catchup: bool) -> None:
-        self._schedule = TimeZoneAwareCron(cron, timezone)
+        self._schedule = CronSchedule(cron, timezone)
         self._catchup = catchup
 
 

@@ -76,7 +76,7 @@ class DagRunInfo(NamedTuple):
         return cls(run_after=end, data_interval=DataInterval(start, end))
 
 
-class TimeTableProtocol(Protocol):
+class TimeTable(Protocol):
     """Protocol that all TimeTable classes are expected to implement."""
 
     def next_dagrun_info(

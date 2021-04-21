@@ -66,7 +66,7 @@ from airflow.models.dagrun import DagRun
 from airflow.models.taskinstance import Context, TaskInstance, clear_task_instances
 from airflow.security import permissions
 from airflow.stats import Stats
-from airflow.timetables.base import TimeRestriction, TimeTableProtocol
+from airflow.timetables.base import TimeRestriction, TimeTable
 from airflow.timetables.interval import CronDataIntervalTimeTable, DeltaDataIntervalTimeTable
 from airflow.timetables.simple import NullTimeTable, OnceTimeTable
 from airflow.utils import timezone
@@ -569,7 +569,7 @@ class DAG(LoggingMixin):
         return TimeRestriction(restriction_earliest, restriction_latest)
 
     @cached_property.cached_property
-    def time_table(self) -> TimeTableProtocol:
+    def time_table(self) -> TimeTable:
         interval = self.schedule_interval
         if interval is None:
             return NullTimeTable()

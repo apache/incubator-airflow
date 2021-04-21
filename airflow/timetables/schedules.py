@@ -31,7 +31,7 @@ from airflow.utils.timezone import convert_to_utc, make_aware, make_naive
 Delta = typing.Union[datetime.timedelta, relativedelta]
 
 
-class ScheduleProtocol(Protocol):
+class Schedule(Protocol):
     """Base protocol for schedules."""
 
     def cancel_catchup(self, restriction: TimeRestriction) -> TimeRestriction:
@@ -75,11 +75,12 @@ def _is_schedule_fixed(expression: str) -> bool:
     return next_b.minute == next_a.minute and next_b.hour == next_a.hour
 
 
-class TimeZoneAwareCron(ScheduleProtocol):
-    """Extended on croniter to add timezone awareness.
+class CronSchedule(Schedule):
+    """Schedule things from a cron expression.
 
-    This is done because crontier works only with naive timestamps, and cannot
-    consider DST when determining the next/previous time.
+    The implementation extends on croniter to add timezone awareness. This is
+    because crontier works only with naive timestamps, and cannot consider DST
+    when determining the next/previous time.
     """
 
     def __init__(self, expression: str, timezone: Timezone) -> None:
@@ -134,7 +135,7 @@ class TimeZoneAwareCron(ScheduleProtocol):
         return TimeRestriction(earliest=earliest, latest=restriction.latest)
 
 
-class DeltaSchedule(ScheduleProtocol):
+class DeltaSchedule(Schedule):
     """Schedule things on a fixed time delta."""
 
     def __init__(self, delta: Delta) -> None:
