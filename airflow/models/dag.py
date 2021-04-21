@@ -113,21 +113,6 @@ def get_last_dagrun(dag_id, session, include_externally_triggered=False):
     return query.first()
 
 
-def coerce_datetime(v: Union[None, datetime, pendulum.DateTime]) -> Optional[pendulum.DateTime]:
-    """Convert whatever is passed in to ``pendulum.DateTime``.
-
-    This is for interfacing with the new ``timetables`` package, which
-    exclusively uses ``pendulum.DateTime`` internally.
-    """
-    if v is None:
-        return None
-    if isinstance(v, pendulum.DateTime):
-        return v
-    if v.tzinfo is None:
-        v = timezone.make_aware(v)
-    return pendulum.instance(v)
-
-
 @functools.total_ordering
 class DAG(LoggingMixin):
     """
@@ -552,10 +537,14 @@ class DAG(LoggingMixin):
             "automated" DagRuns for this dag (scheduled or backfill, but not
             manual)
         """
+        # XXX: The timezone.coerce_datetime calls in this function should not
+        # be necessary since the function annotation suggests it only accepts
+        # pendulum.DateTime, and someone is passing datetime.datetime into this
+        # function. We should fix whatever is doing that.
         if self.is_subdag:
             return (None, None)
         next_info = self.time_table.next_dagrun_info(
-            coerce_datetime(date_last_automated_dagrun),
+            timezone.coerce_datetime(date_last_automated_dagrun),
             self._format_time_restriction(),
         )
         if next_info is None:
@@ -567,14 +556,14 @@ class DAG(LoggingMixin):
         if self.start_date is not None:
             start_dates.append(self.start_date)
         if start_dates:
-            restriction_earliest = coerce_datetime(min(start_dates))
+            restriction_earliest = timezone.coerce_datetime(min(start_dates))
         else:
             restriction_earliest = None
         end_dates = [t.end_date for t in self.tasks if t.end_date]
         if self.end_date is not None:
             end_dates.append(self.end_date)
         if end_dates:
-            restriction_latest = coerce_datetime(max(end_dates))
+            restriction_latest = timezone.coerce_datetime(max(end_dates))
         else:
             restriction_latest = None
         return TimeRestriction(restriction_earliest, restriction_latest)
