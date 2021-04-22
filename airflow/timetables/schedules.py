@@ -90,7 +90,7 @@ class CronSchedule(Schedule):
 
     def get_next(self, current: DateTime) -> DateTime:
         """Get the first schedule after specified time, with DST fixed."""
-        naive = make_naive(current)
+        naive = make_naive(current, self._timezone)
         cron = croniter(self._expression, start_time=naive)
         scheduled = cron.get_next(datetime.datetime)
         if not self._should_fix_dst:
@@ -100,7 +100,7 @@ class CronSchedule(Schedule):
 
     def get_prev(self, current: DateTime) -> DateTime:
         """Get the first schedule before specified time, with DST fixed."""
-        naive = make_naive(current)
+        naive = make_naive(current, self._timezone)
         cron = croniter(self._expression, start_time=naive)
         scheduled = cron.get_prev(datetime.datetime)
         if not self._should_fix_dst:
