@@ -76,7 +76,13 @@ class Borg:
 class ResourceVersion(Borg):
     """Track resourceVersion from Kubernetes"""
 
-    def __init__(self, *, kube_client=None, namespace=None, resource_version=None):
+    def __init__(
+        self,
+        *,
+        kube_client: Optional[client.CoreV1Api] = None,
+        namespace: Optional[str] = None,
+        resource_version: Optional[str] = None,
+    ):
         Borg.__init__(self)
         if resource_version:
             # Update the state
@@ -93,7 +99,7 @@ class ResourceVersion(Borg):
         cls._shared_state = {}
 
 
-def get_resource_version(kube_client: client.CoreV1Api, namespace):
+def get_resource_version(kube_client: client.CoreV1Api, namespace: str):
     """
     List pods to get the latest resource version
 
