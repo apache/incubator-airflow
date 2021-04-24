@@ -71,6 +71,16 @@ https://developers.google.com/style/inclusive-documentation
 
 -->
 
+### Remove `TaskInstance.log_filepath` attribute
+
+This method returned incorrect values for a long time, because it did not take into account the different
+logger configuration and task retries. We have also started supporting more advanced tools that don't use
+files, so it is impossible to determine the correct file path in every case e.g. Stackdriver doesn't use files
+but identifies logs based on labels.  For this reason, we decided to delete this attribute.
+
+If you need to read logs, you can use `airflow.utils.log.log_reader.TaskLogReader` class, which does not have
+the above restrictions.
+
 ### Removed pod_launcher from core airflow
 
 Moved the pod launcher from `airflow.kubernetes.pod_launcher` to `airflow.providers.cncf.kubernetes.utils.pod_launcher`
