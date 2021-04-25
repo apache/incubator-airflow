@@ -25,3 +25,4 @@ You can learn how to use Google integrations by analyzing the source code of the
 * `Google Firebase <https://github.com/apache/airflow/tree/master/airflow/providers/google/firebase/example_dags>`__
 * `Google Marketing Platform <https://github.com/apache/airflow/tree/master/airflow/providers/google/marketing_platform/example_dags>`__
 * `Google Workplace <https://github.com/apache/airflow/tree/master/airflow/providers/google/suite/example_dags>`__ (formerly Google Suite)
+* `Google LevelDB <https://github.com/apache/airflow/tree/master/airflow/providers/google/leveldb/example_dags>`__

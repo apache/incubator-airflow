@@ -214,7 +214,7 @@ class GcpAuthenticator(LoggingCommandExecutor):
 
     def gcp_restore_authentication(self):
         """
-        Restore authentication to the original one one.
+        Restore authentication to the original one.
         """
         self._validate_key_set()
         if GcpAuthenticator.original_account:

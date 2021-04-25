@@ -181,17 +181,17 @@ with DAG(
             "links": [
                 {
                     "title": "Airflow DAG feed card",
-                    "messageURL": "https://airflow.apache.org/docs/stable/ui.html",
+                    "messageURL": "https://airflow.apache.org/docs/apache-airflow/stable/ui.html",
                     "picURL": "https://airflow.apache.org/_images/dags.png",
                 },
                 {
                     "title": "Airflow tree feed card",
-                    "messageURL": "https://airflow.apache.org/docs/stable/ui.html",
+                    "messageURL": "https://airflow.apache.org/docs/apache-airflow/stable/ui.html",
                     "picURL": "https://airflow.apache.org/_images/tree.png",
                 },
                 {
                     "title": "Airflow graph feed card",
-                    "messageURL": "https://airflow.apache.org/docs/stable/ui.html",
+                    "messageURL": "https://airflow.apache.org/docs/apache-airflow/stable/ui.html",
                     "picURL": "https://airflow.apache.org/_images/graph.png",
                 },
             ]

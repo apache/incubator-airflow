@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Replace deprecated doc links to the correct one (#14429)``
+
 1.0.1
 .....
 

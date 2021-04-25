@@ -18,7 +18,9 @@
 # shellcheck source=scripts/ci/libraries/_script_init.sh
 . "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
 
-if [[ ${GITHUB_REF} == 'refs/heads/master' ]]; then
+if [[ ${GITHUB_REF} == 'refs/heads/main' ]]; then
+  echo "::set-output name=branch::constraints-main"
+elif [[ ${GITHUB_REF} == 'refs/heads/master' ]]; then
   echo "::set-output name=branch::constraints-master"
 elif [[ ${GITHUB_REF} == 'refs/heads/v1-10-test' ]]; then
   echo "::set-output name=branch::constraints-1-10"

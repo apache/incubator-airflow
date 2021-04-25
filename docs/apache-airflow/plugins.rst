@@ -115,7 +115,7 @@ looks like:
         flask_blueprints = []
         # A list of dictionaries containing FlaskAppBuilder BaseView object and some metadata. See example below
         appbuilder_views = []
-        # A list of dictionaries containing FlaskAppBuilder BaseView object and some metadata. See example below
+        # A list of dictionaries containing kwargs for FlaskAppBuilder add_link. See example below
         appbuilder_menu_items = []
         # A callback to perform actions when airflow starts and the plugin is loaded.
         # NOTE: Ensure your plugin has *args, and **kwargs in the method definition
@@ -190,7 +190,7 @@ definitions in Airflow.
 
         @expose("/")
         def test(self):
-            return self.render("test_plugin/test.html", content="Hello galaxy!")
+            return self.render_template("test_plugin/test.html", content="Hello galaxy!")
 
     # Creating a flask appbuilder BaseView
     class TestAppBuilderBaseNoMenuView(AppBuilderBaseView):
@@ -210,11 +210,16 @@ definitions in Airflow.
         "view": v_appbuilder_nomenu_view
     }
 
-    # Creating a flask appbuilder Menu Item
-    appbuilder_mitem = {"name": "Google",
-                        "category": "Search",
-                        "category_icon": "fa-th",
-                        "href": "https://www.google.com"}
+    # Creating flask appbuilder Menu Items
+    appbuilder_mitem = {
+        "name": "Google",
+        "href": "https://www.google.com",
+        "category": "Search",
+    }
+    appbuilder_mitem_toplevel = {
+        "name": "Apache",
+        "href": "https://www.apache.org/",
+    }
 
     # A global operator extra link that redirect you to
     # task logs stored in S3
@@ -247,7 +252,7 @@ definitions in Airflow.
         macros = [plugin_macro]
         flask_blueprints = [bp]
         appbuilder_views = [v_appbuilder_package, v_appbuilder_nomenu_package]
-        appbuilder_menu_items = [appbuilder_mitem]
+        appbuilder_menu_items = [appbuilder_mitem, appbuilder_mitem_toplevel]
         global_operator_extra_links = [GoogleLink(),]
         operator_extra_links = [S3LogLink(), ]
 

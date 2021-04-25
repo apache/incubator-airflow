@@ -35,7 +35,7 @@ from kombu.asynchronous import set_event_loop
 from parameterized import parameterized
 
 from airflow.configuration import conf
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.executors import celery_executor
 from airflow.executors.celery_executor import BulkStateFetcher
 from airflow.models.baseoperator import BaseOperator
@@ -200,14 +200,12 @@ class TestCeleryExecutor(unittest.TestCase):
     def test_retry_on_error_sending_task(self):
         """Test that Airflow retries publishing tasks to Celery Broker at least 3 times"""
 
-        def fake_execute_command(command):
-            print(command)
-
-        with _prepare_app(execute=fake_execute_command), self.assertLogs(
-            celery_executor.log
-        ) as cm, mock.patch.object(celery_executor, "OPERATION_TIMEOUT", 0.001):
-            # fake_execute_command takes no arguments while execute_command takes 1,
-            # which will cause TypeError when calling task.apply_async()
+        with _prepare_app(), self.assertLogs(celery_executor.log) as cm, mock.patch.object(
+            # Mock `with timeout()` to _instantly_ fail.
+            celery_executor.timeout,
+            "__enter__",
+            side_effect=AirflowTaskTimeout,
+        ):
             executor = celery_executor.CeleryExecutor()
             assert executor.task_publish_retries == {}
             assert executor.task_publish_max_retries == 3, "Assert Default Max Retries is 3"

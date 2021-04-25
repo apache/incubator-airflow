@@ -81,6 +81,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         bigquery_conn_id: Optional[str] = None,
         api_resource_configs: Optional[Dict] = None,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        labels: Optional[Dict] = None,
     ) -> None:
         # To preserve backward compatibility
         # TODO: remove one day
@@ -101,6 +102,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         self.location = location
         self.running_job_id = None  # type: Optional[str]
         self.api_resource_configs = api_resource_configs if api_resource_configs else {}  # type Dict
+        self.labels = labels
 
     def get_conn(self) -> "BigQueryConnection":
         """Returns a BigQuery PEP 249 connection object."""
@@ -274,6 +276,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         cluster_fields: Optional[List[str]] = None,
         labels: Optional[Dict] = None,
         view: Optional[Dict] = None,
+        materialized_view: Optional[Dict] = None,
         encryption_configuration: Optional[Dict] = None,
         retry: Optional[Retry] = DEFAULT_RETRY,
         num_retries: Optional[int] = None,
@@ -330,6 +333,8 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
                 "useLegacySql": False
             }
 
+        :param materialized_view: [Optional] The materialized view definition.
+        :type materialized_view: dict
         :param encryption_configuration: [Optional] Custom encryption configuration (e.g., Cloud KMS keys).
             **Example**: ::
 
@@ -365,6 +370,9 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
 
         if view:
             _table_resource['view'] = view
+
+        if materialized_view:
+            _table_resource['materializedView'] = materialized_view
 
         if encryption_configuration:
             _table_resource["encryptionConfiguration"] = encryption_configuration
@@ -405,7 +413,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         :param dataset_reference: Dataset reference that could be provided with request body. More info:
             https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets#resource
         :type dataset_reference: dict
-        :param exists_ok: If ``True``, ignore "already exists" errors when creating the DATASET.
+        :param exists_ok: If ``True``, ignore "already exists" errors when creating the dataset.
         :type exists_ok: bool
         """
         dataset_reference = dataset_reference or {"datasetReference": {}}
@@ -523,6 +531,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         encoding: str = "UTF-8",
         src_fmt_configs: Optional[Dict] = None,
         labels: Optional[Dict] = None,
+        description: Optional[str] = None,
         encryption_configuration: Optional[Dict] = None,
         location: Optional[str] = None,
         project_id: Optional[str] = None,
@@ -591,8 +600,10 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         :type encoding: str
         :param src_fmt_configs: configure optional fields specific to the source format
         :type src_fmt_configs: dict
-        :param labels: a dictionary containing labels for the table, passed to BigQuery
+        :param labels: A dictionary containing labels for the BiqQuery table.
         :type labels: dict
+        :param description: A string containing the description for the BigQuery table.
+        :type descriptin: str
         :param encryption_configuration: [Optional] Custom encryption configuration (e.g., Cloud KMS keys).
             **Example**: ::
 
@@ -660,6 +671,9 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         table.external_data_configuration = external_config
         if labels:
             table.labels = labels
+
+        if description:
+            table.description = description
 
         if encryption_configuration:
             table.encryption_configuration = EncryptionConfiguration.from_api_repr(encryption_configuration)
@@ -1552,6 +1566,8 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         cluster_fields: Optional[List] = None,
         autodetect: bool = False,
         encryption_configuration: Optional[Dict] = None,
+        labels: Optional[Dict] = None,
+        description: Optional[str] = None,
     ) -> str:
         """
         Executes a BigQuery load command to load data from Google Cloud Storage
@@ -1634,6 +1650,10 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
                     "kmsKeyName": "projects/testp/locations/us/keyRings/test-kr/cryptoKeys/test-key"
                 }
         :type encryption_configuration: dict
+        :param labels: A dictionary containing labels for the BiqQuery table.
+        :type labels: dict
+        :param description: A string containing the description for the BigQuery table.
+        :type descriptin: str
         """
         warnings.warn(
             "This method is deprecated. Please use `BigQueryHook.insert_job` method.", DeprecationWarning
@@ -1733,6 +1753,15 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
 
         if encryption_configuration:
             configuration["load"]["destinationEncryptionConfiguration"] = encryption_configuration
+
+        if labels or description:
+            configuration['load'].update({'destinationTableProperties': {}})
+
+            if labels:
+                configuration['load']['destinationTableProperties']['labels'] = labels
+
+            if description:
+                configuration['load']['destinationTableProperties']['description'] = description
 
         src_fmt_to_configs_mapping = {
             'CSV': [
@@ -2054,6 +2083,7 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
         if not self.project_id:
             raise ValueError("The project_id should be set")
 
+        labels = labels or self.labels
         schema_update_options = list(schema_update_options or [])
 
         if time_partitioning is None:
@@ -2252,6 +2282,7 @@ class BigQueryBaseCursor(LoggingMixin):
         api_resource_configs: Optional[Dict] = None,
         location: Optional[str] = None,
         num_retries: int = 5,
+        labels: Optional[Dict] = None,
     ) -> None:
 
         super().__init__()
@@ -2264,6 +2295,7 @@ class BigQueryBaseCursor(LoggingMixin):
         self.running_job_id = None  # type: Optional[str]
         self.location = location
         self.num_retries = num_retries
+        self.labels = labels
         self.hook = hook
 
     def create_empty_table(self, *args, **kwargs) -> None:

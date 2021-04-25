@@ -741,6 +741,39 @@ class TestGCSHook(unittest.TestCase):
             ]
         )
 
+    @mock.patch(GCS_STRING.format('GCSHook.get_conn'))
+    def test_list_by_timespans(self, mock_service):
+        test_bucket = 'test_bucket'
+
+        # Given
+        blob1 = mock.Mock()
+        blob1.name = "in-interval-1"
+        blob1.updated = datetime(2019, 8, 28, 14, 7, 20, 0, dateutil.tz.tzutc())
+        blob2 = mock.Mock()
+        blob2.name = "in-interval-2"
+        blob2.updated = datetime(2019, 8, 28, 14, 37, 20, 0, dateutil.tz.tzutc())
+        blob3 = mock.Mock()
+        blob3.name = "outside-interval"
+        blob3.updated = datetime(2019, 8, 29, 14, 7, 20, 0, dateutil.tz.tzutc())
+
+        mock_service.return_value.bucket.return_value.list_blobs.return_value.__iter__.return_value = [
+            blob1,
+            blob2,
+            blob3,
+        ]
+        mock_service.return_value.bucket.return_value.list_blobs.return_value.prefixes = None
+        mock_service.return_value.bucket.return_value.list_blobs.return_value.next_page_token = None
+
+        # When
+        response = self.gcs_hook.list_by_timespan(
+            bucket_name=test_bucket,
+            timespan_start=datetime(2019, 8, 28, 14, 0, 0, 0, dateutil.tz.tzutc()),
+            timespan_end=datetime(2019, 8, 28, 15, 0, 0, 0, dateutil.tz.tzutc()),
+        )
+
+        # Then
+        assert len(response) == 2 and all('in-interval' in b for b in response)
+
 
 class TestGCSHookUpload(unittest.TestCase):
     def setUp(self):
@@ -840,22 +873,22 @@ class TestGCSHookUpload(unittest.TestCase):
     def test_upload_exceptions(self, mock_service):
         test_bucket = 'test_bucket'
         test_object = 'test_object'
-        both_params_excep = (
+        both_params_except = (
             "'filename' and 'data' parameter provided. Please "
             "specify a single parameter, either 'filename' for "
             "local file uploads or 'data' for file content uploads."
         )
-        no_params_excep = "'filename' and 'data' parameter missing. One is required to upload to gcs."
+        no_params_except = "'filename' and 'data' parameter missing. One is required to upload to gcs."
 
         with pytest.raises(ValueError) as ctx:
             self.gcs_hook.upload(test_bucket, test_object)
-        assert no_params_excep == str(ctx.value)
+        assert no_params_except == str(ctx.value)
 
         with pytest.raises(ValueError) as ctx:
             self.gcs_hook.upload(
                 test_bucket, test_object, filename=self.testfile.name, data=self.testdata_str
             )
-        assert both_params_excep == str(ctx.value)
+        assert both_params_except == str(ctx.value)
 
 
 class TestSyncGcsHook(unittest.TestCase):

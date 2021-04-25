@@ -38,6 +38,8 @@ def conf_vars(overrides):
         else:
             original[(section, key)] = None
         if value is not None:
+            if not conf.has_section(section):
+                conf.add_section(section)
             conf.set(section, key, value)
         else:
             conf.remove_option(section, key)

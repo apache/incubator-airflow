@@ -22,7 +22,10 @@ from copy import deepcopy
 from typing import Any, Dict, Optional, Sequence, Union
 from urllib.parse import unquote, urlparse
 
-import yaml
+try:
+    import airflow.utils.yaml as yaml
+except ImportError:
+    import yaml
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator

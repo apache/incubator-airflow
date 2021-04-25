@@ -109,12 +109,13 @@ airflowPodAnnotations: {}
 rbacEnabled: true
 
 # Airflow executor
-# Options: SequentialExecutor, LocalExecutor, CeleryExecutor, KubernetesExecutor
+# Options: LocalExecutor, CeleryExecutor, KubernetesExecutor, CeleryKubernetesExecutor
 executor: "KubernetesExecutor"
 
-# If this is true and using LocalExecutor/SequentialExecutor/KubernetesExecutor, the scheduler's
+# If this is true and using LocalExecutor/KubernetesExecutor/CeleryKubernetesExecutor, the scheduler's
 # service account will have access to communicate with the api-server and launch pods.
-# If this is true and using the CeleryExecutor, the workers will be able to launch pods.
+# If this is true and using CeleryExecutor/KubernetesExecutor/CeleryKubernetesExecutor, the workers
+# will be able to launch pods.
 allowPodLaunching: true
 
 # Images
@@ -166,7 +167,7 @@ secret: []
 # Extra secrets that will be managed by the chart
 # (You can use them with extraEnv or extraEnvFrom or some of the extraVolumes values).
 # The format is "key/value" where
-#    * key (can be templated) is the the name the secret that will be created
+#    * key (can be templated) is the name of the secret that will be created
 #    * value: an object with the standard 'data' or 'stringData' key (or both).
 #          The value associated with those keys must be a string (can be templated)
 extraSecrets: {}
@@ -185,7 +186,7 @@ extraSecrets: {}
 # Extra ConfigMaps that will be managed by the chart
 # (You can use them with extraEnv or extraEnvFrom or some of the extraVolumes values).
 # The format is "key/value" where
-#    * key (can be templated) is the the name the configmap that will be created
+#    * key (can be templated) is the name of the configmap that will be created
 #    * value: an object with the standard 'data' key.
 #          The value associated with this keys must be a string (can be templated)
 extraConfigMaps: {}
@@ -201,8 +202,8 @@ extraConfigMaps: {}
 extraEnv: ~
 # eg:
 # extraEnv: |
-#   - name: PLATFORM
-#     value: FR
+#   - name: AIRFLOW__CORE__LOAD_EXAMPLES
+#     value: 'True'
 
 # Extra envFrom 'items' that will be added to the definition of airflow containers
 # A string is expected (can be templated).
@@ -330,6 +331,13 @@ workers:
   kerberosSidecar:
     # Enable kerberos sidecar
     enabled: false
+    resources: {}
+    #  limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    #  requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
   resources: {}
   #  limits:
@@ -347,6 +355,10 @@ workers:
   safeToEvict: true
   # Annotations to add to worker kubernetes service account.
   serviceAccountAnnotations: {}
+
+  # Launch additional containers into worker.
+  extraContainers: []
+
   # Mount additional volumes into worker.
   extraVolumes: []
   extraVolumeMounts: []
@@ -355,6 +367,16 @@ workers:
   nodeSelector: {}
   affinity: {}
   tolerations: []
+  # hostAliases to use in worker pods.
+  # See:
+  # https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+  hostAliases: []
+  # - ip: "127.0.0.2"
+  #   hostnames:
+  #   - "test.hostname.one"
+  # - ip: "127.0.0.3"
+  #   hostnames:
+  #   - "test.hostname.two"
 
 # Airflow scheduler settings
 scheduler:
@@ -387,6 +409,9 @@ scheduler:
 
   # Annotations to add to scheduler kubernetes service account.
   serviceAccountAnnotations: {}
+
+  # Launch additional containers into scheduler.
+  extraContainers: []
 
   # Mount additional volumes into scheduler.
   extraVolumes: []
@@ -436,6 +461,9 @@ webserver:
     lastName: user
     password: admin
 
+  # Launch additional containers into webserver.
+  extraContainers: []
+
   # Mount additional volumes into webserver.
   extraVolumes: []
   extraVolumeMounts: []
@@ -468,6 +496,9 @@ webserver:
 
 # Flower settings
 flower:
+  # Enable flower.
+  # If True, and using CeleryExecutor/CeleryKubernetesExecutor, will deploy flower app.
+  enabled: true
   # Additional network policies as needed
   extraNetworkPolicies: []
   resources: {}
@@ -689,6 +720,7 @@ postgresql:
 config:
   core:
     dags_folder: '{{ include "airflow_dags" . }}'
+    # This is ignored when used with the official Docker image
     load_examples: 'False'
     executor: '{{ .Values.executor }}'
     # For Airflow 1.10, backward compatibility
@@ -706,11 +738,12 @@ config:
     statsd_port: 9125
     statsd_prefix: airflow
     statsd_host: '{{ printf "%s-statsd" .Release.Name }}'
+  operators:
+    default_queue: celery
   webserver:
     enable_proxy_fix: 'True'
     rbac: 'True'
   celery:
-    default_queue: celery
     worker_concurrency: 16
   scheduler:
     scheduler_heartbeat_sec: 5
@@ -816,3 +849,4 @@ dags:
     wait: 60
     containerName: git-sync
     uid: 65533
+    extraVolumeMounts: []

@@ -18,11 +18,11 @@
 import os
 import sys
 
-import yaml
 from kubernetes import client
 from kubernetes.client.api_client import ApiClient
 from kubernetes.client.rest import ApiException
 
+import airflow.utils.yaml as yaml
 from airflow.executors.kubernetes_executor import KubeConfig, create_pod_id
 from airflow.kubernetes import pod_generator
 from airflow.kubernetes.kube_client import get_kube_client

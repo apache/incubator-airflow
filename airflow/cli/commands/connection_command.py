@@ -22,9 +22,9 @@ import sys
 from typing import Any, Dict, List
 from urllib.parse import urlparse, urlunparse
 
-import yaml
 from sqlalchemy.orm import exc
 
+import airflow.utils.yaml as yaml
 from airflow.cli.simple_table import AirflowConsole
 from airflow.exceptions import AirflowNotFoundException
 from airflow.hooks.base import BaseHook

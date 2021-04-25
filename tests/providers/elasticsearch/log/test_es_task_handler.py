@@ -131,7 +131,7 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
 
         ts = pendulum.now()
         logs, metadatas = self.es_task_handler.read(
-            self.ti, 1, {'offset': 0, 'last_log_timestamp': str(ts), 'end_of_log': False}
+            self.ti, 1, {'offset': '0', 'last_log_timestamp': str(ts), 'end_of_log': False, 'max_offset': 2}
         )
         assert 1 == len(logs)
         assert len(logs) == len(metadatas)

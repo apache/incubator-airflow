@@ -37,6 +37,7 @@ coverage:
         # advanced
         branches:
           - master
+          - main
           - v1-10-stable
           - v1-10-test
           - v2-0-test
@@ -53,6 +54,7 @@ coverage:
         # advanced
         branches:
           - master
+          - main
           - v1-10-stable
           - v1-10-test
           - v2-0-test

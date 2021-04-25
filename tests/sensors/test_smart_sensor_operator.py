@@ -67,8 +67,8 @@ class DummySensor(BaseSensorOperator):
 
 class SmartSensorTest(unittest.TestCase):
     def setUp(self):
-        os.environ['AIRFLOW__SMART_SENSER__USE_SMART_SENSOR'] = 'true'
-        os.environ['AIRFLOW__SMART_SENSER__SENSORS_ENABLED'] = 'DummySmartSensor'
+        os.environ['AIRFLOW__SMART_SENSOR__USE_SMART_SENSOR'] = 'true'
+        os.environ['AIRFLOW__SMART_SENSOR__SENSORS_ENABLED'] = 'DummySmartSensor'
 
         args = {'owner': 'airflow', 'start_date': DEFAULT_DATE}
         self.dag = DAG(TEST_DAG_ID, default_args=args)
@@ -88,8 +88,8 @@ class SmartSensorTest(unittest.TestCase):
         session.query(SensorInstance).delete()
         session.commit()
 
-        os.environ.pop('AIRFLOW__SMART_SENSER__USE_SMART_SENSOR')
-        os.environ.pop('AIRFLOW__SMART_SENSER__SENSORS_ENABLED')
+        os.environ.pop('AIRFLOW__SMART_SENSOR__USE_SMART_SENSOR')
+        os.environ.pop('AIRFLOW__SMART_SENSOR__SENSORS_ENABLED')
 
     def _make_dag_run(self):
         return self.dag.create_dagrun(

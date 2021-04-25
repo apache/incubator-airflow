@@ -24,7 +24,7 @@ from airflow.providers.google.cloud.hooks.speech_to_text import CloudSpeechToTex
 from tests.providers.google.cloud.utils.base_gcp_mock import mock_base_gcp_hook_default_project_id
 
 PROJECT_ID = "project-id"
-CONFIG = {"ecryption": "LINEAR16"}
+CONFIG = {"encryption": "LINEAR16"}
 AUDIO = {"uri": "gs://bucket/object"}
 
 

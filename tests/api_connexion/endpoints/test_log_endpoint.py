@@ -16,66 +16,61 @@
 # under the License.
 import copy
 import logging.config
-import os
-import shutil
 import sys
-import tempfile
-import unittest
 from unittest import mock
 from unittest.mock import PropertyMock
 
+import pytest
 from itsdangerous.url_safe import URLSafeSerializer
 
-from airflow import DAG, settings
+from airflow import DAG
 from airflow.api_connexion.exceptions import EXCEPTIONS_LINK_MAP
 from airflow.config_templates.airflow_local_settings import DEFAULT_LOGGING_CONFIG
 from airflow.models import DagRun, TaskInstance
 from airflow.operators.dummy import DummyOperator
 from airflow.security import permissions
 from airflow.utils import timezone
-from airflow.utils.session import create_session, provide_session
+from airflow.utils.session import create_session
 from airflow.utils.types import DagRunType
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
-from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_runs
 
 
-class TestGetLog(unittest.TestCase):
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
+
+    create_user(
+        app,
+        username="test",
+        role_name="Test",
+        permissions=[
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
+        ],
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")
+
+    yield app
+
+    delete_user(app, username="test")
+    delete_user(app, username="test_no_permissions")
+
+
+class TestGetLog:
     DAG_ID = 'dag_for_testing_log_endpoint'
     TASK_ID = 'task_for_testing_log_endpoint'
     TRY_NUMBER = 1
 
-    @classmethod
-    def setUpClass(cls):
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)
+    default_time = "2020-06-10T20:00:00+00:00"
 
-        create_user(
-            cls.app,
-            username="test",
-            role_name="Test",
-            permissions=[
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
-            ],
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")
-        delete_user(cls.app, username="test_no_permissions")
-
-    def setUp(self) -> None:
-        self.default_time = "2020-06-10T20:00:00+00:00"
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app, configure_loggers) -> None:  # pylint: disable=unused-argument
+        self.app = configured_app
         self.client = self.app.test_client()
-        self.log_dir = tempfile.mkdtemp()
         # Make sure that the configure_logging is not cached
         self.old_modules = dict(sys.modules)
-        self._prepare_log_files()
-        self._configure_loggers()
         self._prepare_db()
 
     def _create_dagrun(self, session):
@@ -90,7 +85,16 @@ class TestGetLog(unittest.TestCase):
         session.add(dagrun_model)
         session.commit()
 
-    def _configure_loggers(self):
+    @pytest.fixture
+    def configure_loggers(self, tmp_path):
+        self.log_dir = tmp_path
+
+        dir_path = tmp_path / self.DAG_ID / self.TASK_ID / self.default_time.replace(':', '.')
+        dir_path.mkdir(parents=True)
+
+        log = dir_path / "1.log"
+        log.write_text("Log for testing.")
+
         # Create a custom logging configuration
         logging_config = copy.deepcopy(DEFAULT_LOGGING_CONFIG)
         logging_config['handlers']['task']['base_log_folder'] = self.log_dir
@@ -99,23 +103,11 @@ class TestGetLog(unittest.TestCase):
             'filename_template'
         ] = '{{ ti.dag_id }}/{{ ti.task_id }}/{{ ts | replace(":", ".") }}/{{ try_number }}.log'
 
-        # Write the custom logging configuration to a file
-        self.settings_folder = tempfile.mkdtemp()
-        settings_file = os.path.join(self.settings_folder, "airflow_local_settings.py")
-        new_logging_file = f"LOGGING_CONFIG = {logging_config}"
-        with open(settings_file, 'w') as handle:
-            handle.writelines(new_logging_file)
-        sys.path.append(self.settings_folder)
+        logging.config.dictConfig(logging_config)
 
-        with conf_vars(
-            {
-                ('logging', 'logging_config_class'): 'airflow_local_settings.LOGGING_CONFIG',
-                ("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend",
-            }
-        ):
-            self.app = app.create_app(testing=True)
-            self.client = self.app.test_client()
-            settings.configure_logging()
+        yield
+
+        logging.config.dictConfig(DEFAULT_LOGGING_CONFIG)
 
     def _prepare_db(self):
         dagbag = self.app.dag_bag  # pylint: disable=no-member
@@ -130,29 +122,9 @@ class TestGetLog(unittest.TestCase):
             self.ti.try_number = 1
             session.merge(self.ti)
 
-    def _prepare_log_files(self):
-        dir_path = f"{self.log_dir}/{self.DAG_ID}/{self.TASK_ID}/" f"{self.default_time.replace(':', '.')}/"
-        os.makedirs(dir_path)
-        with open(f"{dir_path}/1.log", "w+") as file:
-            file.write("Log for testing.")
-            file.flush()
-
-    def tearDown(self):
-        logging.config.dictConfig(DEFAULT_LOGGING_CONFIG)
+    def teardown_method(self):
         clear_db_runs()
 
-        # Remove any new modules imported during the test run. This lets us
-        # import the same source files for more than one test.
-        for mod in [m for m in sys.modules if m not in self.old_modules]:
-            del sys.modules[mod]
-
-        sys.path.remove(self.settings_folder)
-        shutil.rmtree(self.settings_folder)
-        shutil.rmtree(self.log_dir)
-
-        super().tearDown()
-
-    @provide_session
     def test_should_respond_200_json(self, session):
         self._create_dagrun(session)
         key = self.app.config["SECRET_KEY"]
@@ -175,7 +147,6 @@ class TestGetLog(unittest.TestCase):
         assert info == {'end_of_log': True}
         assert 200 == response.status_code
 
-    @provide_session
     def test_should_respond_200_text_plain(self, session):
         self._create_dagrun(session)
         key = self.app.config["SECRET_KEY"]
@@ -197,7 +168,6 @@ class TestGetLog(unittest.TestCase):
             == f"\n*** Reading local file: {expected_filename}\nLog for testing.\n"
         )
 
-    @provide_session
     def test_get_logs_of_removed_task(self, session):
         self._create_dagrun(session)
 
@@ -225,7 +195,6 @@ class TestGetLog(unittest.TestCase):
             == f"\n*** Reading local file: {expected_filename}\nLog for testing.\n"
         )
 
-    @provide_session
     def test_get_logs_response_with_ti_equal_to_none(self, session):
         self._create_dagrun(session)
         key = self.app.config["SECRET_KEY"]
@@ -240,7 +209,6 @@ class TestGetLog(unittest.TestCase):
         assert response.status_code == 400
         assert response.json['detail'] == "Task instance did not exist in the DB"
 
-    @provide_session
     def test_get_logs_with_metadata_as_download_large_file(self, session):
         self._create_dagrun(session)
         with mock.patch("airflow.utils.log.file_task_handler.FileTaskHandler.read") as read_mock:
@@ -280,7 +248,6 @@ class TestGetLog(unittest.TestCase):
         assert 400 == response.status_code
         assert 'Task log handler does not support read logs.' in response.data.decode('utf-8')
 
-    @provide_session
     def test_bad_signature_raises(self, session):
         self._create_dagrun(session)
         token = {"download_logs": False}

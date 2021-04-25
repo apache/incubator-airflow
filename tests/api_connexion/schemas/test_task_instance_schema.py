@@ -199,7 +199,7 @@ class TestSetTaskInstanceStateFormSchema(unittest.TestCase):
     @parameterized.expand(
         [
             ({"task_id": None},),
-            ({"include_future": "True"},),
+            ({"include_future": "foo"},),
             ({"execution_date": "NOW"},),
             ({"new_state": "INVALID_STATE"},),
         ]
@@ -208,4 +208,4 @@ class TestSetTaskInstanceStateFormSchema(unittest.TestCase):
         self.current_input.update(override_data)
 
         with pytest.raises(ValidationError):
-            clear_task_instance_form.load(self.current_input)
+            set_task_instance_state_form.load(self.current_input)

@@ -18,6 +18,7 @@
 import unittest
 from datetime import datetime
 from unittest import mock
+from unittest.mock import ANY
 
 from azure.common import AzureHttpError
 
@@ -72,8 +73,9 @@ class TestWasbTaskHandler(unittest.TestCase):
             mock_error.assert_called_once_with(
                 'Could not create an WasbHook with connection id "%s". '
                 'Please make sure that airflow[azure] is installed and '
-                'the Wasb connection exists.',
+                'the Wasb connection exists. Exception "%s"',
                 "wasb_default",
+                ANY,
             )
 
     def test_set_context_raw(self):
@@ -120,9 +122,11 @@ class TestWasbTaskHandler(unittest.TestCase):
                 mock_hook.return_value.read_file.side_effect = AzureHttpError("failed to connect", 404)
 
                 handler.wasb_read(self.remote_log_location, return_error=True)
-
             mock_error.assert_called_once_with(
-                'Could not read logs from remote/log/location/1.log', exc_info=True
+                "Message: '%s', exception '%s'",
+                'Could not read logs from remote/log/location/1.log',
+                ANY,
+                exc_info=True,
             )
 
     @mock.patch("airflow.providers.microsoft.azure.hooks.wasb.WasbHook")

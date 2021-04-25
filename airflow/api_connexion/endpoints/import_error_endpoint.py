@@ -19,13 +19,13 @@ from sqlalchemy import func
 
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import NotFound
-from airflow.api_connexion.parameters import check_limit, format_parameters
+from airflow.api_connexion.parameters import apply_sorting, check_limit, format_parameters
 from airflow.api_connexion.schemas.error_schema import (
     ImportErrorCollection,
     import_error_collection_schema,
     import_error_schema,
 )
-from airflow.models.errors import ImportError  # pylint: disable=redefined-builtin
+from airflow.models.errors import ImportError as ImportErrorModel
 from airflow.security import permissions
 from airflow.utils.session import provide_session
 
@@ -34,7 +34,7 @@ from airflow.utils.session import provide_session
 @provide_session
 def get_import_error(import_error_id, session):
     """Get an import error"""
-    error = session.query(ImportError).filter(ImportError.id == import_error_id).one_or_none()
+    error = session.query(ImportErrorModel).filter(ImportErrorModel.id == import_error_id).one_or_none()
 
     if error is None:
         raise NotFound(
@@ -47,10 +47,14 @@ def get_import_error(import_error_id, session):
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_IMPORT_ERROR)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_import_errors(session, limit, offset=None):
+def get_import_errors(session, limit, offset=None, order_by='import_error_id'):
     """Get all import errors"""
-    total_entries = session.query(func.count(ImportError.id)).scalar()
-    import_errors = session.query(ImportError).order_by(ImportError.id).offset(offset).limit(limit).all()
+    to_replace = {"import_error_id": 'id'}
+    allowed_filter_attrs = ['import_error_id', "timestamp", "filename"]
+    total_entries = session.query(func.count(ImportErrorModel.id)).scalar()
+    query = session.query(ImportErrorModel)
+    query = apply_sorting(query, order_by, to_replace, allowed_filter_attrs)
+    import_errors = query.offset(offset).limit(limit).all()
     return import_error_collection_schema.dump(
         ImportErrorCollection(import_errors=import_errors, total_entries=total_entries)
     )

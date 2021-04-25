@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from airflow.api_connexion import security
 from airflow.api_connexion.exceptions import AlreadyExists, BadRequest, NotFound
-from airflow.api_connexion.parameters import check_limit, format_parameters
+from airflow.api_connexion.parameters import apply_sorting, check_limit, format_parameters
 from airflow.api_connexion.schemas.pool_schema import PoolCollection, pool_collection_schema, pool_schema
 from airflow.models.pool import Pool
 from airflow.security import permissions
@@ -53,10 +53,14 @@ def get_pool(pool_name, session):
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_POOL)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_pools(session, limit, offset=None):
+def get_pools(session, limit, order_by='id', offset=None):
     """Get all pools"""
+    to_replace = {"name": "pool"}
+    allowed_filter_attrs = ['name', 'slots', "id"]
     total_entries = session.query(func.count(Pool.id)).scalar()
-    pools = session.query(Pool).order_by(Pool.id).offset(offset).limit(limit).all()
+    query = session.query(Pool)
+    query = apply_sorting(query, order_by, to_replace, allowed_filter_attrs)
+    pools = query.offset(offset).limit(limit).all()
     return pool_collection_schema.dump(PoolCollection(pools=pools, total_entries=total_entries))
 
 

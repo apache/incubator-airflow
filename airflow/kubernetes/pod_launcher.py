@@ -140,9 +140,10 @@ class PodLauncher(LoggingMixin):
                     break
 
                 self.log.warning('Pod %s log read interrupted', pod.metadata.name)
-                delta = pendulum.now() - last_log_time
-                # Prefer logs duplication rather than loss
-                read_logs_since_sec = math.ceil(delta.total_seconds())
+                if last_log_time:
+                    delta = pendulum.now() - last_log_time
+                    # Prefer logs duplication rather than loss
+                    read_logs_since_sec = math.ceil(delta.total_seconds())
         result = None
         if self.extract_xcom:
             while self.base_container_is_running(pod):

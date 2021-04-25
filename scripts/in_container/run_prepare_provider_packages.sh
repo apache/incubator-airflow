@@ -19,20 +19,13 @@
 . "$( dirname "${BASH_SOURCE[0]}" )/_in_container_script_init.sh"
 
 function copy_sources() {
-    if [[ ${BACKPORT_PACKAGES} == "true" ]]; then
-        group_start "Copy and refactor sources"
-        echo "==================================================================================="
-        echo " Copying sources and refactoring code for backport provider packages"
-        echo "==================================================================================="
-    else
-        group_start "Copy sources"
-        echo "==================================================================================="
-        echo " Copying sources for provider packages"
-        echo "==================================================================================="
-    fi
-
+    group_start "Copy sources"
+    echo "==================================================================================="
+    echo " Copying sources for provider packages"
+    echo "==================================================================================="
     pushd "${AIRFLOW_SOURCES}"
-    python3 "${PROVIDER_PACKAGES_DIR}/copy_provider_package_sources.py" "${OPTIONAL_BACKPORT_FLAG[@]}"
+    rm -rf "provider_packages/airflow"
+    cp -r airflow "provider_packages"
     popd
 
     group_end
@@ -86,10 +79,11 @@ function build_provider_packages() {
         local res
         set +e
         python3 "${PROVIDER_PACKAGES_DIR}/prepare_provider_packages.py" \
-            "${OPTIONAL_BACKPORT_FLAG[@]}" \
+            generate-setup-files \
+            "${OPTIONAL_VERBOSE_FLAG[@]}" \
             --no-git-update \
             --version-suffix "${VERSION_SUFFIX_FOR_PYPI}" \
-            generate-setup-files "${provider_package}"
+            "${provider_package}"
         res=$?
         set -e
         if [[ ${res} == "64" ]]; then
@@ -110,11 +104,11 @@ function build_provider_packages() {
             package_suffix="${VERSION_SUFFIX_FOR_PYPI}"
         fi
         python3 "${PROVIDER_PACKAGES_DIR}/prepare_provider_packages.py" \
-            "${OPTIONAL_BACKPORT_FLAG[@]}" \
+            build-provider-packages \
+            "${OPTIONAL_VERBOSE_FLAG[@]}" \
             --no-git-update \
             --version-suffix "${package_suffix}" \
             "${package_format_args[@]}" \
-            build-provider-packages \
             "${provider_package}"
         res=$?
         set -e

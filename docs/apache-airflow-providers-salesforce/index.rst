@@ -57,7 +57,7 @@ Package apache-airflow-providers-salesforce
 `Salesforce <https://www.salesforce.com/>`__
 
 
-Release: 1.0.1
+Release: 2.0.0
 
 Provider package
 ----------------
@@ -90,6 +90,25 @@ PIP package              Version required
 ``tableauserverclient``
 =======================  ==================
 
+Cross provider package dependencies
+-----------------------------------
+
+Those are dependencies that might be needed in order to use all the features of the package.
+You need to install the specified provider packages in order to use them.
+
+You can install such cross-provider dependencies when installing from PyPI. For example:
+
+.. code-block:: bash
+
+    pip install apache-airflow-providers-salesforce[tableau]
+
+
+======================================================================================================  ===========
+Dependent package                                                                                       Extra
+======================================================================================================  ===========
+`apache-airflow-providers-tableau <https://airflow.apache.org/docs/apache-airflow-providers-tableau>`_  ``tableau``
+======================================================================================================  ===========
+
  .. Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -111,10 +130,27 @@ PIP package              Version required
 Changelog
 ---------
 
+2.0.0
+.....
+
+Tableau provider moved to separate 'tableau' provider
+
+Things done:
+
+    - Tableau classes imports classes from 'tableau' provider with deprecation warning
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+You need to install ``apache-airflow-providers-tableau`` provider additionally to get
+Tableau integration working.
+
+
 1.0.1
 .....
 
 Updated documentation and readme files.
+
 
 1.0.0
 .....

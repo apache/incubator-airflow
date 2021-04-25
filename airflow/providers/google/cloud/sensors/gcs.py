@@ -18,6 +18,7 @@
 """This module contains Google Cloud Storage sensors."""
 
 import os
+import warnings
 from datetime import datetime
 from typing import Callable, List, Optional, Sequence, Set, Union
 
@@ -167,7 +168,7 @@ class GCSObjectUpdateSensor(BaseSensorOperator):
         return hook.is_updated_after(self.bucket, self.object, self.ts_func(context))
 
 
-class GCSObjectsWtihPrefixExistenceSensor(BaseSensorOperator):
+class GCSObjectsWithPrefixExistenceSensor(BaseSensorOperator):
     """
     Checks for the existence of GCS objects at a given prefix, passing matches via XCom.
 
@@ -237,6 +238,22 @@ class GCSObjectsWtihPrefixExistenceSensor(BaseSensorOperator):
         """Overridden to allow matches to be passed"""
         super().execute(context)
         return self._matches
+
+
+class GCSObjectsWtihPrefixExistenceSensor(GCSObjectsWithPrefixExistenceSensor):
+    """
+    This class is deprecated.
+    Please use `airflow.providers.google.cloud.sensors.gcs.GCSObjectsWithPrefixExistenceSensor`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            """This class is deprecated.
+            Please use `airflow.providers.google.cloud.sensors.gcs.GCSObjectsWithPrefixExistenceSensor`.""",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        super().__init__(*args, **kwargs)
 
 
 def get_time():

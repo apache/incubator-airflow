@@ -672,13 +672,13 @@ class SmartSensorOperator(BaseOperator, SkipMixin):
 
     def flush_cached_sensor_poke_results(self):
         """Flush outdated cached sensor states saved in previous loop."""
-        for key, cached_work in self.cached_dedup_works.items():
+        for key, cached_work in self.cached_dedup_works.copy().items():
             if cached_work.is_expired():
                 self.cached_dedup_works.pop(key, None)
             else:
                 cached_work.state = None
 
-        for ti_key, sensor_exception in self.cached_sensor_exceptions.items():
+        for ti_key, sensor_exception in self.cached_sensor_exceptions.copy().items():
             if sensor_exception.fail_current_run or sensor_exception.is_expired():
                 self.cached_sensor_exceptions.pop(ti_key, None)
 

@@ -103,7 +103,7 @@ We have the following test types (separated by packages in which they are):
 * Core - for the core Airflow functionality (core folder)
 * API - Tests for the Airflow API (api and api_connexion folders)
 * CLI - Tests for the Airflow CLI (cli folder)
-* WWW - Tests for the Airflow webserver (www and www_rbac in 1.10 folders)
+* WWW - Tests for the Airflow webserver (www folder)
 * Providers - Tests for all Providers of Airflow (providers folder)
 * Other - all other tests (all other folders that are not part of any of the above)
 
@@ -112,7 +112,6 @@ pytest markers. They can be found in any of those packages and they can be selec
 pylint custom command line options. See `TESTING.rst <TESTING.rst>`_ for details but those are:
 
 * Integration - tests that require external integration images running in docker-compose
-* Heisentests - tests that are vulnerable to some side effects and are better to be run on their own
 * Quarantined - tests that are flaky and need to be fixed
 * Postgres - tests that require Postgres database. They are only run when backend is Postgres
 * MySQL - tests that require MySQL database. They are only run when backend is MySQL
@@ -126,7 +125,8 @@ The logic implemented for the changes works as follows:
 
 1) In case of direct push (so when PR gets merged) or scheduled run, we always run all tests and checks.
    This is in order to make sure that the merge did not miss anything important. The remainder of the logic
-   is executed only in case of Pull Requests.
+   is executed only in case of Pull Requests. We do not add providers tests in case DEFAULT_BRANCH is
+   different than master, because providers are only important in master branch and PRs to master branch.
 
 2) We retrieve which files have changed in the incoming Merge Commit (github.sha is a merge commit
    automatically prepared by GitHub in case of Pull Request, so we can retrieve the list of changed
@@ -134,7 +134,9 @@ The logic implemented for the changes works as follows:
 
 3) If any of the important, environment files changed (Dockerfile, ci scripts, setup.py, GitHub workflow
    files), then we again run all tests and checks. Those are cases where the logic of the checks changed
-   or the environment for the checks changed so we want to make sure to check everything.
+   or the environment for the checks changed so we want to make sure to check everything. We do not add
+   providers tests in case DEFAULT_BRANCH is different than master, because providers are only
+   important in master branch and PRs to master branch.
 
 4) If any of py files changed: we need to have CI image and run full static checks so we enable image building
 
@@ -158,14 +160,14 @@ The logic implemented for the changes works as follows:
    b) if any of the Airflow API files changed we enable ``API`` test type
    c) if any of the Airflow CLI files changed we enable ``CLI`` test type and Kubernetes tests (the
       K8S tests depend on CLI changes as helm chart uses CLI to run Airflow).
-   d) if any of the Provider files changed we enable ``Providers`` test type
+   d) if this is a master branch and if any of the Provider files changed we enable ``Providers`` test type
    e) if any of the WWW files changed we enable ``WWW`` test type
    f) if any of the Kubernetes files changed we enable ``Kubernetes`` test type
    g) Then we subtract count of all the ``specific`` above per-type changed files from the count of
       all changed files. In case there are any files changed, then we assume that some unknown files
       changed (likely from the core of airflow) and in this case we enable all test types above and the
       Core test types - simply because we do not want to risk to miss anything.
-   h) In all cases where tests are enabled we also add Heisentests, Integration and - depending on
+   h) In all cases where tests are enabled we also add Integration and - depending on
       the backend used = Postgres or MySQL types of tests.
 
 10) Quarantined tests are always run when tests are run - we need to run them often to observe how
@@ -174,7 +176,7 @@ The logic implemented for the changes works as follows:
 
 11) There is a special case of static checks. In case the above logic determines that the CI image
     needs to be build, we run long and more comprehensive version of static checks - including Pylint,
-    MyPy, Flake8. And those tests are run on all files, no matter how many files changed.
+    Mypy, Flake8. And those tests are run on all files, no matter how many files changed.
     In case the image is not built, we run only simpler set of changes - the longer static checks
     that require CI image are skipped, and we only run the tests on the files that changed in the incoming
     commit - unlike pylint/flake8/mypy, those static checks are per-file based and they should not miss any
@@ -237,7 +239,7 @@ As explained above the approval and matrix tests workflow works according to the
     :align: center
     :alt: Full tests are needed for the PR
 
-4) If this or another committer "request changes" in in a  previously approved PR with "full tests needed"
+4) If this or another committer "request changes" in a previously approved PR with "full tests needed"
    label, the bot automatically removes the label, moving it back to "run only default set of parameters"
    mode. For PRs touching core of airflow once the PR gets approved back, the label will be restored.
    If it was manually set by the committer, it has to be restored manually.
@@ -248,7 +250,7 @@ As explained above the approval and matrix tests workflow works according to the
       for the PRs and they provide good "notification" for the committer to act on a PR that was recently
       approved.
 
-The PR approval workflow is possible thanks two two custom GitHub Actions we've developed:
+The PR approval workflow is possible thanks to two custom GitHub Actions we've developed:
 
 * `Get workflow origin <https://github.com/potiuk/get-workflow-origin/>`_
 * `Label when approved <https://github.com/TobKed/label-when-approved-action>`_

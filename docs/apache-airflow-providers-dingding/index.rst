@@ -57,7 +57,7 @@ Package apache-airflow-providers-dingding
 `Dingding <https://oapi.dingtalk.com/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -84,7 +84,7 @@ Cross provider package dependencies
 -----------------------------------
 
 Those are dependencies that might be needed in order to use all the features of the package.
-You need to install the specified backport providers package in order to use them.
+You need to install the specified provider packages in order to use them.
 
 You can install such cross-provider dependencies when installing from PyPI. For example:
 
@@ -119,6 +119,14 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Replace deprecated doc links to the correct one (#14429)``
 
 1.0.1
 .....

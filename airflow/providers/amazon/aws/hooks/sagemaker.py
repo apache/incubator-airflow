@@ -229,7 +229,8 @@ class SageMakerHook(AwsBaseHook):  # pylint: disable=too-many-public-methods
         """
         if "InputDataConfig" in training_config:
             for channel in training_config['InputDataConfig']:
-                self.check_s3_url(channel['DataSource']['S3DataSource']['S3Uri'])
+                if "S3DataSource" in channel['DataSource']:
+                    self.check_s3_url(channel['DataSource']['S3DataSource']['S3Uri'])
 
     def check_tuning_config(self, tuning_config: dict) -> None:
         """
@@ -240,7 +241,8 @@ class SageMakerHook(AwsBaseHook):  # pylint: disable=too-many-public-methods
         :return: None
         """
         for channel in tuning_config['TrainingJobDefinition']['InputDataConfig']:
-            self.check_s3_url(channel['DataSource']['S3DataSource']['S3Uri'])
+            if "S3DataSource" in channel['DataSource']:
+                self.check_s3_url(channel['DataSource']['S3DataSource']['S3Uri'])
 
     def get_log_conn(self):
         """
@@ -421,7 +423,8 @@ class SageMakerHook(AwsBaseHook):  # pylint: disable=too-many-public-methods
         :type max_ingestion_time: int
         :return: A response to transform job creation
         """
-        self.check_s3_url(config['TransformInput']['DataSource']['S3DataSource']['S3Uri'])
+        if "S3DataSource" in config['TransformInput']['DataSource']:
+            self.check_s3_url(config['TransformInput']['DataSource']['S3DataSource']['S3Uri'])
 
         response = self.get_conn().create_transform_job(**config)
         if wait_for_completion:

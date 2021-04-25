@@ -245,3 +245,14 @@ class TestWrappedMarkdown(unittest.TestCase):
             '</td>\n<td>14m</td>\n</tr>\n</tbody>\n'
             '</table></div>'
         ) == rendered
+
+    def test_wrapped_markdown_with_indented_lines(self):
+        rendered = wrapped_markdown(
+            """
+                # header
+                1st line
+                2nd line
+            """
+        )
+
+        assert '<div class="None" ><h1>header</h1>\n<p>1st line\n2nd line</p></div>' == rendered

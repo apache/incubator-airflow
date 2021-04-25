@@ -82,7 +82,7 @@ class SlackHook(BaseHook):  # noqa
 
         raise AirflowException('Cannot get token: No valid Slack token nor slack_conn_id supplied.')
 
-    def call(self, api_method: str, *args, **kwargs) -> None:
+    def call(self, api_method: str, **kwargs) -> None:
         """
         Calls Slack WebClient `WebClient.api_call` with given arguments.
 
@@ -100,4 +100,4 @@ class SlackHook(BaseHook):  # noqa
         :param json: JSON for the body to attach to the request. Optional.
         :type json: dict
         """
-        self.client.api_call(api_method, *args, **kwargs)
+        self.client.api_call(api_method, **kwargs)

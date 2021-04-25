@@ -41,6 +41,7 @@ logs
 venv
 files
 airflow.iml
+.gitmodules
 
 # Generated doc files
 .*html
@@ -78,7 +79,6 @@ rat-results.txt
 apache-airflow-.*\+source.tar.gz.*
 apache-airflow-.*\+bin.tar.gz.*
 PULL_REQUEST_TEMPLATE.md
-BACKPORT_PROVIDER_CHANGES*.md
 PROVIDER_CHANGES*.md
 manifests/*
 redirects.txt

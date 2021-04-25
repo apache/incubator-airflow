@@ -19,6 +19,15 @@
 Changelog
 ---------
 
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Use apache.spark provider without kubernetes (#14187)``
+
+
 1.0.1
 .....
 

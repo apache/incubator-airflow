@@ -23,15 +23,16 @@ from unittest import mock
 import pytest
 
 from airflow.exceptions import AirflowException
-from airflow.models import DAG, DagRun, TaskInstance as TI
-from airflow.operators.check_operator import (
-    CheckOperator,
-    IntervalCheckOperator,
-    ThresholdCheckOperator,
-    ValueCheckOperator,
-)
+from airflow.models import DAG, Connection, DagRun, TaskInstance as TI
 from airflow.operators.dummy import DummyOperator
-from airflow.operators.sql import BranchSQLOperator
+from airflow.operators.sql import (
+    BranchSQLOperator,
+    SQLCheckOperator,
+    SQLIntervalCheckOperator,
+    SQLThresholdCheckOperator,
+    SQLValueCheckOperator,
+)
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils import timezone
 from airflow.utils.session import create_session
 from airflow.utils.state import State
@@ -66,20 +67,48 @@ SUPPORTED_FALSE_VALUES = [
 ]
 
 
+@mock.patch(
+    'airflow.operators.sql.BaseHook.get_connection',
+    return_value=Connection(conn_id='sql_default', conn_type='postgres'),
+)
+class TestSQLCheckOperatorDbHook:
+    # pylint: disable=attribute-defined-outside-init
+    def setup_method(self):
+        self.task_id = "test_task"
+        self.conn_id = "sql_default"
+        self._operator = SQLCheckOperator(task_id=self.task_id, conn_id=self.conn_id, sql="sql")
+
+    @pytest.mark.parametrize('database', [None, 'test-db'])
+    def test_get_hook(self, mock_get_conn, database):
+        if database:
+            self._operator.database = database
+        assert isinstance(self._operator._hook, PostgresHook)
+        assert self._operator._hook.schema == database
+        mock_get_conn.assert_called_once_with(self.conn_id)
+
+    def test_not_allowed_conn_type(self, mock_get_conn):
+        mock_get_conn.return_value = Connection(conn_id='sql_default', conn_type='s3')
+        with pytest.raises(AirflowException, match=r"The connection type is not supported"):
+            self._operator._hook
+
+
 class TestCheckOperator(unittest.TestCase):
-    @mock.patch.object(CheckOperator, "get_db_hook")
+    def setUp(self):
+        self._operator = SQLCheckOperator(task_id="test_task", sql="sql")
+
+    @mock.patch.object(SQLCheckOperator, "get_db_hook")
     def test_execute_no_records(self, mock_get_db_hook):
         mock_get_db_hook.return_value.get_first.return_value = []
 
-        with pytest.raises(AirflowException):
-            CheckOperator(sql="sql").execute()
+        with pytest.raises(AirflowException, match=r"The query returned None"):
+            self._operator.execute()
 
-    @mock.patch.object(CheckOperator, "get_db_hook")
+    @mock.patch.object(SQLCheckOperator, "get_db_hook")
     def test_execute_not_all_records_are_true(self, mock_get_db_hook):
         mock_get_db_hook.return_value.get_first.return_value = ["data", ""]
 
-        with pytest.raises(AirflowException):
-            CheckOperator(sql="sql").execute()
+        with pytest.raises(AirflowException, match=r"Test failed."):
+            self._operator.execute()
 
 
 class TestValueCheckOperator(unittest.TestCase):
@@ -90,7 +119,7 @@ class TestValueCheckOperator(unittest.TestCase):
     def _construct_operator(self, sql, pass_value, tolerance=None):
         dag = DAG("test_dag", start_date=datetime.datetime(2017, 1, 1))
 
-        return ValueCheckOperator(
+        return SQLValueCheckOperator(
             dag=dag,
             task_id=self.task_id,
             conn_id=self.conn_id,
@@ -117,7 +146,7 @@ class TestValueCheckOperator(unittest.TestCase):
         assert operator.task_id == self.task_id
         assert operator.pass_value == str(pass_value_float)
 
-    @mock.patch.object(ValueCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLValueCheckOperator, "get_db_hook")
     def test_execute_pass(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = [10]
@@ -129,7 +158,7 @@ class TestValueCheckOperator(unittest.TestCase):
 
         mock_hook.get_first.assert_called_once_with(sql)
 
-    @mock.patch.object(ValueCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLValueCheckOperator, "get_db_hook")
     def test_execute_fail(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = [11]
@@ -143,7 +172,7 @@ class TestValueCheckOperator(unittest.TestCase):
 
 class TestIntervalCheckOperator(unittest.TestCase):
     def _construct_operator(self, table, metric_thresholds, ratio_formula, ignore_zero):
-        return IntervalCheckOperator(
+        return SQLIntervalCheckOperator(
             task_id="test_task",
             table=table,
             metrics_thresholds=metric_thresholds,
@@ -162,7 +191,7 @@ class TestIntervalCheckOperator(unittest.TestCase):
                 ignore_zero=False,
             )
 
-    @mock.patch.object(IntervalCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLIntervalCheckOperator, "get_db_hook")
     def test_execute_not_ignore_zero(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = [0]
@@ -180,7 +209,7 @@ class TestIntervalCheckOperator(unittest.TestCase):
         with pytest.raises(AirflowException):
             operator.execute()
 
-    @mock.patch.object(IntervalCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLIntervalCheckOperator, "get_db_hook")
     def test_execute_ignore_zero(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = [0]
@@ -197,7 +226,7 @@ class TestIntervalCheckOperator(unittest.TestCase):
 
         operator.execute()
 
-    @mock.patch.object(IntervalCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLIntervalCheckOperator, "get_db_hook")
     def test_execute_min_max(self, mock_get_db_hook):
         mock_hook = mock.Mock()
 
@@ -227,7 +256,7 @@ class TestIntervalCheckOperator(unittest.TestCase):
         with pytest.raises(AirflowException, match="f0, f1, f2"):
             operator.execute()
 
-    @mock.patch.object(IntervalCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLIntervalCheckOperator, "get_db_hook")
     def test_execute_diff(self, mock_get_db_hook):
         mock_hook = mock.Mock()
 
@@ -262,7 +291,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
     def _construct_operator(self, sql, min_threshold, max_threshold):
         dag = DAG("test_dag", start_date=datetime.datetime(2017, 1, 1))
 
-        return ThresholdCheckOperator(
+        return SQLThresholdCheckOperator(
             task_id="test_task",
             sql=sql,
             min_threshold=min_threshold,
@@ -270,7 +299,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
             dag=dag,
         )
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_pass_min_value_max_value(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = (10,)
@@ -280,7 +309,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
 
         operator.execute()
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_fail_min_value_max_value(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.return_value = (10,)
@@ -291,7 +320,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
         with pytest.raises(AirflowException, match="10.*20.0.*100.0"):
             operator.execute()
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_pass_min_sql_max_sql(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.side_effect = lambda x: (int(x.split()[1]),)
@@ -301,7 +330,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
 
         operator.execute()
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_fail_min_sql_max_sql(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.side_effect = lambda x: (int(x.split()[1]),)
@@ -312,7 +341,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
         with pytest.raises(AirflowException, match="10.*20.*100"):
             operator.execute()
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_pass_min_value_max_sql(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.side_effect = lambda x: (int(x.split()[1]),)
@@ -322,7 +351,7 @@ class TestThresholdCheckOperator(unittest.TestCase):
 
         operator.execute()
 
-    @mock.patch.object(ThresholdCheckOperator, "get_db_hook")
+    @mock.patch.object(SQLThresholdCheckOperator, "get_db_hook")
     def test_fail_min_sql_max_value(self, mock_get_db_hook):
         mock_hook = mock.Mock()
         mock_hook.get_first.side_effect = lambda x: (int(x.split()[1]),)
@@ -447,8 +476,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
         )
         branch_op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE, ignore_ti_state=True)
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_branch_single_value_with_dag_run(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_branch_single_value_with_dag_run(self, mock_get_db_hook):
         """Check BranchSQLOperator branch operation """
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -470,8 +499,7 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         mock_get_records.return_value = 1
 
@@ -488,8 +516,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             else:
                 raise ValueError(f"Invalid task id {ti.task_id} found!")
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_branch_true_with_dag_run(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_branch_true_with_dag_run(self, mock_get_db_hook):
         """Check BranchSQLOperator branch operation """
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -511,8 +539,7 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         for true_value in SUPPORTED_TRUE_VALUES:
             mock_get_records.return_value = true_value
@@ -530,8 +557,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
                 else:
                     raise ValueError(f"Invalid task id {ti.task_id} found!")
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_branch_false_with_dag_run(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_branch_false_with_dag_run(self, mock_get_db_hook):
         """Check BranchSQLOperator branch operation """
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -553,12 +580,10 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         for false_value in SUPPORTED_FALSE_VALUES:
             mock_get_records.return_value = false_value
-
             branch_op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
 
             tis = dr.get_task_instances()
@@ -572,8 +597,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
                 else:
                     raise ValueError(f"Invalid task id {ti.task_id} found!")
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_branch_list_with_dag_run(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_branch_list_with_dag_run(self, mock_get_db_hook):
         """Checks if the BranchSQLOperator supports branching off to a list of tasks."""
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -597,8 +622,7 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
         mock_get_records.return_value = [["1"]]
 
         branch_op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
@@ -616,8 +640,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             else:
                 raise ValueError(f"Invalid task id {ti.task_id} found!")
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_invalid_query_result_with_dag_run(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_invalid_query_result_with_dag_run(self, mock_get_db_hook):
         """Check BranchSQLOperator branch operation """
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -639,16 +663,15 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         mock_get_records.return_value = ["Invalid Value"]
 
         with pytest.raises(AirflowException):
             branch_op.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_with_skip_in_branch_downstream_dependencies(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_with_skip_in_branch_downstream_dependencies(self, mock_get_db_hook):
         """Test SQL Branch with skipping all downstream dependencies """
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -670,8 +693,7 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         for true_value in SUPPORTED_TRUE_VALUES:
             mock_get_records.return_value = [true_value]
@@ -689,8 +711,8 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
                 else:
                     raise ValueError(f"Invalid task id {ti.task_id} found!")
 
-    @mock.patch("airflow.operators.sql.BaseHook")
-    def test_with_skip_in_branch_downstream_dependencies2(self, mock_hook):
+    @mock.patch("airflow.operators.sql.BaseSQLOperator.get_db_hook")
+    def test_with_skip_in_branch_downstream_dependencies2(self, mock_get_db_hook):
         """Test skipping downstream dependency for false condition"""
         branch_op = BranchSQLOperator(
             task_id="make_choice",
@@ -712,8 +734,7 @@ class TestSqlBranch(TestHiveEnvironment, unittest.TestCase):
             state=State.RUNNING,
         )
 
-        mock_hook.get_connection("mysql_default").conn_type = "mysql"
-        mock_get_records = mock_hook.get_connection.return_value.get_hook.return_value.get_first
+        mock_get_records = mock_get_db_hook.return_value.get_first
 
         for false_value in SUPPORTED_FALSE_VALUES:
             mock_get_records.return_value = [false_value]

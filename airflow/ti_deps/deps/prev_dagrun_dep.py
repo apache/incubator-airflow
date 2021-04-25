@@ -28,7 +28,7 @@ class PrevDagrunDep(BaseTIDep):
     """
 
     NAME = "Previous Dagrun State"
-    IGNOREABLE = True
+    IGNORABLE = True
     IS_TASK_DEP = True
 
     @provide_session

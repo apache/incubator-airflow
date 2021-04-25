@@ -19,8 +19,8 @@
 import unittest
 from datetime import timedelta
 
+from airflow.decorators import task
 from airflow.models.dag import DAG
-from airflow.operators.python import task
 from airflow.utils import timezone
 from airflow.utils.state import State
 from airflow.utils.types import DagRunType

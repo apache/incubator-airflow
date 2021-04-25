@@ -59,3 +59,33 @@ class KerberosTest(unittest.TestCase):
         assert {"name": "KRB5CCNAME", "value": "/var/kerberos-ccache/ccache"} in jmespath.search(
             "spec.template.spec.containers[0].env", docs[0]
         )
+
+    def test_kerberos_sidecar_resources(self):
+        docs = render_chart(
+            values={
+                "executor": "CeleryExecutor",
+                "workers": {
+                    "kerberosSidecar": {
+                        "enabled": True,
+                        "resources": {
+                            "requests": {
+                                "cpu": "200m",
+                                "memory": "200Mi",
+                            },
+                            "limits": {
+                                "cpu": "201m",
+                                "memory": "201Mi",
+                            },
+                        },
+                    },
+                },
+            },
+            show_only=["templates/workers/worker-deployment.yaml"],
+        )
+
+        assert jmespath.search("spec.template.spec.containers[2].resources.requests.cpu", docs[0]) == "200m"
+        assert (
+            jmespath.search("spec.template.spec.containers[2].resources.requests.memory", docs[0]) == "200Mi"
+        )
+        assert jmespath.search("spec.template.spec.containers[2].resources.limits.cpu", docs[0]) == "201m"
+        assert jmespath.search("spec.template.spec.containers[2].resources.limits.memory", docs[0]) == "201Mi"

@@ -190,7 +190,7 @@ class TestSalesforceHook(unittest.TestCase):
         "airflow.providers.salesforce.hooks.salesforce.pd.DataFrame.from_records",
         return_value=pd.DataFrame({"test": [1, 2, 3], "field_1": ["2019-01-01", "2019-01-02", "2019-01-03"]}),
     )
-    def test_obect_to_df_with_timestamp_conversion(self, mock_data_frame, mock_describe_object):
+    def test_object_to_df_with_timestamp_conversion(self, mock_data_frame, mock_describe_object):
         obj_name = "obj_name"
 
         data_frame = self.salesforce_hook.object_to_df(

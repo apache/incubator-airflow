@@ -28,14 +28,26 @@ For high-level changelog, see :doc:`package information including changelog <ind
 
 
 
+1.1.1
+.....
+
+Latest change: 2021-02-05
+
+================================================================================================  ===========  =======================================================================
+Commit                                                                                            Committed    Subject
+================================================================================================  ===========  =======================================================================
+`10343ec29 <https://github.com/apache/airflow/commit/10343ec29f8f0abc5b932ba26faf49bc63c6bcda>`_  2021-02-05   ``Corrections in docs and tools after releasing provider RCs (#14082)``
+================================================================================================  ===========  =======================================================================
+
 1.1.0
 .....
 
-Latest change: 2021-02-01
+Latest change: 2021-02-04
 
 ================================================================================================  ===========  ======================================================================================================
 Commit                                                                                            Committed    Subject
 ================================================================================================  ===========  ======================================================================================================
+`88bdcfa0d <https://github.com/apache/airflow/commit/88bdcfa0df5bcb4c489486e05826544b428c8f43>`_  2021-02-04   ``Prepare to release a new wave of providers. (#14013)``
 `ac2f72c98 <https://github.com/apache/airflow/commit/ac2f72c98dc0821b33721054588adbf2bb53bb0b>`_  2021-02-01   ``Implement provider versioning tools (#13767)``
 `3fd5ef355 <https://github.com/apache/airflow/commit/3fd5ef355556cf0ad7896bb570bbe4b2eabbf46e>`_  2021-01-21   ``Add missing logos for integrations (#13717)``
 `1602ec97c <https://github.com/apache/airflow/commit/1602ec97c8d5bc7a7a8b42e850ac6c7a7030e47d>`_  2021-01-20   ``Add a new argument for HttpSensor to accept a list of http status code to Continue Poking (#13499)``

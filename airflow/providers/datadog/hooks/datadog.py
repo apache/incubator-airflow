@@ -36,7 +36,7 @@ class DatadogHook(BaseHook, LoggingMixin):
     Airflow runs.
 
     :param datadog_conn_id: The connection to datadog, containing metadata for api keys.
-    :param datadog_conn_id: str
+    :type datadog_conn_id: str
     """
 
     def __init__(self, datadog_conn_id: str = 'datadog_default') -> None:

@@ -22,6 +22,7 @@ import inspect
 import logging
 import multiprocessing
 import os
+import random
 import signal
 import sys
 import time
@@ -30,7 +31,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from importlib import import_module
 from multiprocessing.connection import Connection as MultiprocessingConnection
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 from sqlalchemy import or_
@@ -48,9 +49,13 @@ from airflow.utils.callback_requests import CallbackRequest, SlaCallbackRequest,
 from airflow.utils.file import list_py_file_paths
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.mixins import MultiprocessingStartMethodMixin
+from airflow.utils.net import get_hostname
 from airflow.utils.process_utils import kill_child_processes_by_pids, reap_process_group
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
+
+if TYPE_CHECKING:
+    import pathlib
 
 
 class AbstractDagFileProcessorProcess(metaclass=ABCMeta):
@@ -136,7 +141,6 @@ class AbstractDagFileProcessorProcess(metaclass=ABCMeta):
 class DagParsingStat(NamedTuple):
     """Information on processing progress"""
 
-    file_paths: List[str]
     done: bool
     all_files_processed: bool
 
@@ -309,16 +313,17 @@ class DagFileProcessorAgent(LoggingMixin, MultiprocessingStartMethodMixin):
         """Waits until DAG parsing is finished."""
         if not self._parent_signal_conn:
             raise ValueError("Process not started.")
+        if self._async_mode:
+            raise RuntimeError("wait_until_finished should only be called in sync_mode")
         while self._parent_signal_conn.poll(timeout=None):
             try:
                 result = self._parent_signal_conn.recv()
             except EOFError:
-                break
+                return
             self._process_message(result)
             if isinstance(result, DagParsingStat):
-                # In sync mode we don't send this message from the Manager
-                # until all the running processors have finished
-                self._sync_metadata(result)
+                # In sync mode (which is the only time we call this function) we don't send this message from
+                # the Manager until all the running processors have finished
                 return
 
     @staticmethod
@@ -489,7 +494,7 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
 
     def __init__(
         self,
-        dag_directory: str,
+        dag_directory: Union[str, "pathlib.Path"],
         max_runs: int,
         processor_factory: Callable[[str, List[CallbackRequest]], AbstractDagFileProcessorProcess],
         processor_timeout: timedelta,
@@ -509,6 +514,15 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
         self._dag_ids = dag_ids
         self._async_mode = async_mode
         self._parsing_start_time: Optional[int] = None
+
+        # Set the signal conn in to non-blocking mode, so that attempting to
+        # send when the buffer is full errors, rather than hangs for-ever
+        # attempting to send (this is to avoid deadlocks!)
+        #
+        # Don't do this in sync_mode, as we _need_ the DagParsingStat sent to
+        # continue the scheduler
+        if self._async_mode:
+            os.set_blocking(self._signal_conn.fileno(), False)
 
         self._parallelism = conf.getint('scheduler', 'parsing_processes')
         if 'sqlite' in conf.get('core', 'sql_alchemy_conn') and self._parallelism > 1:
@@ -618,6 +632,7 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
             ready = multiprocessing.connection.wait(self.waitables.keys(), timeout=poll_time)
             if self._signal_conn in ready:
                 agent_signal = self._signal_conn.recv()
+
                 self.log.debug("Received %s signal from DagFileProcessorAgent", agent_signal)
                 if agent_signal == DagParsingSignal.TERMINATE_MANAGER:
                     self.terminate()
@@ -690,12 +705,21 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
             all_files_processed = all(self.get_last_finish_time(x) is not None for x in self.file_paths)
             max_runs_reached = self.max_runs_reached()
 
-            dag_parsing_stat = DagParsingStat(
-                self._file_paths,
-                max_runs_reached,
-                all_files_processed,
-            )
-            self._signal_conn.send(dag_parsing_stat)
+            try:
+                self._signal_conn.send(
+                    DagParsingStat(
+                        max_runs_reached,
+                        all_files_processed,
+                    )
+                )
+            except BlockingIOError:
+                # Try again next time around the loop!
+
+                # It is better to fail, than it is deadlock. This should
+                # "almost never happen" since the DagParsingStat object is
+                # small, and in async mode this stat is not actually _required_
+                # for normal operation (It only drives "max runs")
+                self.log.debug("BlockingIOError recived trying to send DagParsingStat, ignoring")
 
             if max_runs_reached:
                 self.log.info(
@@ -1017,8 +1041,23 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
         # processed recently, wait until the next batch
         file_paths_in_progress = self._processors.keys()
         now = timezone.utcnow()
+
+        # Sort the file paths by the parsing order mode
+        list_mode = conf.get("scheduler", "file_parsing_sort_mode")
+
+        files_with_mtime = {}
+        file_paths = []
+        is_mtime_mode = list_mode == "modified_time"
+
         file_paths_recently_processed = []
         for file_path in self._file_paths:
+
+            if is_mtime_mode:
+                files_with_mtime[file_path] = os.path.getmtime(file_path)
+            else:
+                file_paths.append(file_path)
+
+            # Find file paths that were recently processed
             last_finish_time = self.get_last_finish_time(file_path)
             if (
                 last_finish_time is not None
@@ -1026,16 +1065,29 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
             ):
                 file_paths_recently_processed.append(file_path)
 
+        # Sort file paths via last modified time
+        if is_mtime_mode:
+            file_paths = sorted(files_with_mtime, key=files_with_mtime.get, reverse=True)
+        elif list_mode == "alphabetical":
+            file_paths = sorted(file_paths)
+        elif list_mode == "random_seeded_by_host":
+            # Shuffle the list seeded by hostname so multiple schedulers can work on different
+            # set of files. Since we set the seed, the sort order will remain same per host
+            random.Random(get_hostname()).shuffle(file_paths)
+
         files_paths_at_run_limit = [
             file_path for file_path, stat in self._file_stats.items() if stat.run_count == self._max_runs
         ]
 
-        files_paths_to_queue = list(
-            set(self._file_paths)
-            - set(file_paths_in_progress)
-            - set(file_paths_recently_processed)
-            - set(files_paths_at_run_limit)
+        file_paths_to_exclude = set(file_paths_in_progress).union(
+            file_paths_recently_processed, files_paths_at_run_limit
         )
+
+        # Do not convert the following list to set as set does not preserve the order
+        # and we need to maintain the order of file_paths for `[scheduler] file_parsing_sort_mode`
+        files_paths_to_queue = [
+            file_path for file_path in file_paths if file_path not in file_paths_to_exclude
+        ]
 
         for file_path, processor in self._processors.items():
             self.log.debug(

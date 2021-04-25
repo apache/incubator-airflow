@@ -29,7 +29,13 @@ log = logging.getLogger(__name__)
 
 
 class HdfsSensor(BaseSensorOperator):
-    """Waits for a file or folder to land in HDFS"""
+    """
+    Waits for a file or folder to land in HDFS
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:HdfsSensor`
+    """
 
     template_fields = ('filepath',)
     ui_color = settings.WEB_COLORS['LIGHTBLUE']
@@ -122,7 +128,13 @@ class HdfsSensor(BaseSensorOperator):
 
 
 class HdfsRegexSensor(HdfsSensor):
-    """Waits for matching files by matching on regex"""
+    """
+    Waits for matching files by matching on regex
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:HdfsRegexSensor`
+    """
 
     def __init__(self, regex: Pattern[str], *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -149,7 +161,13 @@ class HdfsRegexSensor(HdfsSensor):
 
 
 class HdfsFolderSensor(HdfsSensor):
-    """Waits for a non-empty directory"""
+    """
+    Waits for a non-empty directory
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:HdfsFolderSensor`
+    """
 
     def __init__(self, be_empty: bool = False, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)

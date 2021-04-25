@@ -15,6 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+# pylint: disable=not-callable
+
 import re
 import unittest
 from unittest import mock
@@ -974,6 +976,35 @@ class TestTableOperations(_BigQueryBaseTestClass):
         for res, exp in zip(result, table_list):
             assert res["tableId"] == exp["tableReference"]["tableId"]
 
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.Table")
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.Client")
+    def test_create_materialized_view(self, mock_bq_client, mock_table):
+        query = """
+            SELECT product, SUM(amount)
+            FROM `test-project-id.test_dataset_id.test_table_prefix*`
+            GROUP BY product
+            """
+        materialized_view = {
+            'query': query,
+            'enableRefresh': True,
+            'refreshIntervalMs': 2000000,
+        }
+
+        self.hook.create_empty_table(
+            project_id=PROJECT_ID,
+            dataset_id=DATASET_ID,
+            table_id=TABLE_ID,
+            materialized_view=materialized_view,
+            retry=DEFAULT_RETRY,
+        )
+        body = {'tableReference': TABLE_REFERENCE_REPR, 'materializedView': materialized_view}
+        mock_table.from_api_repr.assert_called_once_with(body)
+        mock_bq_client.return_value.create_table.assert_called_once_with(
+            table=mock_table.from_api_repr.return_value,
+            exists_ok=True,
+            retry=DEFAULT_RETRY,
+        )
+
 
 class TestBigQueryCursor(_BigQueryBaseTestClass):
     @mock.patch("airflow.providers.google.cloud.hooks.bigquery.BigQueryHook.get_service")
@@ -1748,3 +1779,61 @@ class TestBigQueryBaseCursorMethodsDeprecationWarning(unittest.TestCase):
 
         mocked_func.assert_called_once_with(*args, **kwargs)
         assert re.search(f".*{new_path}.*", func.__doc__)
+
+
+class TestBigQueryWithLabelsAndDescription(_BigQueryBaseTestClass):
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.BigQueryHook.insert_job")
+    def test_run_load_labels(self, mock_insert):
+
+        labels = {'label1': 'test1', 'label2': 'test2'}
+        self.hook.run_load(
+            destination_project_dataset_table='my_dataset.my_table',
+            schema_fields=[],
+            source_uris=[],
+            labels=labels,
+        )
+
+        _, kwargs = mock_insert.call_args
+        assert kwargs["configuration"]['load']['destinationTableProperties']['labels'] is labels
+
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.BigQueryHook.insert_job")
+    def test_run_load_description(self, mock_insert):
+
+        description = "Test Description"
+        self.hook.run_load(
+            destination_project_dataset_table='my_dataset.my_table',
+            schema_fields=[],
+            source_uris=[],
+            description=description,
+        )
+
+        _, kwargs = mock_insert.call_args
+        assert kwargs["configuration"]['load']['destinationTableProperties']['description'] is description
+
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.BigQueryHook.create_empty_table")
+    def test_create_external_table_labels(self, mock_create):
+
+        labels = {'label1': 'test1', 'label2': 'test2'}
+        self.hook.create_external_table(
+            external_project_dataset_table='my_dataset.my_table',
+            schema_fields=[],
+            source_uris=[],
+            labels=labels,
+        )
+
+        _, kwargs = mock_create.call_args
+        self.assertDictEqual(kwargs['table_resource']['labels'], labels)
+
+    @mock.patch("airflow.providers.google.cloud.hooks.bigquery.BigQueryHook.create_empty_table")
+    def test_create_external_table_description(self, mock_create):
+
+        description = "Test Description"
+        self.hook.create_external_table(
+            external_project_dataset_table='my_dataset.my_table',
+            schema_fields=[],
+            source_uris=[],
+            description=description,
+        )
+
+        _, kwargs = mock_create.call_args
+        assert kwargs['table_resource']['description'] is description

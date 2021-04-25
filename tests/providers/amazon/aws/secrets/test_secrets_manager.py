@@ -32,12 +32,19 @@ class TestSecretsManagerBackend(TestCase):
 
     @mock_secretsmanager
     def test_get_conn_uri(self):
+
+        secret_id = 'airflow/connections/test_postgres'
+        create_param = {
+            'Name': secret_id,
+        }
+
         param = {
-            'SecretId': 'airflow/connections/test_postgres',
+            'SecretId': secret_id,
             'SecretString': 'postgresql://airflow:airflow@host:5432/airflow',
         }
 
         secrets_manager_backend = SecretsManagerBackend()
+        secrets_manager_backend.client.create_secret(**create_param)
         secrets_manager_backend.client.put_secret_value(**param)
 
         returned_uri = secrets_manager_backend.get_conn_uri(conn_id="test_postgres")
@@ -50,12 +57,19 @@ class TestSecretsManagerBackend(TestCase):
         SecretsManagerBackend.get_connections should return None
         """
         conn_id = "test_mysql"
+
+        secret_id = 'airflow/connections/test_postgres'
+        create_param = {
+            'Name': secret_id,
+        }
+
         param = {
-            'SecretId': 'airflow/connections/test_postgres',
+            'SecretId': secret_id,
             'SecretString': 'postgresql://airflow:airflow@host:5432/airflow',
         }
 
         secrets_manager_backend = SecretsManagerBackend()
+        secrets_manager_backend.client.create_secret(**create_param)
         secrets_manager_backend.client.put_secret_value(**param)
 
         assert secrets_manager_backend.get_conn_uri(conn_id=conn_id) is None
@@ -63,9 +77,16 @@ class TestSecretsManagerBackend(TestCase):
 
     @mock_secretsmanager
     def test_get_variable(self):
-        param = {'SecretId': 'airflow/variables/hello', 'SecretString': 'world'}
+
+        secret_id = 'airflow/variables/hello'
+        create_param = {
+            'Name': secret_id,
+        }
+
+        param = {'SecretId': secret_id, 'SecretString': 'world'}
 
         secrets_manager_backend = SecretsManagerBackend()
+        secrets_manager_backend.client.create_secret(**create_param)
         secrets_manager_backend.client.put_secret_value(**param)
 
         returned_uri = secrets_manager_backend.get_variable('hello')
@@ -77,9 +98,14 @@ class TestSecretsManagerBackend(TestCase):
         Test that if Variable key is not present,
         SystemsManagerParameterStoreBackend.get_variables should return None
         """
-        param = {'SecretId': 'airflow/variables/hello', 'SecretString': 'world'}
+        secret_id = 'airflow/variables/hello'
+        create_param = {
+            'Name': secret_id,
+        }
+        param = {'SecretId': secret_id, 'SecretString': 'world'}
 
         secrets_manager_backend = SecretsManagerBackend()
+        secrets_manager_backend.client.create_secret(**create_param)
         secrets_manager_backend.client.put_secret_value(**param)
 
         assert secrets_manager_backend.get_variable("test_mysql") is None

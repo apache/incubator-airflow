@@ -18,6 +18,7 @@ from functools import wraps
 from typing import Callable, Dict, TypeVar, cast
 
 from pendulum.parsing import ParserError
+from sqlalchemy import asc, desc
 
 from airflow.api_connexion.exceptions import BadRequest
 from airflow.configuration import conf
@@ -86,3 +87,21 @@ def format_parameters(params_formatters: Dict[str, Callable[..., bool]]) -> Call
         return cast(T, wrapped_function)
 
     return format_parameters_decorator
+
+
+def apply_sorting(query, order_by, to_replace=None, allowed_attrs=None):
+    """Apply sorting to query"""
+    lstriped_orderby = order_by.lstrip('-')
+    if allowed_attrs and lstriped_orderby not in allowed_attrs:
+        raise BadRequest(
+            detail=f"Ordering with '{lstriped_orderby}' is disallowed or "
+            f"the attribute does not exist on the model"
+        )
+    if order_by[0] == "-":
+        func = desc
+        order_by = lstriped_orderby
+    else:
+        func = asc
+    if to_replace:
+        order_by = to_replace.get(order_by, order_by)
+    return query.order_by(func(order_by))

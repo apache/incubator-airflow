@@ -18,7 +18,10 @@
 
 from time import sleep
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from airflow.exceptions import AirflowException
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook

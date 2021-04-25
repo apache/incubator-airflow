@@ -263,7 +263,7 @@ class BaseSQLToGCSOperator(BaseOperator):
 
     def _convert_parquet_schema(self, cursor):
         type_map = {
-            'INTERGER': pa.int64(),
+            'INTEGER': pa.int64(),
             'FLOAT': pa.float64(),
             'NUMERIC': pa.float64(),
             'BIGNUMERIC': pa.float64(),

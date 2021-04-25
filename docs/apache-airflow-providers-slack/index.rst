@@ -50,7 +50,7 @@ Package apache-airflow-providers-slack
 `Slack <https://slack.com/>`__
 
 
-Release: 2.0.0
+Release: 3.0.0
 
 Provider package
 ----------------
@@ -86,7 +86,7 @@ Cross provider package dependencies
 -----------------------------------
 
 Those are dependencies that might be needed in order to use all the features of the package.
-You need to install the specified backport providers package in order to use them.
+You need to install the specified provider packages in order to use them.
 
 You can install such cross-provider dependencies when installing from PyPI. For example:
 
@@ -121,6 +121,15 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+3.0.0
+.....
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* ``Don't allow SlackHook.call method accept *args (#14289)``
+
 
 2.0.0
 .....

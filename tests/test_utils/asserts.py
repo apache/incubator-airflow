@@ -63,9 +63,8 @@ class CountQueries:
             and __file__ != f.filename
             and ('session.py' not in f.filename and f.name != 'wrapper')
         ]
-        stack_info = ">".join([f"{f.filename.rpartition('/')[-1]}:{f.name}" for f in stack][-3:])
-        lineno = stack[-1].lineno
-        self.result[f"{stack_info}:{lineno}"] += 1
+        stack_info = ">".join([f"{f.filename.rpartition('/')[-1]}:{f.name}:{f.lineno}" for f in stack][-3:])
+        self.result[f"{stack_info}"] += 1
 
 
 count_queries = CountQueries  # pylint: disable=invalid-name

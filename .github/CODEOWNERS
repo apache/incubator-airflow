@@ -1,0 +1,40 @@
+# Core
+/airflow/executors/ @kaxil @XD-DENG @ashb @turbaszek
+/airflow/jobs/ @kaxil @ashb @XD-DENG
+/airflow/models/ @kaxil @XD-DENG @ashb @turbaszek
+
+# DAG Serialization
+/airflow/serialization/ @kaxil @ashb
+
+# Kubernetes
+/airflow/kubernetes/ @dimberman
+/airflow/kubernetes_executor_templates/ @dimberman
+/airflow/executors/celery_kubernetes_executor.py @dimberman
+/chart/ @dimberman @ashb
+
+# Docs
+/docs/ @mik-laj @kaxil @vikramkoka
+
+# API
+/airflow/api/ @mik-laj @kaxil
+/airflow/api_connexion/ @mik-laj @kaxil @ephraimbuddy
+
+# UI
+/airflow/ui/ @ryanahamilton @ashb
+
+# WWW
+/airflow/www/ @ryanahamilton @ashb
+
+# Providers
+/airflow/providers/google/ @turbaszek @mik-laj
+/airflow/providers/snowflake @turbaszek @potiuk
+
+# Dev tools
+/.github/workflows/ @potiuk @ashb @kaxil
+breeze @potiuk
+breeze-complete @potiuk
+Dockerfile @potiuk @ashb
+Dockerfile.ci @potiuk @ashb
+/dev/ @potiuk @ashb @kaxil
+/provider_packages/ @potiuk @ashb
+/scripts/ @potiuk @ashb

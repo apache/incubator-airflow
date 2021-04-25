@@ -139,6 +139,8 @@ def worker(args):
         'hostname': args.celery_hostname,
         'loglevel': conf.get('logging', 'LOGGING_LEVEL'),
         'pidfile': pid_file_path,
+        'without_mingle': args.without_mingle,
+        'without_gossip': args.without_gossip,
     }
 
     if conf.has_option("celery", "pool"):

@@ -19,7 +19,10 @@ import logging
 from typing import Collection, Dict, List, Optional, Tuple, Type
 from urllib.parse import urlencode
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.auth.credentials import Credentials
 from google.cloud import logging as gcp_logging

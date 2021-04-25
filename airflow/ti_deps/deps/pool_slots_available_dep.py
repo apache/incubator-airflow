@@ -27,7 +27,7 @@ class PoolSlotsAvailableDep(BaseTIDep):
     """Dep for pool slots availability."""
 
     NAME = "Pool Slots Available"
-    IGNOREABLE = True
+    IGNORABLE = True
 
     @provide_session
     def _get_dep_statuses(self, ti, session, dep_context=None):

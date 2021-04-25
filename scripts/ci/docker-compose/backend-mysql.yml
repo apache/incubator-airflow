@@ -44,8 +44,5 @@ services:
       timeout: 10s
       retries: 5
     restart: always
-
-    ports:
-      - "${MYSQL_HOST_PORT}:3306"
     command: ['mysqld', '--character-set-server=utf8mb4',
               '--collation-server=utf8mb4_unicode_ci']

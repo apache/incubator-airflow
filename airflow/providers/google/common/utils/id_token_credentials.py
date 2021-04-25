@@ -205,8 +205,8 @@ def get_default_id_token_credentials(
 if __name__ == "__main__":
     from google.auth.transport import requests
 
-    request_adaapter = requests.Request()
+    request_adapter = requests.Request()
 
     creds = get_default_id_token_credentials(target_audience=None)
-    creds.refresh(request=request_adaapter)
+    creds.refresh(request=request_adapter)
     print(creds.token)

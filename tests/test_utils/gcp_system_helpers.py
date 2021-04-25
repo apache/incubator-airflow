@@ -43,6 +43,9 @@ GSUITE_DAG_FOLDER = os.path.join(
 FIREBASE_DAG_FOLDER = os.path.join(
     AIRFLOW_MAIN_FOLDER, "airflow", "providers", "google", "firebase", "example_dags"
 )
+LEVELDB_DAG_FOLDER = os.path.join(
+    AIRFLOW_MAIN_FOLDER, "airflow", "providers", "google", "leveldb", "example_dags"
+)
 POSTGRES_LOCAL_EXECUTOR = os.path.join(
     AIRFLOW_MAIN_FOLDER, "tests", "test_utils", "postgres_local_executor.cfg"
 )

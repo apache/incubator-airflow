@@ -62,7 +62,7 @@ Variable                                Description
 ``{{ ti }}``                            same as ``{{ task_instance }}``
 ``{{ params }}``                        a reference to the user-defined params dictionary which can be overridden by
                                         the dictionary passed through ``trigger_dag -c`` if you enabled
-                                        ``dag_run_conf_overrides_params` in ``airflow.cfg``
+                                        ``dag_run_conf_overrides_params`` in ``airflow.cfg``
 ``{{ var.value.my_var }}``              global defined variables represented as a dictionary
 ``{{ var.json.my_var.path }}``          global defined variables represented as a dictionary
                                         with deserialized JSON object, append the path to the

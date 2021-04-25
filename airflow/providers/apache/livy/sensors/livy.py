@@ -31,18 +31,26 @@ class LivySensor(BaseSensorOperator):
     :type livy_conn_id: str
     :param batch_id: identifier of the monitored batch
     :type batch_id: Union[int, str]
+    :type extra_options: A dictionary of options, where key is string and value
+        depends on the option that's being modified.
     """
 
     template_fields = ('batch_id',)
 
     @apply_defaults
     def __init__(
-        self, *, batch_id: Union[int, str], livy_conn_id: str = 'livy_default', **kwargs: Any
+        self,
+        *,
+        batch_id: Union[int, str],
+        livy_conn_id: str = 'livy_default',
+        extra_options: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
+        self.batch_id = batch_id
         self._livy_conn_id = livy_conn_id
-        self._batch_id = batch_id
         self._livy_hook: Optional[LivyHook] = None
+        self._extra_options = extra_options or {}
 
     def get_hook(self) -> LivyHook:
         """
@@ -52,11 +60,11 @@ class LivySensor(BaseSensorOperator):
         :rtype: LivyHook
         """
         if self._livy_hook is None or not isinstance(self._livy_hook, LivyHook):
-            self._livy_hook = LivyHook(livy_conn_id=self._livy_conn_id)
+            self._livy_hook = LivyHook(livy_conn_id=self._livy_conn_id, extra_options=self._extra_options)
         return self._livy_hook
 
     def poke(self, context: Dict[Any, Any]) -> bool:
-        batch_id = self._batch_id
+        batch_id = self.batch_id
 
         status = self.get_hook().get_batch_state(batch_id)
         return status in self.get_hook().TERMINAL_STATES

@@ -29,7 +29,7 @@ LOCATION = os.environ.get("GCP_LIFE_SCIENCES_LOCATION", 'us-central1')
 
 
 # [START howto_configure_simple_action_pipeline]
-SIMPLE_ACTION_PIEPELINE = {
+SIMPLE_ACTION_PIPELINE = {
     "pipeline": {
         "actions": [
             {"imageUri": "bash", "commands": ["-c", "echo Hello, world"]},
@@ -83,7 +83,7 @@ with models.DAG(
     # [START howto_run_pipeline]
     simple_life_science_action_pipeline = LifeSciencesRunPipelineOperator(
         task_id='simple-action-pipeline',
-        body=SIMPLE_ACTION_PIEPELINE,
+        body=SIMPLE_ACTION_PIPELINE,
         project_id=PROJECT_ID,
         location=LOCATION,
     )

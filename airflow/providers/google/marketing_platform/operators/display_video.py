@@ -505,7 +505,7 @@ class GoogleDisplayVideo360UploadLineItemsOperator(BaseOperator):
     :param filename: The filename to fetch.
     :type filename: str,
     :param dry_run: Upload status without actually persisting the line items.
-    :type filename: str,
+    :type dry_run: str,
     """
 
     template_fields = (
@@ -572,7 +572,7 @@ class GoogleDisplayVideo360CreateSDFDownloadTaskOperator(BaseOperator):
         Check also the official API docs:
         `https://developers.google.com/display-video/api/reference/rest`
 
-    :param version: The SDF version of the downloaded file..
+    :param version: The SDF version of the downloaded file.
     :type version: str
     :param partner_id: The ID of the partner to download SDF for.
     :type partner_id: str
@@ -650,7 +650,7 @@ class GoogleDisplayVideo360SDFtoGCSOperator(BaseOperator):
         Check also the official API docs:
         `https://developers.google.com/display-video/api/reference/rest`
 
-    :param version: The SDF version of the downloaded file..
+    :param version: The SDF version of the downloaded file.
     :type version: str
     :param partner_id: The ID of the partner to download SDF for.
     :type partner_id: str

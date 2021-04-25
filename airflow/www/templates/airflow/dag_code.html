@@ -19,7 +19,12 @@
 
 {% extends "airflow/dag.html" %}
 
-{% block page_title %}{{ dag.dag_id }} - Code - Airflow{% endblock %}
+{% block page_title %}{{ dag.dag_id }} - Code - {{ appbuilder.app_name }}{% endblock %}
+
+{% block head_meta %}
+  {{ super() }}
+  <meta name="wrapped" content="{{ wrapped }}">
+{% endblock %}
 
 {% block content %}
   {{ super() }}
@@ -31,24 +36,5 @@
 
 {% block tail_js %}
   {{ super() }}
-  <script>
-    function toggleWrap() {
-      $('.code pre').toggleClass('wrap')
-    };
-
-    // We blur task_ids in demo mode
-    $(document).ready(function() {
-      if ("{{ demo_mode }}" == "True") {
-        $("pre span.s").css({
-          'text-shadow': '0 0 10px red',
-          'color': 'transparent',
-        });
-      }
-    });
-
-    // pygments generates the HTML so set wrap toggle via js
-    if ("{{ wrapped }}" == "True") {
-      toggleWrap();
-    };
-  </script>
+  <script src="{{ url_for_asset('dagCode.js') }}"></script>
 {% endblock %}

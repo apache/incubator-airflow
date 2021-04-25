@@ -51,7 +51,7 @@ Package apache-airflow-providers-apache-beam
 `Apache Beam <https://beam.apache.org/>`__.
 
 
-Release: 1.0.0
+Release: 1.0.1
 
 Provider package
 ----------------
@@ -87,7 +87,7 @@ Cross provider package dependencies
 -----------------------------------
 
 Those are dependencies that might be needed in order to use all the features of the package.
-You need to install the specified backport providers package in order to use them.
+You need to install the specified provider packages in order to use them.
 
 You can install such cross-provider dependencies when installing from PyPI. For example:
 
@@ -122,6 +122,15 @@ Dependent package                                                               
 
 Changelog
 ---------
+
+1.0.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Improve Apache Beam operators - refactor operator - common Dataflow logic (#14094)``
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
 
 1.0.0
 .....

@@ -19,6 +19,20 @@
 Changelog
 ---------
 
+1.2.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Add Azure Data Factory hook (#11015)``
+
+Bug fixes
+~~~~~~~~~
+
+* ``BugFix: Fix remote log in azure storage blob displays in one line (#14313)``
+* ``Fix AzureDataFactoryHook failing to instantiate its connection (#14565)``
+
 1.1.0
 .....
 

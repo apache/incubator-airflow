@@ -18,6 +18,7 @@
 ################################
 ## Airflow Flower Service Component
 #################################
+{{- if .Values.flower.enabled }}
 {{- if or (eq .Values.executor "CeleryExecutor") (eq .Values.executor "CeleryKubernetesExecutor") }}
 kind: Service
 apiVersion: v1
@@ -43,4 +44,5 @@ spec:
       protocol: TCP
       port: {{ .Values.ports.flowerUI }}
       targetPort: {{ .Values.ports.flowerUI }}
+{{- end }}
 {{- end }}

@@ -19,6 +19,16 @@
 Changelog
 ---------
 
+1.0.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Improve Apache Beam operators - refactor operator - common Dataflow logic (#14094)``
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+* ``Remove WARNINGs from BeamHook (#14554)``
+
 1.0.0
 .....
 

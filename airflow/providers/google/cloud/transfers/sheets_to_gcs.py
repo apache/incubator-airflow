@@ -40,7 +40,7 @@ class GoogleSheetsToGCSOperator(BaseOperator):
     :type sheet_filter: List[str]
     :param destination_bucket: The destination Google cloud storage bucket where the
         report should be written to. (templated)
-    :param destination_bucket: str
+    :type destination_bucket: str
     :param destination_path: The Google cloud storage URI array for the object created by the operator.
         For example: ``path/to/my/files``.
     :type destination_path: str

@@ -63,7 +63,7 @@ Package apache-airflow-providers-neo4j
 `Neo4j <https://neo4j.com/>`__
 
 
-Release: 1.0.0
+Release: 1.0.1
 
 Provider package
 ----------------
@@ -116,6 +116,15 @@ PIP package    Version required
 
 Changelog
 ---------
+
+1.0.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+
 
 1.0.0
 .....

@@ -18,17 +18,27 @@ import inspect
 import json
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import yaml
 from rich.box import ASCII_DOUBLE_HEAD
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
+from tabulate import tabulate
 
+import airflow.utils.yaml as yaml
 from airflow.plugins_manager import PluginsDirectorySource
+from airflow.utils.platform import is_tty
 
 
 class AirflowConsole(Console):
     """Airflow rich console"""
+
+    def __init__(self, show_header: bool = True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the width to constant to pipe whole output from console
+        self._width = 200 if not is_tty() else self._width
+
+        # If show header in tables
+        self.show_header = show_header
 
     def print_as_json(self, data: Dict):
         """Renders dict as json text representation"""
@@ -46,15 +56,22 @@ class AirflowConsole(Console):
             self.print("No data found")
             return
 
-        table = SimpleTable(
-            show_header=True,
-        )
+        table = SimpleTable(show_header=self.show_header)
         for col in data[0].keys():
             table.add_column(col)
 
         for row in data:
             table.add_row(*[str(d) for d in row.values()])
         self.print(table)
+
+    def print_as_plain_table(self, data: List[Dict]):
+        """Renders list of dictionaries as a simple table than can be easily piped"""
+        if not data:
+            self.print("No data found")
+            return
+        rows = [d.values() for d in data]
+        output = tabulate(rows, tablefmt="plain", headers=data[0].keys())
+        print(output)
 
     # pylint: disable=too-many-return-statements
     def _normalize_data(self, value: Any, output: str) -> Optional[Union[list, str, dict]]:
@@ -76,6 +93,7 @@ class AirflowConsole(Console):
             "json": self.print_as_json,
             "yaml": self.print_as_yaml,
             "table": self.print_as_table,
+            "plain": self.print_as_plain_table,
         }
         renderer = output_to_renderer.get(output)
         if not renderer:
@@ -109,5 +127,5 @@ class SimpleTable(Table):
 
     def add_column(self, *args, **kwargs) -> None:  # pylint: disable=signature-differs
         """Add a column to the table. We use different default"""
-        kwargs["overflow"] = kwargs.get("overflow", None)  # to avoid truncating
+        kwargs["overflow"] = kwargs.get("overflow")  # to avoid truncating
         super().add_column(*args, **kwargs)

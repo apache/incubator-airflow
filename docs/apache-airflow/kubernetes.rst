@@ -46,5 +46,7 @@ to every worker pod launched by KubernetesExecutor or KubernetesPodOperator.
 
 .. code-block:: python
 
-    def pod_mutation_hook(pod: Pod):
-      pod.annotations['airflow.apache.org/launched-by'] = 'Tests'
+    from kubernetes.client.models import V1Pod
+
+    def pod_mutation_hook(pod: V1Pod):
+        pod.metadata.annotations['airflow.apache.org/launched-by'] = 'Tests'

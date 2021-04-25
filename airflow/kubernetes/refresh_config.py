@@ -27,10 +27,11 @@ import time
 from typing import Optional, cast
 
 import pendulum
-import yaml
 from kubernetes.client import Configuration
 from kubernetes.config.exec_provider import ExecProvider
 from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION, KubeConfigLoader
+
+import airflow.utils.yaml as yaml
 
 
 def _parse_timestamp(ts_str: str) -> int:
@@ -68,6 +69,7 @@ class RefreshKubeConfigLoader(KubeConfigLoader):
             return True
         except Exception as e:  # pylint: disable=W0703
             logging.error(str(e))
+            return None
 
     def refresh_api_key(self, client_configuration):
         """Refresh API key if expired"""
@@ -81,7 +83,7 @@ class RefreshKubeConfigLoader(KubeConfigLoader):
 
 class RefreshConfiguration(Configuration):
     """
-    Patched Configuration, this subclass taskes api key refresh callback hook
+    Patched Configuration, this subclass takes api key refresh callback hook
     into account
     """
 

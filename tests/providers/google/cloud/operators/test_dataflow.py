@@ -66,7 +66,7 @@ TEST_FLEX_PARAMETERS = {
     "containerSpecGcsPath": "gs://test-bucket/test-file",
     "jobName": 'test-job-name',
     "parameters": {
-        "inputSubscription": 'test-subsription',
+        "inputSubscription": 'test-subscription',
         "outputTable": "test-project:test-dataset.streaming_beam_sql",
     },
 }

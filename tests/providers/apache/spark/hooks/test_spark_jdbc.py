@@ -44,7 +44,7 @@ class TestSparkJDBCHook(unittest.TestCase):
     }
 
     # this config is invalid because if one of [partitionColumn, lowerBound, upperBound]
-    # is set, all of the options must be enabled (enforced by Spark)
+    # is set, all the options must be enabled (enforced by Spark)
     _invalid_config = {
         'cmd_type': 'spark_to_jdbc',
         'jdbc_table': 'tableMcTableFace',

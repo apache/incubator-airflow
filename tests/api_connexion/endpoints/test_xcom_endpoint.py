@@ -14,9 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import unittest
 from datetime import timedelta
 
+import pytest
 from parameterized import parameterized
 
 from airflow.models import DagModel, DagRun as DR, XCom
@@ -24,66 +24,65 @@ from airflow.security import permissions
 from airflow.utils.dates import parse_execution_date
 from airflow.utils.session import provide_session
 from airflow.utils.types import DagRunType
-from airflow.www import app
 from tests.test_utils.api_connexion_utils import assert_401, create_user, delete_user
-from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_dags, clear_db_runs, clear_db_xcom
 
 
-class TestXComEndpoint(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        with conf_vars({("api", "auth_backend"): "tests.test_utils.remote_user_api_auth_backend"}):
-            cls.app = app.create_app(testing=True)  # type:ignore
+@pytest.fixture(scope="module")
+def configured_app(minimal_app_for_api):
+    app = minimal_app_for_api
 
-        create_user(
-            cls.app,  # type: ignore
-            username="test",
-            role_name="Test",
-            permissions=[
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_XCOM),
-            ],
-        )
-        create_user(
-            cls.app,  # type: ignore
-            username="test_granular_permissions",
-            role_name="TestGranularDag",
-            permissions=[
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
-                (permissions.ACTION_CAN_READ, permissions.RESOURCE_XCOM),
-            ],
-        )
-        cls.app.appbuilder.sm.sync_perm_for_dag(  # type: ignore  # pylint: disable=no-member
-            "test-dag-id-1",
-            access_control={'TestGranularDag': [permissions.ACTION_CAN_EDIT, permissions.ACTION_CAN_READ]},
-        )
-        create_user(cls.app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
+    create_user(
+        app,  # type: ignore
+        username="test",
+        role_name="Test",
+        permissions=[
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_XCOM),
+        ],
+    )
+    create_user(
+        app,  # type: ignore
+        username="test_granular_permissions",
+        role_name="TestGranularDag",
+        permissions=[
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG_RUN),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_TASK_INSTANCE),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_XCOM),
+        ],
+    )
+    app.appbuilder.sm.sync_perm_for_dag(  # type: ignore  # pylint: disable=no-member
+        "test-dag-id-1",
+        access_control={'TestGranularDag': [permissions.ACTION_CAN_EDIT, permissions.ACTION_CAN_READ]},
+    )
+    create_user(app, username="test_no_permissions", role_name="TestNoPermissions")  # type: ignore
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        delete_user(cls.app, username="test")  # type: ignore
-        delete_user(cls.app, username="test_no_permissions")  # type: ignore
+    yield app
 
+    delete_user(app, username="test")  # type: ignore
+    delete_user(app, username="test_no_permissions")  # type: ignore
+
+
+class TestXComEndpoint:
     @staticmethod
     def clean_db():
         clear_db_dags()
         clear_db_runs()
         clear_db_xcom()
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup_attrs(self, configured_app) -> None:
         """
         Setup For XCom endpoint TC
         """
+        self.app = configured_app
         self.client = self.app.test_client()  # type:ignore
         # clear existing xcoms
         self.clean_db()
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         """
         Clear Hanging XComs
         """
@@ -373,8 +372,7 @@ class TestGetXComEntries(TestXComEndpoint):
 
 
 class TestPaginationGetXComEntries(TestXComEndpoint):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.dag_id = 'test-dag-id'
         self.task_id = 'test-task-id'
         self.execution_date = '2005-04-02T00:00:00+00:00'

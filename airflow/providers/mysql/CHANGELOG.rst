@@ -22,6 +22,14 @@ used with MySQL server 5.6.4 through 5.7.
 Changelog
 ---------
 
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``MySQL hook respects conn_name_attr (#14240)``
+
 1.0.1
 .....
 

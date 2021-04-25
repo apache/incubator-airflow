@@ -22,6 +22,7 @@ description: |
     `Snowflake <https://www.snowflake.com/>`__
 
 versions:
+  - 1.1.1
   - 1.1.0
   - 1.0.0
 

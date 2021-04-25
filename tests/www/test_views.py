@@ -43,7 +43,7 @@ from werkzeug.wrappers import BaseResponse
 
 from airflow import models, settings, version
 from airflow.config_templates.airflow_local_settings import DEFAULT_LOGGING_CONFIG
-from airflow.configuration import conf
+from airflow.configuration import conf, initialize_config
 from airflow.executors.celery_executor import CeleryExecutor
 from airflow.jobs.base_job import BaseJob
 from airflow.models import DAG, Connection, DagRun, TaskInstance
@@ -62,11 +62,14 @@ from airflow.utils.state import State
 from airflow.utils.timezone import datetime
 from airflow.utils.types import DagRunType
 from airflow.www import app as application
-from airflow.www.views import ConnectionModelView, get_safe_url
+from airflow.www.extensions import init_views
+from airflow.www.extensions.init_appbuilder_links import init_appbuilder_links
+from airflow.www.views import ConnectionModelView, get_safe_url, truncate_task_duration
 from tests.test_utils import fab_utils
 from tests.test_utils.asserts import assert_queries_count
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_runs
+from tests.test_utils.decorators import dont_initialize_flask_app_submodules
 from tests.test_utils.mock_plugins import mock_plugin_manager
 
 
@@ -121,6 +124,14 @@ class TemplateWithContext(NamedTuple):
 
 class TestBase(unittest.TestCase):
     @classmethod
+    @dont_initialize_flask_app_submodules(
+        skip_all_except=[
+            "init_appbuilder",
+            "init_appbuilder_views",
+            "init_flash_views",
+            "init_jinja_globals",
+        ]
+    )
     def setUpClass(cls):
         settings.configure_orm()
         cls.session = settings.Session
@@ -138,36 +149,38 @@ class TestBase(unittest.TestCase):
         self.login()
 
     def login(self, username='test', password='test'):
-        if username == 'test' and not self.appbuilder.sm.find_user(username='test'):
-            self.appbuilder.sm.add_user(
-                username='test',
-                first_name='test',
-                last_name='test',
-                email='test@fab.org',
-                role=self.appbuilder.sm.find_role('Admin'),
-                password='test',
-            )
-        if username == 'test_user' and not self.appbuilder.sm.find_user(username='test_user'):
-            self.appbuilder.sm.add_user(
-                username='test_user',
-                first_name='test_user',
-                last_name='test_user',
-                email='test_user@fab.org',
-                role=self.appbuilder.sm.find_role('User'),
-                password='test_user',
-            )
+        with mock.patch('flask_appbuilder.security.manager.check_password_hash') as set_mock:
+            set_mock.return_value = True
+            if username == 'test' and not self.appbuilder.sm.find_user(username='test'):
+                self.appbuilder.sm.add_user(
+                    username='test',
+                    first_name='test',
+                    last_name='test',
+                    email='test@fab.org',
+                    role=self.appbuilder.sm.find_role('Admin'),
+                    password='test',
+                )
+            if username == 'test_user' and not self.appbuilder.sm.find_user(username='test_user'):
+                self.appbuilder.sm.add_user(
+                    username='test_user',
+                    first_name='test_user',
+                    last_name='test_user',
+                    email='test_user@fab.org',
+                    role=self.appbuilder.sm.find_role('User'),
+                    password='test_user',
+                )
 
-        if username == 'test_viewer' and not self.appbuilder.sm.find_user(username='test_viewer'):
-            self.appbuilder.sm.add_user(
-                username='test_viewer',
-                first_name='test_viewer',
-                last_name='test_viewer',
-                email='test_viewer@fab.org',
-                role=self.appbuilder.sm.find_role('Viewer'),
-                password='test_viewer',
-            )
+            if username == 'test_viewer' and not self.appbuilder.sm.find_user(username='test_viewer'):
+                self.appbuilder.sm.add_user(
+                    username='test_viewer',
+                    first_name='test_viewer',
+                    last_name='test_viewer',
+                    email='test_viewer@fab.org',
+                    role=self.appbuilder.sm.find_role('Viewer'),
+                    password='test_viewer',
+                )
 
-        return self.client.post('/login/', data={"username": username, "password": password})
+            return self.client.post('/login/', data={"username": username, "password": password})
 
     def logout(self):
         return self.client.get('/logout/')
@@ -228,6 +241,7 @@ class TestBase(unittest.TestCase):
 class TestConnectionModelView(TestBase):
     def setUp(self):
         super().setUp()
+
         self.connection = {
             'conn_id': 'test_conn',
             'conn_type': 'http',
@@ -243,6 +257,7 @@ class TestConnectionModelView(TestBase):
         super().tearDown()
 
     def test_create_connection(self):
+        init_views.init_connection_form()
         resp = self.client.post('/connection/add', data=self.connection, follow_redirects=True)
         self.check_content_in_response('Added Row', resp)
 
@@ -361,6 +376,12 @@ class TestPluginView(TestBase):
         self.check_content_in_response("source", resp)
         self.check_content_in_response("<em>test-entrypoint-testpluginview==1.0.0:</em> <Mock id=", resp)
 
+    def test_endpoint_should_not_be_unauthenticated(self):
+        self.logout()
+        resp = self.client.get('/plugin', follow_redirects=True)
+        self.check_content_not_in_response("test_plugin", resp)
+        self.check_content_in_response("Sign In - Airflow", resp)
+
 
 class TestPoolModelView(TestBase):
     def setUp(self):
@@ -385,7 +406,6 @@ class TestPoolModelView(TestBase):
         self.check_content_in_response('Already exists.', resp)
 
     def test_create_pool_with_empty_name(self):
-
         self.pool['pool'] = ''
         resp = self.client.post('/pool/add', data=self.pool, follow_redirects=True)
         self.check_content_in_response('This field is required.', resp)
@@ -420,7 +440,8 @@ class TestMountPoint(unittest.TestCase):
     def setUpClass(cls):
         application.app = None
         application.appbuilder = None
-        app = application.cached_app(config={'WTF_CSRF_ENABLED': False}, testing=True)
+        app = application.create_app(testing=True)
+        app.config['WTF_CSRF_ENABLED'] = False
         cls.client = Client(app, BaseResponse)
 
     @classmethod
@@ -453,6 +474,9 @@ class TestAirflowBaseViews(TestBase):
         models.DagBag(include_examples=True).sync_to_db()
         cls.dagbag = models.DagBag(include_examples=True, read_dags_from_db=True)
         cls.app.dag_bag = cls.dagbag
+        init_views.init_api_connexion(cls.app)
+        init_views.init_plugins(cls.app)
+        init_appbuilder_links(cls.app)
 
     def setUp(self):
         super().setUp()
@@ -488,7 +512,7 @@ class TestAirflowBaseViews(TestBase):
         )
 
     def test_index(self):
-        with assert_queries_count(42):
+        with assert_queries_count(43):
             resp = self.client.get('/', follow_redirects=True)
         self.check_content_in_response('DAGs', resp)
 
@@ -1137,8 +1161,28 @@ class TestAirflowBaseViews(TestBase):
             assert ctx['show_external_log_redirect']
             assert ctx['external_log_name'] == ExternalHandler.LOG_NAME
 
+    def test_page_instance_name(self):
+        with conf_vars({('webserver', 'instance_name'): 'Site Title Test'}):
+            resp = self.client.get('home', follow_redirects=True)
+            self.check_content_in_response('Site Title Test', resp)
+
+    def test_page_instance_name_xss_prevention(self):
+        xss_string = "<script>alert('Give me your credit card number')</script>"
+        with conf_vars({('webserver', 'instance_name'): xss_string}):
+            resp = self.client.get('home', follow_redirects=True)
+            escaped_xss_string = (
+                "&lt;script&gt;alert(&#39;Give me your credit card number&#39;)&lt;/script&gt;"
+            )
+            self.check_content_in_response(escaped_xss_string, resp)
+            self.check_content_not_in_response(xss_string, resp)
+
 
 class TestConfigurationView(TestBase):
+    def setUp(self):
+        super().setUp()
+        with mock.patch.dict(os.environ, {"AIRFLOW__CORE__UNIT_TEST_MODE": "False"}):
+            initialize_config()
+
     def test_configuration_do_not_expose_config(self):
         self.logout()
         self.login()
@@ -1162,6 +1206,11 @@ class TestConfigurationView(TestBase):
 
 
 class TestRedocView(TestBase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        init_views.init_api_connexion(cls.app)
+
     def test_should_render_template(self):
         with self.capture_templates() as templates:
             resp = self.client.get('redoc')
@@ -1179,9 +1228,13 @@ class TestLogView(TestBase):
     DEFAULT_DATE = timezone.datetime(2017, 9, 1)
     ENDPOINT = f'log?dag_id={DAG_ID}&task_id={TASK_ID}&execution_date={DEFAULT_DATE}'
 
-    def setUp(self):
+    @classmethod
+    @dont_initialize_flask_app_submodules(
+        skip_all_except=["init_appbuilder", "init_jinja_globals", "init_appbuilder_views"]
+    )
+    def setUpClass(cls):
         # Make sure that the configure_logging is not cached
-        self.old_modules = dict(sys.modules)
+        cls.old_modules = dict(sys.modules)
 
         # Create a custom logging configuration
         logging_config = copy.deepcopy(DEFAULT_LOGGING_CONFIG)
@@ -1195,15 +1248,18 @@ class TestLogView(TestBase):
         ] = '{{ ti.dag_id }}/{{ ti.task_id }}/{{ ts | replace(":", ".") }}/{{ try_number }}.log'
 
         # Write the custom logging configuration to a file
-        self.settings_folder = tempfile.mkdtemp()
-        settings_file = os.path.join(self.settings_folder, "airflow_local_settings.py")
+        cls.settings_folder = tempfile.mkdtemp()
+        settings_file = os.path.join(cls.settings_folder, "airflow_local_settings.py")
         new_logging_file = f"LOGGING_CONFIG = {logging_config}"
         with open(settings_file, 'w') as handle:
             handle.writelines(new_logging_file)
-        sys.path.append(self.settings_folder)
+        sys.path.append(cls.settings_folder)
 
         with conf_vars({('logging', 'logging_config_class'): 'airflow_local_settings.LOGGING_CONFIG'}):
-            self.app = application.create_app(testing=True)
+            cls.app = application.create_app(testing=True)
+
+    def setUp(self):
+        with conf_vars({('logging', 'logging_config_class'): 'airflow_local_settings.LOGGING_CONFIG'}):
             self.appbuilder = self.app.appbuilder  # pylint: disable=no-member
             self.app.config['WTF_CSRF_ENABLED'] = False
             self.client = self.app.test_client()
@@ -1237,7 +1293,6 @@ class TestLogView(TestBase):
                 session.merge(self.ti_removed_dag)
 
     def tearDown(self):
-        logging.config.dictConfig(DEFAULT_LOGGING_CONFIG)
         self.clear_table(TaskInstance)
 
         # Remove any new modules imported during the test run. This lets us
@@ -1245,10 +1300,14 @@ class TestLogView(TestBase):
         for mod in [m for m in sys.modules if m not in self.old_modules]:
             del sys.modules[mod]
 
-        sys.path.remove(self.settings_folder)
-        shutil.rmtree(self.settings_folder)
         self.logout()
         super().tearDown()
+
+    @classmethod
+    def tearDownClass(cls):
+        logging.config.dictConfig(DEFAULT_LOGGING_CONFIG)
+        sys.path.remove(cls.settings_folder)
+        shutil.rmtree(cls.settings_folder)
 
     @parameterized.expand(
         [
@@ -1270,6 +1329,7 @@ class TestLogView(TestBase):
         response = self.client.get(
             TestLogView.ENDPOINT, data=dict(username='test', password='test'), follow_redirects=True
         )
+
         assert response.status_code == 200
         assert 'Log by attempts' in response.data.decode('utf-8')
         for num in range(1, expected_num_logs_visible + 1):
@@ -1742,8 +1802,6 @@ class TestDagACLView(TestBase):
         clear_db_runs()
         self.prepare_dagruns()
         self.logout()
-        self.appbuilder.sm.sync_roles()
-        self.add_permission_for_role()
 
     def login(self, username='dag_tester', password='dag_test'):
         dag_tester_role = self.appbuilder.sm.add_role('dag_acl_tester')
@@ -1839,6 +1897,9 @@ class TestDagACLView(TestBase):
         dag_read_only_role = self.appbuilder.sm.find_role('dag_acl_read_only')
         self.appbuilder.sm.add_permission_role(dag_read_only_role, read_only_perm_on_dag)
         self.appbuilder.sm.add_permission_role(dag_read_only_role, website_permission)
+
+        dag_acl_faker_role = self.appbuilder.sm.find_role('dag_acl_faker')
+        self.appbuilder.sm.add_permission_role(dag_acl_faker_role, website_permission)
 
     def test_permission_exist(self):
         self.create_user_and_login(
@@ -1955,6 +2016,7 @@ class TestDagACLView(TestBase):
         self.check_content_in_response('example_bash_operator', resp)
 
     def test_dag_stats_success_when_selecting_dags(self):
+        self.add_permission_for_role()
         resp = self.client.post(
             'dag_stats', data={'dag_ids': ['example_subdag_operator']}, follow_redirects=True
         )
@@ -2320,6 +2382,7 @@ class TestDagACLView(TestBase):
         self.check_content_in_response('example_subdag_operator', resp)
 
     def test_blocked_success_when_selecting_dags(self):
+        self.add_permission_for_role()
         resp = self.client.post(
             'blocked', data={'dag_ids': ['example_subdag_operator']}, follow_redirects=True
         )
@@ -2334,6 +2397,7 @@ class TestDagACLView(TestBase):
             data={'dag_ids': ['example_subdag_operator', 'example_bash_operator']},
             follow_redirects=True,
         )
+
         blocked_dags = {blocked['dag_id'] for blocked in json.loads(resp.data.decode('utf-8'))}
         assert 'example_bash_operator' in blocked_dags
         assert 'example_subdag_operator' in blocked_dags
@@ -2551,6 +2615,7 @@ class TestDagACLView(TestBase):
         url = 'log?task_id=runme_0&dag_id=example_bash_operator&execution_date={}'.format(
             self.percent_encode(self.default_date)
         )
+
         resp = self.client.get(url, follow_redirects=True)
         self.check_content_in_response('Log by attempts', resp)
         url = (
@@ -2747,9 +2812,10 @@ class TestTriggerDag(TestBase):
         [
             ("javascript:alert(1)", "/home"),
             ("http://google.com", "/home"),
+            ("36539'%3balert(1)%2f%2f166", "/home"),
             (
                 "%2Ftree%3Fdag_id%3Dexample_bash_operator';alert(33)//",
-                "/tree?dag_id=example_bash_operator%27&amp;alert%2833%29%2F%2F=",
+                "/home",
             ),
             ("%2Ftree%3Fdag_id%3Dexample_bash_operator", "/tree?dag_id=example_bash_operator"),
             ("%2Fgraph%3Fdag_id%3Dexample_bash_operator", "/graph?dag_id=example_bash_operator"),
@@ -3289,14 +3355,18 @@ class TestHelperFunctions(TestBase):
         [
             ("", "/home"),
             ("http://google.com", "/home"),
+            ("36539'%3balert(1)%2f%2f166", "/home"),
             (
-                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%test_dag';alert(33)//",
-                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3F"
-                "dag_id%25test_dag%27&alert%2833%29%2F%2F=",
+                "http://localhost:8080/trigger?dag_id=test&origin=36539%27%3balert(1)%2f%2f166&abc=2",
+                "/home",
             ),
             (
-                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%test_dag",
-                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%25test_dag",
+                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%test_dag';alert(33)//",
+                "/home",
+            ),
+            (
+                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%3Dtest_dag",
+                "http://localhost:8080/trigger?dag_id=test_dag&origin=%2Ftree%3Fdag_id%3Dtest_dag",
             ),
         ]
     )
@@ -3305,3 +3375,15 @@ class TestHelperFunctions(TestBase):
         mock_url_for.return_value = "/home"
         with self.app.test_request_context(base_url="http://localhost:8080"):
             assert get_safe_url(test_url) == expected_url
+
+    @parameterized.expand(
+        [
+            (0.12345, 0.123),
+            (0.12355, 0.124),
+            (3.12, 3.12),
+            (9.99999, 10.0),
+            (10.01232, 10),
+        ]
+    )
+    def test_truncate_task_duration(self, test_duration, expected_duration):
+        assert truncate_task_duration(test_duration) == expected_duration

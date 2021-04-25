@@ -24,6 +24,11 @@ from typing import Iterable, List, Optional, Set
 
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader  # type: ignore[misc]
+
 import airflow
 from docs.exts.docs_build.docs_builder import ALL_PROVIDER_YAMLS  # pylint: disable=no-name-in-module
 from docs.exts.docs_build.errors import DocBuildError  # pylint: disable=no-name-in-module
@@ -327,7 +332,7 @@ def check_docker_image_tag_in_quick_start_guide() -> List[DocBuildError]:
     # master tag is little outdated.
     expected_image = f'apache/airflow:{expected_tag}'
     with open(compose_file_path) as yaml_file:
-        content = yaml.safe_load(yaml_file)
+        content = yaml.load(yaml_file, SafeLoader)
         current_image_expression = content['x-airflow-common']['image']
         if expected_image not in current_image_expression:
             build_errors.append(

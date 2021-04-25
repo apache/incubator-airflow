@@ -267,7 +267,7 @@ class QuboleOperator(BaseOperator):
         return QuboleHook(**self.kwargs)
 
     def __getattribute__(self, name: str) -> str:
-        if name in QuboleOperator.template_fields:
+        if name in _get_template_fields(self):
             if name in self.kwargs:
                 return self.kwargs[name]
             else:
@@ -276,7 +276,13 @@ class QuboleOperator(BaseOperator):
             return object.__getattribute__(self, name)
 
     def __setattr__(self, name: str, value: str) -> None:
-        if name in QuboleOperator.template_fields:
+        if name in _get_template_fields(self):
             self.kwargs[name] = value
         else:
             object.__setattr__(self, name, value)
+
+
+def _get_template_fields(obj: BaseOperator) -> dict:
+    class_ = object.__getattribute__(obj, '__class__')
+    template_fields = object.__getattribute__(class_, 'template_fields')
+    return template_fields

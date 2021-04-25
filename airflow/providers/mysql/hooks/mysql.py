@@ -18,10 +18,16 @@
 
 """This module allows to connect to a MySQL database."""
 import json
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 from airflow.hooks.dbapi import DbApiHook
 from airflow.models import Connection
+
+if TYPE_CHECKING:
+    from mysql.connector.abstracts import MySQLConnectionAbstract
+    from MySQLdb.connections import Connection as MySQLdbConnection
+
+MySQLConnectionTypes = Union['MySQLdbConnection', 'MySQLConnectionAbstract']
 
 
 class MySqlHook(DbApiHook):
@@ -50,20 +56,36 @@ class MySqlHook(DbApiHook):
         self.schema = kwargs.pop("schema", None)
         self.connection = kwargs.pop("connection", None)
 
-    def set_autocommit(self, conn: Connection, autocommit: bool) -> None:  # noqa: D403
-        """MySql connection sets autocommit in a different way."""
-        conn.autocommit(autocommit)
-
-    def get_autocommit(self, conn: Connection) -> bool:  # noqa: D403
+    def set_autocommit(self, conn: MySQLConnectionTypes, autocommit: bool) -> None:
         """
-        MySql connection gets autocommit in a different way.
+        The MySQLdb (mysqlclient) client uses an `autocommit` method rather
+        than an `autocommit` property to set the autocommit setting
+
+        :param conn: connection to set autocommit setting
+        :type MySQLConnectionTypes: connection object.
+        :param autocommit: autocommit setting
+        :type bool: True to enable autocommit, False to disable autocommit
+        :rtype: None
+        """
+        if hasattr(conn.__class__, 'autocommit') and isinstance(conn.__class__.autocommit, property):
+            conn.autocommit = autocommit
+        else:
+            conn.autocommit(autocommit)
+
+    def get_autocommit(self, conn: MySQLConnectionTypes) -> bool:
+        """
+        The MySQLdb (mysqlclient) client uses a `get_autocommit` method
+        rather than an `autocommit` property to get the autocommit setting
 
         :param conn: connection to get autocommit setting from.
-        :type conn: connection object.
+        :type MySQLConnectionTypes: connection object.
         :return: connection autocommit setting
         :rtype: bool
         """
-        return conn.get_autocommit()
+        if hasattr(conn.__class__, 'autocommit') and isinstance(conn.__class__.autocommit, property):
+            return conn.autocommit
+        else:
+            return conn.get_autocommit()
 
     def _get_conn_config_mysql_client(self, conn: Connection) -> Dict:
         conn_config = {
@@ -122,7 +144,7 @@ class MySqlHook(DbApiHook):
 
         return conn_config
 
-    def get_conn(self):
+    def get_conn(self) -> MySQLConnectionTypes:
         """
         Establishes a connection to a mysql database
         by extracting the connection configuration from the Airflow connection.
@@ -133,7 +155,9 @@ class MySqlHook(DbApiHook):
 
         :return: a mysql connection object
         """
-        conn = self.connection or self.get_connection(self.mysql_conn_id)  # pylint: disable=no-member
+        conn = self.connection or self.get_connection(
+            getattr(self, self.conn_name_attr)
+        )  # pylint: disable=no-member
 
         client_name = conn.extra_dejson.get('client', 'mysqlclient')
 

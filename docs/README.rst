@@ -25,7 +25,7 @@ For Helm Chart, see: `/chart/README.md <../chart/READMe.md>`__
 Development documentation preview
 ==================================
 
-Documentation from the ``master`` branch is built and automatically published: `s.apache.org/airflow-docs <https://s.apache.org/airflow-docs>`_
+Documentation from the development version is built and automatically published: `s.apache.org/airflow-docs <https://s.apache.org/airflow-docs>`_
 
 Documentation for your PRs is available as downloadable artifact in GitHub Actions after the CI builds your PR.
 

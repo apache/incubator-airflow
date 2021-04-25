@@ -185,17 +185,33 @@ class TestStackdriverListNotificationChannelsOperator(unittest.TestCase):
             timeout=DEFAULT,
             metadata=None,
         )
-        assert [
-            {
-                'description': '',
-                'display_name': '',
-                'labels': {},
-                'name': 'test-123',
-                'type_': '',
-                'user_labels': {},
-                'verification_status': 0,
-            }
-        ] == result
+        # Depending on the version of google-apitools installed we might receive the response either with or
+        # without mutation_records.
+        assert result in [
+            [
+                {
+                    'description': '',
+                    'display_name': '',
+                    'labels': {},
+                    'name': 'test-123',
+                    'type_': '',
+                    'user_labels': {},
+                    'verification_status': 0,
+                }
+            ],
+            [
+                {
+                    'description': '',
+                    'display_name': '',
+                    'labels': {},
+                    'mutation_records': [],
+                    'name': 'test-123',
+                    'type_': '',
+                    'user_labels': {},
+                    'verification_status': 0,
+                }
+            ],
+        ]
 
 
 class TestStackdriverEnableNotificationChannelsOperator(unittest.TestCase):

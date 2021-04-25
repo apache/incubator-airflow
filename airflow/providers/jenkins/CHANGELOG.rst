@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Add allowed_jenkins_states to JenkinsJobTriggerOperator (#14131)``
+
 1.0.1
 .....
 

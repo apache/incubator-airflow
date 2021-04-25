@@ -40,7 +40,7 @@ class TestQuboleSensor(unittest.TestCase):
         db.merge_conn(Connection(conn_id=DEFAULT_CONN, conn_type='HTTP'))
 
     @patch('airflow.providers.qubole.sensors.qubole.QuboleFileSensor.poke')
-    def test_file_sensore(self, patched_poke):
+    def test_file_sensor(self, patched_poke):
         patched_poke.return_value = True
         sensor = QuboleFileSensor(
             task_id='test_qubole_file_sensor', data={"files": ["s3://some_bucket/some_file"]}

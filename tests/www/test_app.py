@@ -15,7 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import subprocess
+import runpy
+import sys
 import unittest
 from datetime import timedelta
 from unittest import mock
@@ -27,6 +28,7 @@ from werkzeug.wrappers import Response
 
 from airflow.www import app as application
 from tests.test_utils.config import conf_vars
+from tests.test_utils.decorators import dont_initialize_flask_app_submodules
 
 
 class TestApp(unittest.TestCase):
@@ -46,7 +48,7 @@ class TestApp(unittest.TestCase):
             ('webserver', 'proxy_fix_x_prefix'): '1',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     def test_should_respect_proxy_fix(self):
         app = application.cached_app(testing=True)
         app.url_map.add(Rule("/debug", endpoint="debug"))
@@ -86,7 +88,7 @@ class TestApp(unittest.TestCase):
             ('webserver', 'base_url'): 'http://localhost:8080/internal-client',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     def test_should_respect_base_url_ignore_proxy_headers(self):
         app = application.cached_app(testing=True)
         app.url_map.add(Rule("/debug", endpoint="debug"))
@@ -132,7 +134,7 @@ class TestApp(unittest.TestCase):
             ('webserver', 'proxy_fix_x_prefix'): '1',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     def test_should_respect_base_url_when_proxy_fix_and_base_url_is_set_up_but_headers_missing(self):
         app = application.cached_app(testing=True)
         app.url_map.add(Rule("/debug", endpoint="debug"))
@@ -172,7 +174,7 @@ class TestApp(unittest.TestCase):
             ('webserver', 'proxy_fix_x_prefix'): '1',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     def test_should_respect_base_url_and_proxy_when_proxy_fix_and_base_url_is_set_up(self):
         app = application.cached_app(testing=True)
         app.url_map.add(Rule("/debug", endpoint="debug"))
@@ -216,7 +218,7 @@ class TestApp(unittest.TestCase):
             ('core', 'sql_alchemy_pool_pre_ping'): 'True',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     @pytest.mark.backend("mysql", "postgres")
     def test_should_set_sqlalchemy_engine_options(self):
         app = application.cached_app(testing=True)
@@ -228,14 +230,25 @@ class TestApp(unittest.TestCase):
             ('webserver', 'session_lifetime_minutes'): '3600',
         }
     )
-    @mock.patch("airflow.www.app.app", None)
+    @dont_initialize_flask_app_submodules
     def test_should_set_permanent_session_timeout(self):
         app = application.cached_app(testing=True)
         assert app.config['PERMANENT_SESSION_LIFETIME'] == timedelta(minutes=3600)
 
+    @conf_vars({('webserver', 'cookie_samesite'): ''})
+    @dont_initialize_flask_app_submodules
+    def test_correct_default_is_set_for_cookie_samesite(self):
+        app = application.cached_app(testing=True)
+        assert app.config['SESSION_COOKIE_SAMESITE'] == 'Lax'
 
-class TestFlaskCli(unittest.TestCase):
-    def test_flask_cli_should_display_routes(self):
-        with mock.patch.dict("os.environ", FLASK_APP="airflow.www.app:create_app"):
-            output = subprocess.check_output(["flask", "routes"])
-            assert "/api/v1/version" in output.decode()
+
+class TestFlaskCli:
+    @dont_initialize_flask_app_submodules(skip_all_except=['init_appbuilder'])
+    def test_flask_cli_should_display_routes(self, capsys):
+        with mock.patch.dict("os.environ", FLASK_APP="airflow.www.app:cached_app"), mock.patch.object(
+            sys, 'argv', ['flask', 'routes']
+        ), pytest.raises(SystemExit):
+            runpy.run_module('flask', run_name='__main__')
+
+        output = capsys.readouterr()
+        assert "/login/" in output.out

@@ -1008,7 +1008,7 @@ OPERATORS = [
         'airflow.contrib.operators.sqoop_operator.SqoopOperator',
     ),
     (
-        'airflow.providers.apache.druid.operators.druid_check.DruidCheckOperator',
+        'airflow.operators.sql.SQLCheckOperator',
         'airflow.operators.druid_check_operator.DruidCheckOperator',
     ),
     (
@@ -1416,7 +1416,7 @@ SENSORS = [
         "airflow.contrib.sensors.gcs_sensor.GoogleCloudStorageObjectUpdatedSensor",
     ),
     (
-        "airflow.providers.google.cloud.sensors.gcs.GCSObjectsWtihPrefixExistenceSensor",
+        "airflow.providers.google.cloud.sensors.gcs.GCSObjectsWithPrefixExistenceSensor",
         "airflow.contrib.sensors.gcs_sensor.GoogleCloudStoragePrefixSensor",
     ),
     (

@@ -21,9 +21,11 @@ import functools
 import gzip as gz
 import os
 import shutil
+import time
 import warnings
 from contextlib import contextmanager
 from datetime import datetime
+from functools import partial
 from io import BytesIO
 from os import path
 from tempfile import NamedTemporaryFile
@@ -32,9 +34,11 @@ from urllib.parse import urlparse
 
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
+from google.cloud.exceptions import GoogleCloudError
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
+from airflow.utils import timezone
 from airflow.version import version
 
 RT = TypeVar('RT')  # pylint: disable=invalid-name
@@ -266,6 +270,7 @@ class GCSHook(GoogleBaseHook):
         filename: Optional[str] = None,
         chunk_size: Optional[int] = None,
         timeout: Optional[int] = DEFAULT_TIMEOUT,
+        num_max_attempts: Optional[int] = 1,
     ) -> Union[str, bytes]:
         """
         Downloads a file from Google Cloud Storage.
@@ -275,30 +280,53 @@ class GCSHook(GoogleBaseHook):
         returns the location. For file sizes that exceed the available memory it is recommended
         to write to a file.
 
-        :param bucket_name: The bucket to fetch from.
-        :type bucket_name: str
         :param object_name: The object to fetch.
         :type object_name: str
+        :param bucket_name: The bucket to fetch from.
+        :type bucket_name: str
         :param filename: If set, a local file path where the file should be written to.
         :type filename: str
         :param chunk_size: Blob chunk size.
         :type chunk_size: int
         :param timeout: Request timeout in seconds.
         :type timeout: int
+        :param num_max_attempts: Number of attempts to download the file.
+        :type num_max_attempts: int
         """
         # TODO: future improvement check file size before downloading,
         #  to check for local space availability
 
-        client = self.get_conn()
-        bucket = client.bucket(bucket_name)
-        blob = bucket.blob(blob_name=object_name, chunk_size=chunk_size)
+        num_file_attempts = 0
 
-        if filename:
-            blob.download_to_filename(filename, timeout=timeout)
-            self.log.info('File downloaded to %s', filename)
-            return filename
-        else:
-            return blob.download_as_string()
+        while num_file_attempts < num_max_attempts:
+            try:
+                num_file_attempts += 1
+                client = self.get_conn()
+                bucket = client.bucket(bucket_name)
+                blob = bucket.blob(blob_name=object_name, chunk_size=chunk_size)
+
+                if filename:
+                    blob.download_to_filename(filename, timeout=timeout)
+                    self.log.info('File downloaded to %s', filename)
+                    return filename
+                else:
+                    return blob.download_as_string()
+
+            except GoogleCloudError:
+                if num_file_attempts == num_max_attempts:
+                    self.log.error(
+                        'Download attempt of object: %s from %s has failed. Attempt: %s, max %s.',
+                        object_name,
+                        object_name,
+                        num_file_attempts,
+                        num_max_attempts,
+                    )
+                    raise
+
+                # Wait with exponential backoff scheme before retrying.
+                timeout_seconds = 1.0 * 2 ** (num_file_attempts - 1)
+                time.sleep(timeout_seconds)
+                continue
 
     @_fallback_object_url_to_object_name_and_bucket_name()
     @contextmanager
@@ -362,7 +390,7 @@ class GCSHook(GoogleBaseHook):
             tmp_file.flush()
             self.upload(bucket_name=bucket_name, object_name=object_name, filename=tmp_file.name)
 
-    def upload(
+    def upload(  # pylint: disable=too-many-arguments
         self,
         bucket_name: str,
         object_name: str,
@@ -373,6 +401,7 @@ class GCSHook(GoogleBaseHook):
         encoding: str = 'utf-8',
         chunk_size: Optional[int] = None,
         timeout: Optional[int] = DEFAULT_TIMEOUT,
+        num_max_attempts: int = 1,
     ) -> None:
         """
         Uploads a local file or file data as string or bytes to Google Cloud Storage.
@@ -395,7 +424,38 @@ class GCSHook(GoogleBaseHook):
         :type chunk_size: int
         :param timeout: Request timeout in seconds.
         :type timeout: int
+        :param num_max_attempts: Number of attempts to try to upload the file.
+        :type num_max_attempts: int
         """
+
+        def _call_with_retry(f: Callable[[], None]) -> None:
+            """Helper functions to upload a file or a string with a retry mechanism and exponential back-off.
+            :param f: Callable that should be retried.
+            :type f: Callable[[], None]
+            """
+            num_file_attempts = 0
+
+            while num_file_attempts < num_max_attempts:
+                try:
+                    num_file_attempts += 1
+                    f()
+
+                except GoogleCloudError as e:
+                    if num_file_attempts == num_max_attempts:
+                        self.log.error(
+                            'Upload attempt of object: %s from %s has failed. Attempt: %s, max %s.',
+                            object_name,
+                            object_name,
+                            num_file_attempts,
+                            num_max_attempts,
+                        )
+                        raise e
+
+                    # Wait with exponential backoff scheme before retrying.
+                    timeout_seconds = 1.0 * 2 ** (num_file_attempts - 1)
+                    time.sleep(timeout_seconds)
+                    continue
+
         client = self.get_conn()
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(blob_name=object_name, chunk_size=chunk_size)
@@ -416,7 +476,10 @@ class GCSHook(GoogleBaseHook):
                         shutil.copyfileobj(f_in, f_out)
                         filename = filename_gz
 
-            blob.upload_from_filename(filename=filename, content_type=mime_type, timeout=timeout)
+            _call_with_retry(
+                partial(blob.upload_from_filename, filename=filename, content_type=mime_type, timeout=timeout)
+            )
+
             if gzip:
                 os.remove(filename)
             self.log.info('File %s uploaded to %s in %s bucket', filename, object_name, bucket_name)
@@ -430,7 +493,9 @@ class GCSHook(GoogleBaseHook):
                 with gz.GzipFile(fileobj=out, mode="w") as f:
                     f.write(data)
                 data = out.getvalue()
-            blob.upload_from_string(data, content_type=mime_type, timeout=timeout)
+
+            _call_with_retry(partial(blob.upload_from_string, data, content_type=mime_type, timeout=timeout))
+
             self.log.info('Data stream uploaded to %s in %s bucket', object_name, bucket_name)
         else:
             raise ValueError("'filename' and 'data' parameter missing. One is required to upload to gcs.")
@@ -481,10 +546,9 @@ class GCSHook(GoogleBaseHook):
         """
         blob_update_time = self.get_blob_update_time(bucket_name, object_name)
         if blob_update_time is not None:
-            import dateutil.tz
 
             if not ts.tzinfo:
-                ts = ts.replace(tzinfo=dateutil.tz.tzutc())
+                ts = ts.replace(tzinfo=timezone.utc)
             self.log.info("Verify object date: %s > %s", blob_update_time, ts)
             if blob_update_time > ts:
                 return True
@@ -508,12 +572,11 @@ class GCSHook(GoogleBaseHook):
         """
         blob_update_time = self.get_blob_update_time(bucket_name, object_name)
         if blob_update_time is not None:
-            import dateutil.tz
 
             if not min_ts.tzinfo:
-                min_ts = min_ts.replace(tzinfo=dateutil.tz.tzutc())
+                min_ts = min_ts.replace(tzinfo=timezone.utc)
             if not max_ts.tzinfo:
-                max_ts = max_ts.replace(tzinfo=dateutil.tz.tzutc())
+                max_ts = max_ts.replace(tzinfo=timezone.utc)
             self.log.info("Verify object date: %s is between %s and %s", blob_update_time, min_ts, max_ts)
             if min_ts <= blob_update_time < max_ts:
                 return True
@@ -533,10 +596,9 @@ class GCSHook(GoogleBaseHook):
         """
         blob_update_time = self.get_blob_update_time(bucket_name, object_name)
         if blob_update_time is not None:
-            import dateutil.tz
 
             if not ts.tzinfo:
-                ts = ts.replace(tzinfo=dateutil.tz.tzutc())
+                ts = ts.replace(tzinfo=timezone.utc)
             self.log.info("Verify object date: %s < %s", blob_update_time, ts)
             if blob_update_time < ts:
                 return True
@@ -557,8 +619,6 @@ class GCSHook(GoogleBaseHook):
         blob_update_time = self.get_blob_update_time(bucket_name, object_name)
         if blob_update_time is not None:
             from datetime import timedelta
-
-            from airflow.utils import timezone
 
             current_time = timezone.utcnow()
             given_time = current_time - timedelta(seconds=seconds)
@@ -637,6 +697,69 @@ class GCSHook(GoogleBaseHook):
             blob_names = []
             for blob in blobs:
                 blob_names.append(blob.name)
+
+            prefixes = blobs.prefixes
+            if prefixes:
+                ids += list(prefixes)
+            else:
+                ids += blob_names
+
+            page_token = blobs.next_page_token
+            if page_token is None:
+                # empty next page token
+                break
+        return ids
+
+    def list_by_timespan(
+        self,
+        bucket_name: str,
+        timespan_start: datetime,
+        timespan_end: datetime,
+        versions: bool = None,
+        max_results: int = None,
+        prefix: str = None,
+        delimiter: str = None,
+    ) -> list:
+        """
+        List all objects from the bucket with the give string prefix in name that were
+        updated in the time between ``timespan_start`` and ``timespan_end``.
+
+        :param bucket_name: bucket name
+        :type bucket_name: str
+        :param timespan_start: will return objects that were updated at or after this datetime (UTC)
+        :type timespan_start: datetime
+        :param timespan_end: will return objects that were updated before this datetime (UTC)
+        :type timespan_end: datetime
+        :param versions: if true, list all versions of the objects
+        :type versions: bool
+        :param max_results: max count of items to return in a single page of responses
+        :type max_results: int
+        :param prefix: prefix string which filters objects whose name begin with
+            this prefix
+        :type prefix: str
+        :param delimiter: filters objects based on the delimiter (for e.g '.csv')
+        :type delimiter: str
+        :return: a stream of object names matching the filtering criteria
+        """
+        client = self.get_conn()
+        bucket = client.bucket(bucket_name)
+
+        ids = []
+        page_token = None
+
+        while True:
+            blobs = bucket.list_blobs(
+                max_results=max_results,
+                page_token=page_token,
+                prefix=prefix,
+                delimiter=delimiter,
+                versions=versions,
+            )
+
+            blob_names = []
+            for blob in blobs:
+                if timespan_start <= blob.updated.replace(tzinfo=timezone.utc) < timespan_end:
+                    blob_names.append(blob.name)
 
             prefixes = blobs.prefixes
             if prefixes:

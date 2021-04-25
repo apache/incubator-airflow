@@ -29,7 +29,6 @@ class PodLauncherTest(unittest.TestCase):
             ("CeleryKubernetesExecutor", True, True, ['scheduler', 'worker']),
             ("KubernetesExecutor", True, True, ['scheduler', 'worker']),
             ("CeleryExecutor", True, True, ['worker']),
-            ("SequentialExecutor", True, True, ['scheduler']),
             ("LocalExecutor", True, True, ['scheduler']),
             ("LocalExecutor", False, False, []),
         ]

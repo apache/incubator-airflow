@@ -188,7 +188,7 @@ Building this dependency is shown in the code below:
 .. code-block:: python
 
     @task()
-        def extract_from_file():
+    def extract_from_file():
         """
         #### Extract from file task
         A simple Extract task to get data ready for the rest of the data

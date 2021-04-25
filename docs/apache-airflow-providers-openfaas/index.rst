@@ -50,7 +50,7 @@ Package apache-airflow-providers-openfaas
 `OpenFaaS <https://www.openfaas.com/>`__
 
 
-Release: 1.1.0
+Release: 1.1.1
 
 Provider package
 ----------------
@@ -93,6 +93,15 @@ You can install this package on top of an existing airflow 2.* installation via
 
 Changelog
 ---------
+
+1.1.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+
 
 1.1.0
 .....

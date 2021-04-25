@@ -19,8 +19,12 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
-import yaml
 from kubernetes.client import CoreV1Api, models as k8s
+
+try:
+    import airflow.utils.yaml as yaml
+except ImportError:
+    import yaml
 
 from airflow.exceptions import AirflowException
 from airflow.kubernetes import kube_client, pod_generator, pod_launcher
@@ -410,7 +414,7 @@ class KubernetesPodOperator(BaseOperator):  # pylint: disable=too-many-instance-
         return pod.metadata.labels['try_number'] == context['ti'].try_number
 
     def _set_name(self, name):
-        if self.pod_template_file or self.full_pod_spec:
+        if name is None:
             return None
         validate_key(name, max_length=220)
         return re.sub(r'[^a-z0-9.-]+', '-', name.lower())

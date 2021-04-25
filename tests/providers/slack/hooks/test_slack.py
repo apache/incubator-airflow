@@ -120,7 +120,7 @@ class TestSlackHook(unittest.TestCase):
         test_api_params = {'key1': 'value1', 'key2': 'value2'}
 
         with pytest.raises(SlackApiError):
-            slack_hook.call(test_method, test_api_params)
+            slack_hook.call(test_method, data=test_api_params)
 
     @mock.patch('airflow.providers.slack.hooks.slack.WebClient.api_call', autospec=True)
     @mock.patch('airflow.providers.slack.hooks.slack.WebClient')

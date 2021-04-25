@@ -30,6 +30,8 @@ tasks on the same DAG. For example:
 - Different teams are responsible for different DAGs, but these DAGs have some cross-DAG
   dependencies.
 - A task may depend on another task on the same DAG, but for a different ``execution_date``.
+- Use ``execution_delta`` for tasks running at different times, like ``execution_delta=timedelta(hours=1)``
+  to check against a task that runs 1 hour earlier.
 
 ``ExternalTaskSensor`` can be used to establish such dependencies across different DAGs. When it is
 used together with ``ExternalTaskMarker``, clearing dependent tasks can also happen across different

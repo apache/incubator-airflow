@@ -106,7 +106,7 @@ class Query(NamedTuple):
 
 def reset_db():
     """
-    Wrapper function that calls the airflows resetdb function.
+    Wrapper function that calls the airflow resetdb function.
     """
     from airflow.utils.db import resetdb
 

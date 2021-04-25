@@ -229,7 +229,7 @@ class TestHiveCliHook(unittest.TestCase):
         filepath = "/path/to/input/file"
         table = "output_table"
         field_dict = OrderedDict([("name", "string"), ("gender", "string")])
-        fields = ",\n    ".join(['`{k}` {v}'.format(k=k.strip('`'), v=v) for k, v in field_dict.items()])
+        fields = ",\n    ".join([f"`{k.strip('`')}` {v}" for k, v in field_dict.items()])
 
         hook = MockHiveCliHook()
         hook.load_file(filepath=filepath, table=table, field_dict=field_dict, create=True, recreate=True)
@@ -464,6 +464,7 @@ class TestHiveMetastoreHook(TestHiveEnvironment):
         self.hook.metastore.__enter__().get_tables.assert_called_with(
             db_name='airflow', pattern='static_babynames_partitioned*'
         )
+        # pylint: disable=no-member
         self.hook.metastore.__enter__().get_table_objects_by_name.assert_called_with(
             'airflow', ['static_babynames_partitioned']
         )

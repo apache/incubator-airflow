@@ -105,6 +105,17 @@ class TestLivyOperator(unittest.TestCase):
         assert call_args == {'file': 'sparkapp'}
         mock_get.assert_called_once_with(BATCH_ID)
 
+    @patch('airflow.providers.apache.livy.operators.livy.LivyHook.post_batch')
+    def test_execution_with_extra_options(self, mock_post):
+        extra_options = {'check_response': True}
+        task = LivyOperator(
+            file='sparkapp', dag=self.dag, task_id='livy_example', extra_options=extra_options
+        )
+
+        task.execute(context={})
+
+        assert task.get_hook().extra_options == extra_options
+
     @patch('airflow.providers.apache.livy.operators.livy.LivyHook.delete_batch')
     @patch('airflow.providers.apache.livy.operators.livy.LivyHook.post_batch', return_value=BATCH_ID)
     def test_deletion(self, mock_post, mock_delete):

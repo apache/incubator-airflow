@@ -23,6 +23,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 MD5SUM_FILE="static/dist/sum.md5"
 readonly MD5SUM_FILE
 
+GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NO_COLOR='\033[0m'
 
@@ -36,5 +37,7 @@ if [[ ${old_md5sum} != "${md5sum}" ]]; then
     echo "   ./airflow/www/compile_assets.sh"
     echo ""
 else
-    echo "No need to recompile www assets"
+    echo
+    echo -e "${GREEN}No need for www assets recompilation.${NO_COLOR}"
+    echo
 fi

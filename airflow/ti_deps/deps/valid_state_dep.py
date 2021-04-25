@@ -32,7 +32,7 @@ class ValidStateDep(BaseTIDep):
     """
 
     NAME = "Task Instance State"
-    IGNOREABLE = True
+    IGNORABLE = True
 
     def __init__(self, valid_states):
         super().__init__()

@@ -52,14 +52,6 @@
   <script src="{{ url_for_asset('lint.js') }}"></script>
   <script src="{{ url_for_asset('javascript-lint.js') }}"></script>
   <script src="{{ url_for_asset('jshint.js') }}"></script>
-  <script>
-    const textArea = document.getElementById('json');
-    CodeMirror.fromTextArea(textArea, {
-      lineNumbers: true,
-      mode: { name: 'javascript', json: true },
-      gutters: ['CodeMirror-lint-markers'],
-      lint: true,
-    });
-  </script>
+  <script src="{{ url_for_asset('trigger.js') }}"></script>
   {{ super() }}
 {% endblock %}

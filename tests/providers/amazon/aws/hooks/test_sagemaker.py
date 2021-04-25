@@ -71,7 +71,20 @@ create_training_params = {
             },
             'CompressionType': 'None',
             'RecordWrapperType': 'None',
-        }
+        },
+        {
+            'ChannelName': 'train_fs',
+            'DataSource': {
+                'FileSystemDataSource': {
+                    'DirectoryPath': '/tmp',
+                    'FileSystemAccessMode': 'ro',
+                    'FileSystemId': 'fs-abc',
+                    'FileSystemType': 'FSxLustre',
+                }
+            },
+            'CompressionType': 'None',
+            'RecordWrapperType': 'None',
+        },
     ],
 }
 
@@ -103,6 +116,26 @@ create_transform_params = {
     'ModelName': model_name,
     'BatchStrategy': 'MultiRecord',
     'TransformInput': {'DataSource': {'S3DataSource': {'S3DataType': 'S3Prefix', 'S3Uri': data_url}}},
+    'TransformOutput': {
+        'S3OutputPath': output_url,
+    },
+    'TransformResources': {'InstanceType': 'ml.m4.xlarge', 'InstanceCount': 123},
+}
+
+create_transform_params_fs = {
+    'TransformJobName': job_name,
+    'ModelName': model_name,
+    'BatchStrategy': 'MultiRecord',
+    'TransformInput': {
+        'DataSource': {
+            'FileSystemDataSource': {
+                'DirectoryPath': '/tmp',
+                'FileSystemAccessMode': 'ro',
+                'FileSystemId': 'fs-abc',
+                'FileSystemType': 'FSxLustre',
+            }
+        }
+    },
     'TransformOutput': {
         'S3OutputPath': output_url,
     },
@@ -353,6 +386,17 @@ class TestSageMakerHook(unittest.TestCase):
         hook = SageMakerHook(aws_conn_id='sagemaker_test_conn_id')
         response = hook.create_transform_job(create_transform_params, wait_for_completion=False)
         mock_session.create_transform_job.assert_called_once_with(**create_transform_params)
+        assert response == test_arn_return
+
+    @mock.patch.object(SageMakerHook, 'get_conn')
+    def test_create_transform_job_fs(self, mock_client):
+        mock_session = mock.Mock()
+        attrs = {'create_transform_job.return_value': test_arn_return}
+        mock_session.configure_mock(**attrs)
+        mock_client.return_value = mock_session
+        hook = SageMakerHook(aws_conn_id='sagemaker_test_conn_id')
+        response = hook.create_transform_job(create_transform_params_fs, wait_for_completion=False)
+        mock_session.create_transform_job.assert_called_once_with(**create_transform_params_fs)
         assert response == test_arn_return
 
     @mock.patch.object(SageMakerHook, 'get_conn')

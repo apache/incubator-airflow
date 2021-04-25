@@ -19,7 +19,7 @@
 
 {% extends "airflow/dag.html" %}
 
-{% block page_title %}{{ dag.dag_id }} - {{ title }} - Airflow{% endblock %}
+{% block page_title %}{{ dag.dag_id }} - DAG Details - {{ appbuilder.app_name }}{% endblock %}
 
 {% block content %}
   {{ super() }}
@@ -66,7 +66,7 @@
     </tr>
     <tr>
       <th>Default Args</th>
-      <td><code>{{ dag.default_args }}</code></td>
+      <td class="wrap">{{ dag.default_args | pprint }}</td>
     </tr>
     <tr>
       <th>Tasks Count</th>
@@ -83,6 +83,10 @@
     <tr>
       <th>Owner</th>
       <td>{{ dag.owner }}</td>
+    </tr>
+    <tr>
+      <th>DAG Run Timeout</th>
+      <td>{{ dag.dagrun_timeout }}</td>
     </tr>
     <tr>
       <th>Tags</th>

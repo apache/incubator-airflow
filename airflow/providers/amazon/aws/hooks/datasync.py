@@ -35,8 +35,9 @@ class AWSDataSyncHook(AwsBaseHook):
         :class:`~airflow.providers.amazon.aws.hooks.base_aws.AwsBaseHook`
         :class:`~airflow.providers.amazon.aws.operators.datasync.AWSDataSyncOperator`
 
-    :param int wait_for_task_execution: Time to wait between two
-        consecutive calls to check TaskExecution status.
+    :param wait_interval_seconds: Time to wait between two
+        consecutive calls to check TaskExecution status. Defaults to 5 seconds.
+    :type wait_interval_seconds: Optional[int]
     :raises ValueError: If wait_interval_seconds is not between 0 and 15*60 seconds.
     """
 

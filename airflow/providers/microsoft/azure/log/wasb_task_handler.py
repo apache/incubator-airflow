@@ -20,7 +20,11 @@ import shutil
 from typing import Dict, Optional, Tuple
 
 from azure.common import AzureHttpError
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from airflow.configuration import conf
 from airflow.utils.log.file_task_handler import FileTaskHandler
@@ -59,13 +63,15 @@ class WasbTaskHandler(FileTaskHandler, LoggingMixin):
             from airflow.providers.microsoft.azure.hooks.wasb import WasbHook
 
             return WasbHook(remote_conn_id)
-        except AzureHttpError:
+        except AzureHttpError as e:
             self.log.error(
                 'Could not create an WasbHook with connection id "%s". '
                 'Please make sure that airflow[azure] is installed and '
-                'the Wasb connection exists.',
+                'the Wasb connection exists. Exception "%s"',
                 remote_conn_id,
+                e,
             )
+            return None
 
     def set_context(self, ti) -> None:
         super().set_context(ti)
@@ -136,8 +142,9 @@ class WasbTaskHandler(FileTaskHandler, LoggingMixin):
         """
         try:
             return self.hook.check_for_blob(self.wasb_container, remote_log_location)
-        except Exception:  # pylint: disable=broad-except
-            pass
+        # pylint: disable=broad-except
+        except Exception as e:
+            self.log.debug('Exception when trying to check remote location: "%s"', e)
         return False
 
     def wasb_read(self, remote_log_location: str, return_error: bool = False):
@@ -153,12 +160,13 @@ class WasbTaskHandler(FileTaskHandler, LoggingMixin):
         """
         try:
             return self.hook.read_file(self.wasb_container, remote_log_location)
-        except AzureHttpError:
+        except AzureHttpError as e:
             msg = f'Could not read logs from {remote_log_location}'
-            self.log.exception(msg)
+            self.log.exception("Message: '%s', exception '%s'", msg, e)
             # return error if needed
             if return_error:
                 return msg
+            return ''
 
     def wasb_write(self, log: str, remote_log_location: str, append: bool = True) -> None:
         """

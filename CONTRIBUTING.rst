@@ -63,6 +63,14 @@ Fix Bugs
 Look through the GitHub issues for bugs. Anything is open to whoever wants to
 implement it.
 
+Issue reporting and resolution process
+--------------------------------------
+
+The Apache Airflow project uses a set of labels for tracking and triaging issues, as
+well as a set of priorities and milestones to track how and when the enhancements and bug
+fixes make it into an Airflow release. This is documented as part of
+the `Issue reporting and resolution process <ISSUE_TRIAGE_PROCESS.rst>`_,
+
 Implement Features
 ------------------
 
@@ -188,9 +196,14 @@ From the `apache/airflow <https://github.com/apache/airflow>`_ repo,
 
 Step 2: Configure Your Environment
 ----------------------------------
-Configure the Docker-based Breeze development environment and run tests.
 
-You can use the default Breeze configuration as follows:
+You can use either a local virtual env or a Docker-based env. The differences
+between the two are explained `here <https://github.com/apache/airflow/blob/master/CONTRIBUTING.rst#development-environments>`_.
+
+The local env's instructions can be found in full in the  `LOCAL_VIRTUALENV.rst <https://github.com/apache/airflow/blob/master/LOCAL_VIRTUALENV.rst>`_ file.
+The Docker env is here to maintain a consistent and common development environment so that you can replicate CI failures locally and work on solving them locally rather by pushing to CI.
+
+You can configure the Docker-based Breeze development environment as follows:
 
 1. Install the latest versions of the Docker Community Edition
    and Docker Compose and add them to the PATH.
@@ -245,7 +258,7 @@ Step 4: Prepare PR
 
    For example, to address this example issue, do the following:
 
-   * Read about `email configuration in Airflow </docs/howto/email-config.rst>`__.
+   * Read about `email configuration in Airflow </docs/apache-airflow/howto/email-config.rst>`__.
 
    * Find the class you should modify. For the example GitHub issue,
      this is `email.py <https://github.com/apache/airflow/blob/master/airflow/utils/email.py>`__.
@@ -297,7 +310,7 @@ Step 4: Prepare PR
    and send it through the right path:
 
    * In case of a "no-code" change, approval will generate a comment that the PR can be merged and no
-     tests are needed. This is usually when the change modifies some non-documentation related rst
+     tests are needed. This is usually when the change modifies some non-documentation related RST
      files (such as this file). No python tests are run and no CI images are built for such PR. Usually
      it can be approved and merged few minutes after it is submitted (unless there is a big queue of jobs).
 
@@ -368,7 +381,7 @@ these guidelines:
     of the same PR. Doc string is often sufficient. Make sure to follow the
     Sphinx compatible standards.
 
--   Make sure your code fulfils all the
+-   Make sure your code fulfills all the
     `static code checks <STATIC_CODE_CHECKS.rst#pre-commit-hooks>`__ we have in our code. The easiest way
     to make sure of that is to use `pre-commit hooks <STATIC_CODE_CHECKS.rst#pre-commit-hooks>`__
 
@@ -572,17 +585,17 @@ This is the full list of those extras:
 
   .. START EXTRAS HERE
 
-all, all_dbs, amazon, apache.atlas, apache.beam, apache.cassandra, apache.druid, apache.hdfs,
-apache.hive, apache.kylin, apache.livy, apache.pig, apache.pinot, apache.spark, apache.sqoop,
-apache.webhdfs, async, atlas, aws, azure, cassandra, celery, cgroups, cloudant, cncf.kubernetes,
-crypto, dask, databricks, datadog, devel, devel_all, devel_ci, devel_hadoop, dingding, discord, doc,
-docker, druid, elasticsearch, exasol, facebook, ftp, gcp, gcp_api, github_enterprise, google,
-google_auth, grpc, hashicorp, hdfs, hive, http, imap, jdbc, jenkins, jira, kerberos, kubernetes,
-ldap, microsoft.azure, microsoft.mssql, microsoft.winrm, mongo, mssql, mysql, neo4j, odbc, openfaas,
-opsgenie, oracle, pagerduty, papermill, password, pinot, plexus, postgres, presto, qds, qubole,
-rabbitmq, redis, s3, salesforce, samba, segment, sendgrid, sentry, sftp, singularity, slack,
-snowflake, spark, sqlite, ssh, statsd, tableau, telegram, vertica, virtualenv, webhdfs, winrm,
-yandex, zendesk
+airbyte, all, all_dbs, amazon, apache.atlas, apache.beam, apache.cassandra, apache.druid,
+apache.hdfs, apache.hive, apache.kylin, apache.livy, apache.pig, apache.pinot, apache.spark,
+apache.sqoop, apache.webhdfs, async, atlas, aws, azure, cassandra, celery, cgroups, cloudant,
+cncf.kubernetes, crypto, dask, databricks, datadog, devel, devel_all, devel_ci, devel_hadoop,
+dingding, discord, doc, docker, druid, elasticsearch, exasol, facebook, ftp, gcp, gcp_api,
+github_enterprise, google, google_auth, grpc, hashicorp, hdfs, hive, http, imap, jdbc, jenkins,
+jira, kerberos, kubernetes, ldap, microsoft.azure, microsoft.mssql, microsoft.winrm, mongo, mssql,
+mysql, neo4j, odbc, openfaas, opsgenie, oracle, pagerduty, papermill, password, pinot, plexus,
+postgres, presto, qds, qubole, rabbitmq, redis, s3, salesforce, samba, segment, sendgrid, sentry,
+sftp, singularity, slack, snowflake, spark, sqlite, ssh, statsd, tableau, telegram, vertica,
+virtualenv, webhdfs, winrm, yandex, zendesk
 
   .. END EXTRAS HERE
 
@@ -616,8 +629,8 @@ The dependency list is automatically used during PyPI packages generation.
 
 Cross-dependencies between provider packages are converted into extras - if you need functionality from
 the other provider package you can install it adding [extra] after the
-``apache-airflow-backport-providers-PROVIDER`` for example:
-``pip install apache-airflow-backport-providers-google[amazon]`` in case you want to use GCP
+``apache-airflow-providers-PROVIDER`` for example:
+``pip install apache-airflow-providers-google[amazon]`` in case you want to use GCP
 transfer operators from Amazon ECS.
 
 If you add a new dependency between different providers packages, it will be detected automatically during
@@ -640,6 +653,7 @@ Here is the list of packages and their extras:
 ========================== ===========================
 Package                    Extras
 ========================== ===========================
+airbyte                    http
 amazon                     apache.hive,exasol,ftp,google,imap,mongo,mysql,postgres,ssh
 apache.beam                google
 apache.druid               apache.hive
@@ -654,6 +668,7 @@ microsoft.mssql            odbc
 mysql                      amazon,presto,vertica
 opsgenie                   http
 postgres                   amazon
+salesforce                 tableau
 sftp                       ssh
 slack                      http
 snowflake                  slack
@@ -749,26 +764,13 @@ providers.
 You can read more about out approach for tests in `TESTING.rst <TESTING.rst>`_ but here
 are some highlights.
 
-
-Backport providers
-------------------
-
-You can also build backport provider packages for Airflow 1.10. They aim to provide a bridge when users
-of Airflow 1.10 want to migrate to Airflow 2.0. The backport packages are named similarly to the
-provider packages, but with "backport" added:
-
-* ``apache-airflow-backport-provider-*``
-
-Those backport providers are automatically refactored to work with Airflow 1.10.* and have a few
-limitations described in those packages.
-
 Dependency management
 =====================
 
 Airflow is not a standard python project. Most of the python projects fall into one of two types -
 application or library. As described in
-[StackOverflow Question](https://stackoverflow.com/questions/28509481/should-i-pin-my-python-dependencies-versions)
-decision whether to pin (freeze) dependency versions for a python project depends on the type. For
+`this StackOverflow question <https://stackoverflow.com/questions/28509481/should-i-pin-my-python-dependencies-versions>`_,
+the decision whether to pin (freeze) dependency versions for a python project depends on the type. For
 applications, dependencies should be pinned, but for libraries, they should be open.
 
 For application, pinning the dependencies makes it more stable to install in the future - because new
@@ -811,11 +813,26 @@ install in case a direct or transitive dependency is released that breaks the in
 when installing ``apache-airflow``, you might need to provide additional constraints (for
 example ``pip install apache-airflow==1.10.2 Werkzeug<1.0.0``)
 
-However we now have ``constraints-<PYTHON_MAJOR_MINOR_VERSION>.txt`` files generated
-automatically and committed to orphan ``constraints-master``, ``constraints-2-0` and ``constraints-1-10`` branches based on
-the set of all latest working and tested dependency versions. Those
-``constraints-<PYTHON_MAJOR_MINOR_VERSION>.txt`` files can be used as
-constraints file when installing Apache Airflow - either from the sources:
+There are several sets of constraints we keep:
+
+* 'constraints' - those are constraints generated by matching the current airflow version from sources
+   and providers that are installed from PyPI. Those are constraints used by the users who want to
+   install airflow with pip, they are named ``constraints-<PYTHON_MAJOR_MINOR_VERSION>.txt``.
+
+* "constraints-source-providers" - those are constraints generated by using providers installed from
+  current sources. While adding new providers their dependencies might change, so this set of providers
+  is the current set of the constraints for airflow and providers from the current master sources.
+  Those providers are used by CI system to keep "stable" set of constraints. Thet are named
+  ``constraints-source-providers-<PYTHON_MAJOR_MINOR_VERSION>.txt``
+
+* "constraints-no-providers" - those are constraints generated from only Apache Airflow, without any
+  providers. If you want to manage airflow separately and then add providers individually, you can
+  use those. Those constraints are named ``constraints-no-providers-<PYTHON_MAJOR_MINOR_VERSION>.txt``.
+
+We also have constraints with "source-providers" but they are used i
+
+The first ones can be used as constraints file when installing Apache Airflow in a repeatable way.
+It can be done from the sources:
 
 .. code-block:: bash
 
@@ -851,9 +868,50 @@ fixed valid constraints 1.10.12 can be used by using ``constraints-1.10.12`` tag
 There are different set of fixed constraint files for different python major/minor versions and you should
 use the right file for the right python version.
 
-The ``constraints-<PYTHON_MAJOR_MINOR_VERSION>.txt`` will be automatically regenerated by CI cron job
-every time after the ``setup.py`` is updated and pushed if the tests are successful. There are separate
-jobs for each python version.
+If you want to update just airflow dependencies, without paying attention to providers, you can do it using
+-no-providers constraint files as well.
+
+.. code-block:: bash
+
+  pip install . --upgrade \
+    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-master/constraints-no-providers-3.6.txt"
+
+
+The ``constraints-<PYTHON_MAJOR_MINOR_VERSION>.txt`` and ``constraints-no-providers-<PYTHON_MAJOR_MINOR_VERSION>.txt``
+will be automatically regenerated by CI job every time after the ``setup.py`` is updated and pushed
+if the tests are successful.
+
+Manually generating constraint files
+------------------------------------
+
+The constraint files are generated automatically by the CI job. Sometimes however it is needed to regenerate
+them manually (committers only). For example when master build did not succeed for quite some time). This can be done by
+running this:
+
+.. code-block:: bash
+
+    for python_version in 3.6 3.7 3.8
+    do
+      ./breeze generate-constraints --generate-constraints-mode source-providers --python ${python_version} --build-cache-local
+      ./breeze generate-constraints --generate-constraints-mode pypi-providers --python ${python_version} --build-cache-local
+      ./breeze generate-constraints --generate-constraints-mode no-providers --python ${python_version} --build-cache-local
+    done
+    AIRFLOW_SOURCES=$(pwd)
+
+The constraints will be generated in "files/constraints-PYTHON_VERSION/constraints-*.txt files. You need to
+checkout the right 'constraints-' branch in a separate repository and then you can copy, commit and push the
+generated files:
+
+.. code-block:: bash
+
+    cd <AIRFLOW_WITH_CONSTRAINT_MASTER_DIRECTORY>
+    git pull
+    cp ${AIRFLOW_SOURCES}/files/constraints-*/constraints*.txt .
+    git diff
+    git add .
+    git commit -m "Your commit message here" --no-verify
+    git push
+
 
 Documentation
 =============
@@ -913,7 +971,7 @@ If this function is designed to be called by "end-users" (i.e. DAG authors) then
       ...
       # You SHOULD not commit the session here. The wrapper will take care of commit()/rollback() if exception
 
-Don't use time() for duration calcuations
+Don't use time() for duration calculations
 -----------------------------------------
 
 If you wish to compute the time difference between two events with in the same process, use
@@ -960,7 +1018,7 @@ Naming Conventions for provider packages
 In Airflow 2.0 we standardized and enforced naming for provider packages, modules and classes.
 those rules (introduced as AIP-21) were not only introduced but enforced using automated checks
 that verify if the naming conventions are followed. Here is a brief summary of the rules, for
-detailed discussion you can go to [AIP-21 Changes in import paths](https://cwiki.apache.org/confluence/display/AIRFLOW/AIP-21%3A+Changes+in+import+paths)
+detailed discussion you can go to `AIP-21 Changes in import paths <https://cwiki.apache.org/confluence/display/AIRFLOW/AIP-21%3A+Changes+in+import+paths>`_
 
 The rules are as follows:
 

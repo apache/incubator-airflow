@@ -128,7 +128,7 @@ class TestDagCode(unittest.TestCase):
     def test_code_can_be_read_when_no_access_to_file(self):
         """
         Test that code can be retrieved from DB when you do not have access to Code file.
-        Source Code should atleast exist in one of DB or File.
+        Source Code should at least exist in one of DB or File.
         """
         example_dag = make_example_dags(example_dags_module).get('example_bash_operator')
         example_dag.sync_to_db()

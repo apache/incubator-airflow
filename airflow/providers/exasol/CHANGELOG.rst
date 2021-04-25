@@ -19,6 +19,14 @@
 Changelog
 ---------
 
+1.1.1
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+
 1.1.0
 .....
 

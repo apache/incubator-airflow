@@ -19,6 +19,19 @@
 Changelog
 ---------
 
+1.1.0
+.....
+
+Features
+~~~~~~~~
+
+* ``Refactor SQL/BigQuery/Qubole/Druid Check operators (#12677)``
+
+Bugfixes
+~~~~~~~~
+
+* ``Bugfix: DruidOperator fails to submit ingestion tasks (#14418)``
+
 1.0.1
 .....
 

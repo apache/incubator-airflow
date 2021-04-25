@@ -42,48 +42,61 @@ class AWSDataSyncOperator(BaseOperator):
         environment. The default behavior is to create a new Task if there are 0, or
         execute the Task if there was 1 Task, or fail if there were many Tasks.
 
-    :param str aws_conn_id: AWS connection to use.
-    :param int wait_interval_seconds: Time to wait between two
+    :param aws_conn_id: AWS connection to use.
+    :type aws_conn_id: str
+    :param wait_interval_seconds: Time to wait between two
         consecutive calls to check TaskExecution status.
-    :param str task_arn: AWS DataSync TaskArn to use. If None, then this operator will
+    :type wait_interval_seconds: int
+    :param task_arn: AWS DataSync TaskArn to use. If None, then this operator will
         attempt to either search for an existing Task or attempt to create a new Task.
-    :param str source_location_uri: Source location URI to search for. All DataSync
+    :type task_arn: str
+    :param source_location_uri: Source location URI to search for. All DataSync
         Tasks with a LocationArn with this URI will be considered.
         Example: ``smb://server/subdir``
-    :param str destination_location_uri: Destination location URI to search for.
+    :type source_location_uri: str
+    :param destination_location_uri: Destination location URI to search for.
         All DataSync Tasks with a LocationArn with this URI will be considered.
         Example: ``s3://airflow_bucket/stuff``
-    :param bool allow_random_task_choice: If multiple Tasks match, one must be chosen to
+    :type destination_location_uri: str
+    :param allow_random_task_choice: If multiple Tasks match, one must be chosen to
         execute. If allow_random_task_choice is True then a random one is chosen.
-    :param bool allow_random_location_choice: If multiple Locations match, one must be chosen
+    :type allow_random_task_choice: bool
+    :param allow_random_location_choice: If multiple Locations match, one must be chosen
         when creating a task. If allow_random_location_choice is True then a random one is chosen.
-    :param dict create_task_kwargs: If no suitable TaskArn is identified,
+    :type allow_random_location_choice: bool
+    :param create_task_kwargs: If no suitable TaskArn is identified,
         it will be created if ``create_task_kwargs`` is defined.
         ``create_task_kwargs`` is then used internally like this:
         ``boto3.create_task(**create_task_kwargs)``
         Example:  ``{'Name': 'xyz', 'Options': ..., 'Excludes': ..., 'Tags': ...}``
-    :param dict create_source_location_kwargs: If no suitable LocationArn is found,
+    :type create_task_kwargs: dict
+    :param create_source_location_kwargs: If no suitable LocationArn is found,
         a Location will be created if ``create_source_location_kwargs`` is defined.
         ``create_source_location_kwargs`` is then used internally like this:
         ``boto3.create_location_xyz(**create_source_location_kwargs)``
         The xyz is determined from the prefix of source_location_uri, eg ``smb:/...`` or ``s3:/...``
         Example:  ``{'Subdirectory': ..., 'ServerHostname': ..., ...}``
-    :param dict create_destination_location_kwargs: If no suitable LocationArn is found,
+    :type create_source_location_kwargs: dict
+    :param create_destination_location_kwargs: If no suitable LocationArn is found,
         a Location will be created if ``create_destination_location_kwargs`` is defined.
         ``create_destination_location_kwargs`` is used internally like this:
         ``boto3.create_location_xyz(**create_destination_location_kwargs)``
         The xyz is determined from the prefix of destination_location_uri, eg ``smb:/...` or ``s3:/...``
         Example:  ``{'S3BucketArn': ..., 'S3Config': {'BucketAccessRoleArn': ...}, ...}``
-    :param dict update_task_kwargs:  If a suitable TaskArn is found or created,
+    :type create_destination_location_kwargs: dict
+    :param update_task_kwargs:  If a suitable TaskArn is found or created,
         it will be updated if ``update_task_kwargs`` is defined.
         ``update_task_kwargs`` is used internally like this:
         ``boto3.update_task(TaskArn=task_arn, **update_task_kwargs)``
         Example:  ``{'Name': 'xyz', 'Options': ..., 'Excludes': ...}``
-    :param dict task_execution_kwargs: Additional kwargs passed directly when starting the
+    :type update_task_kwargs: dict
+    :param task_execution_kwargs: Additional kwargs passed directly when starting the
         Task execution, used internally like this:
         ``boto3.start_task_execution(TaskArn=task_arn, **task_execution_kwargs)``
-    :param bool delete_task_after_execution: If True then the TaskArn which was executed
+    :type task_execution_kwargs: dict
+    :param  delete_task_after_execution: If True then the TaskArn which was executed
         will be deleted from AWS DataSync on successful completion.
+    :type delete_task_after_execution: bool
     :raises AirflowException: If ``task_arn`` was not specified, or if
         either ``source_location_uri`` or ``destination_location_uri`` were
         not specified.

@@ -29,3 +29,4 @@ Google Operators
     suite/sheets
     ads
     transfer/index
+    leveldb/leveldb

@@ -42,7 +42,7 @@ INCLUDE_VALUES_IN_RESPONSE = True
 VALUE_INPUT_OPTION = 'RAW'
 INSERT_DATA_OPTION = 'OVERWRITE'
 NUM_RETRIES = 5
-API_RESPONSE = {'test': 'repsonse'}
+API_RESPONSE = {'test': 'response'}
 
 
 class TestGSheetsHook(unittest.TestCase):

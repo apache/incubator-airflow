@@ -23,6 +23,12 @@ from typing import Any, Dict, List
 import jsonschema
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader  # type: ignore[misc]
+
+
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 PROVIDER_DATA_SCHEMA_PATH = os.path.join(ROOT_DIR, "airflow", "provider.yaml.schema.json")
 
@@ -53,7 +59,7 @@ def load_package_data() -> List[Dict[str, Any]]:
     result = []
     for provider_yaml_path in get_provider_yaml_paths():
         with open(provider_yaml_path) as yaml_file:
-            provider = yaml.safe_load(yaml_file)
+            provider = yaml.load(yaml_file, SafeLoader)
         try:
             jsonschema.validate(provider, schema=schema)
         except jsonschema.ValidationError:

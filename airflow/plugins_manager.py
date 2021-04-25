@@ -63,6 +63,17 @@ registered_operator_link_classes: Optional[Dict[str, Type]] = None
 Used by the DAG serialization code to only allow specific classes to be created
 during deserialization
 """
+PLUGINS_ATTRIBUTES_TO_DUMP = {
+    "hooks",
+    "executors",
+    "macros",
+    "flask_blueprints",
+    "appbuilder_views",
+    "appbuilder_menu_items",
+    "global_operator_extra_links",
+    "operator_extra_links",
+    "source",
+}
 
 
 class AirflowPluginSource:
@@ -427,3 +438,26 @@ def integrate_macros_plugins() -> None:
             # Register the newly created module on airflow.macros such that it
             # can be accessed when rendering templates.
             setattr(macros, plugin.name, macros_module)
+
+
+def get_plugin_info(attrs_to_dump: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """
+    Dump plugins attributes
+
+    :param attrs_to_dump: A list of plugin attributes to dump
+    :type attrs_to_dump: List
+    """
+    ensure_plugins_loaded()
+    integrate_executor_plugins()
+    integrate_macros_plugins()
+    initialize_web_ui_plugins()
+    initialize_extra_operators_links_plugins()
+    if not attrs_to_dump:
+        attrs_to_dump = PLUGINS_ATTRIBUTES_TO_DUMP
+    plugins_info = []
+    if plugins:
+        for plugin in plugins:
+            info = {"name": plugin.name}
+            info.update({n: getattr(plugin, n) for n in attrs_to_dump})
+            plugins_info.append(info)
+    return plugins_info

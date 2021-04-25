@@ -18,10 +18,9 @@
 from datetime import timedelta
 from typing import Callable, List
 
-from airflow import DAG
 from airflow.configuration import conf
 from airflow.exceptions import AirflowClusterPolicyViolation
-from airflow.models import TaskInstance
+from airflow.models import DAG, TaskInstance
 from airflow.models.baseoperator import BaseOperator
 
 

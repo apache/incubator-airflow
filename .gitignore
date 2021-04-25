@@ -14,8 +14,6 @@ unittests.db
 airflow/git_version
 airflow/www/static/coverage/
 airflow/www/static/dist
-airflow/www_rbac/static/coverage/
-airflow/www_rbac/static/dist/
 
 /logs/
 airflow-webserver.pid
@@ -215,3 +213,9 @@ Chart.lock
 pip-wheel-metadata
 
 .pypirc
+
+/.docs-venv
+
+# Dev files
+/dev/packages.txt
+/dev/Dockerfile.pmc

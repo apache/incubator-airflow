@@ -23,7 +23,7 @@ import warnings
 from airflow.providers.apache.druid.operators.druid_check import DruidCheckOperator  # noqa
 
 warnings.warn(
-    "This module is deprecated. Please use `airflow.providers.apache.druid.operators.druid_check`.",
+    "This module is deprecated. Please use `airflow.operators.sql.SQLCheckOperator`.",
     DeprecationWarning,
     stacklevel=2,
 )

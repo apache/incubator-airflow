@@ -21,7 +21,10 @@ from base64 import b64decode
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 from uuid import uuid4
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.exceptions import AlreadyExists, GoogleAPICallError
 from google.api_core.retry import Retry
 from google.cloud.exceptions import NotFound

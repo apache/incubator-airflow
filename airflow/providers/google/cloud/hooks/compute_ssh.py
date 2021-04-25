@@ -20,7 +20,11 @@ from io import StringIO
 from typing import Any, Dict, Optional
 
 import paramiko
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from google.api_core.retry import exponential_sleep_generator
 
 from airflow import AirflowException
@@ -79,6 +83,7 @@ class ComputeEngineSSHHook(SSHHook):
     :type use_internal_ip: bool
     :param use_oslogin: Whether to manage keys using OsLogin API. If false,
         keys are managed using instance metadata
+    :type use_oslogin: bool
     :param expire_time: The maximum amount of time in seconds before the private key expires
     :type expire_time: int
     :param gcp_conn_id: The connection id to use when fetching connection information

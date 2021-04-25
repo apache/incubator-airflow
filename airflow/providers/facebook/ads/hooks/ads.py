@@ -20,7 +20,10 @@ import time
 from enum import Enum
 from typing import Any, Dict, List
 
-from cached_property import cached_property
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 from facebook_business.adobjects.adaccount import AdAccount
 from facebook_business.adobjects.adreportrun import AdReportRun
 from facebook_business.adobjects.adsinsights import AdsInsights

@@ -386,7 +386,8 @@ Using Breeze
              alt="Accessing local airflow">
       </div>
 
-3. Setup mysql database in mysql workbench   with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
+3. Setup mysql database in
+MySQL Workbench with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
    blank(leave empty), default schema ``airflow``.
 
    .. raw:: html
@@ -482,10 +483,10 @@ Setting up Debug
 
 1. Configuring Airflow database connection
 
-- Airflow is by default configured to use sqlite database. Configuration can be seen on local machine
+- Airflow is by default configured to use SQLite database. Configuration can be seen on local machine
   ``~/airflow/airflow.cfg`` under ``sql_alchemy_conn``.
 
-- Installing required dependency for MySql connection in ``airflow-env`` on local machine.
+- Installing required dependency for MySQL connection in ``airflow-env`` on local machine.
 
   .. code-block:: bash
 
@@ -634,14 +635,7 @@ All Tests are inside ./tests directory.
 
   - Types of tests
 
-  .. code-block:: bash
-
-   $ breeze --backend mysql --mysql-version 5.7 --python 3.8 --db-reset --test-type
-      All          CLI          Heisentests  Integration  Other        Providers
-      API          Core         Helm         MySQL        Postgres     WWW
-
-
-  - Running specific type of Test
+  - Running specific type of test
 
   .. code-block:: bash
 
@@ -649,16 +643,6 @@ All Tests are inside ./tests directory.
 
 
 - Running Integration test for specific test type
-
-
-  - Types of Integration Tests
-
-  .. code-block:: bash
-
-     $ breeze --backend mysql --mysql-version 5.7 --python 3.8 --db-reset --test-type Core --integration
-
-       all        kerberos   openldap   presto     redis
-       cassandra  mongo      pinot      rabbitmq
 
   - Running an Integration Test
 
@@ -750,7 +734,7 @@ tests are applied when you commit your code.
 
   <div align="center" style="padding-bottom:20px">
     <img src="images/quick_start/ci_tests.png"
-         alt="CI tests Github">
+         alt="CI tests GitHub">
   </div>
 
 
@@ -939,7 +923,7 @@ Contribution guide
 Raising Pull Request
 --------------------
 
-1. Go to your Github account and open your fork project and click on Branches
+1. Go to your GitHub account and open your fork project and click on Branches
 
    .. raw:: html
 

@@ -22,18 +22,13 @@
 # The packages are prepared from current sources and placed in the 'docker-context-files folder
 # Then both airflow and provider packages are installed using those packages rather than
 # PyPI
-set -euo pipefail
-
-test -v AIRFLOW_EXTRAS
-test -v AIRFLOW_INSTALL_USER_FLAG
-test -v AIRFLOW_CONSTRAINTS_LOCATION
-test -v AIRFLOW_PIP_VERSION
-test -v CONTINUE_ON_PIP_CHECK_FAILURE
-test -v EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS
-test -v UPGRADE_TO_NEWER_DEPENDENCIES
-
+# shellcheck source=scripts/docker/common.sh
+. "$( dirname "${BASH_SOURCE[0]}" )/common.sh"
 
 function install_airflow_and_providers_from_docker_context_files(){
+    if [[ ${INSTALL_MYSQL_CLIENT} != "true" ]]; then
+        AIRFLOW_EXTRAS=${AIRFLOW_EXTRAS/mysql,}
+    fi
     # Find Apache Airflow packages in docker-context files
     local reinstalling_apache_airflow_package
     reinstalling_apache_airflow_package=$(ls \
@@ -67,10 +62,17 @@ function install_airflow_and_providers_from_docker_context_files(){
         echo
         echo Force re-installing airflow and providers from local files with constraints and upgrade if needed
         echo
+        if [[ ${AIRFLOW_CONSTRAINTS_LOCATION} == "/"* ]]; then
+            grep -ve '^apache-airflow' <"${AIRFLOW_CONSTRAINTS_LOCATION}" > /tmp/constraints.txt
+        else
+            # Remove provider packages from constraint files because they are locally prepared
+            curl -L "${AIRFLOW_CONSTRAINTS_LOCATION}" | grep -ve '^apache-airflow' > /tmp/constraints.txt
+        fi
         # force reinstall airflow + provider package local files with constraints + upgrade if needed
         pip install ${AIRFLOW_INSTALL_USER_FLAG} --force-reinstall \
             ${reinstalling_apache_airflow_package} ${reinstalling_apache_airflow_providers_packages} \
-            --constraint "${AIRFLOW_CONSTRAINTS_LOCATION}"
+            --constraint /tmp/constraints.txt
+        rm /tmp/constraints.txt
         # make sure correct PIP version is used \
         pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
         # then upgrade if needed without using constraints to account for new limits in setup.py
@@ -101,6 +103,8 @@ install_all_other_packages_from_docker_context_files() {
         pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
     fi
 }
+
+common::get_constraints_location
 
 install_airflow_and_providers_from_docker_context_files
 install_all_other_packages_from_docker_context_files

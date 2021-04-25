@@ -243,6 +243,7 @@ class AllowListValidator:
 
     def __init__(self, allow_list=None):
         if allow_list:
+            # pylint: disable=consider-using-generator
             self.allow_list = tuple([item.strip().lower() for item in allow_list.split(',')])
         else:
             self.allow_list = None
@@ -347,25 +348,28 @@ class SafeDogStatsdLogger:
 
 
 class _Stats(type):
+    factory = None
     instance: Optional[StatsLogger] = None
 
     def __getattr__(cls, name):
+        if not cls.instance:
+            try:
+                cls.instance = cls.factory()
+            except (socket.gaierror, ImportError) as e:
+                log.error("Could not configure StatsClient: %s, using DummyStatsLogger instead.", e)
+                cls.instance = DummyStatsLogger()
         return getattr(cls.instance, name)
 
     def __init__(cls, *args, **kwargs):
         super().__init__(cls)
-        if cls.__class__.instance is None:
-            try:
-                is_datadog_enabled_defined = conf.has_option('metrics', 'statsd_datadog_enabled')
-                if is_datadog_enabled_defined and conf.getboolean('metrics', 'statsd_datadog_enabled'):
-                    cls.__class__.instance = cls.get_dogstatsd_logger()
-                elif conf.getboolean('metrics', 'statsd_on'):
-                    cls.__class__.instance = cls.get_statsd_logger()
-                else:
-                    cls.__class__.instance = DummyStatsLogger()
-            except (socket.gaierror, ImportError) as e:
-                log.error("Could not configure StatsClient: %s, using DummyStatsLogger instead.", e)
-                cls.__class__.instance = DummyStatsLogger()
+        if cls.__class__.factory is None:
+            is_datadog_enabled_defined = conf.has_option('metrics', 'statsd_datadog_enabled')
+            if is_datadog_enabled_defined and conf.getboolean('metrics', 'statsd_datadog_enabled'):
+                cls.__class__.factory = cls.get_dogstatsd_logger
+            elif conf.getboolean('metrics', 'statsd_on'):
+                cls.__class__.factory = cls.get_statsd_logger
+            else:
+                cls.__class__.factory = DummyStatsLogger
 
     @classmethod
     def get_statsd_logger(cls):

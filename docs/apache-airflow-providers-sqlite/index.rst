@@ -63,7 +63,7 @@ Package apache-airflow-providers-sqlite
 `SQLite <https://www.sqlite.org/>`__
 
 
-Release: 1.0.1
+Release: 1.0.2
 
 Provider package
 ----------------
@@ -106,6 +106,15 @@ You can install this package on top of an existing airflow 2.* installation via
 
 Changelog
 ---------
+
+1.0.2
+.....
+
+Bug fixes
+~~~~~~~~~
+
+* ``Corrections in docs and tools after releasing provider RCs (#14082)``
+
 
 1.0.1
 .....

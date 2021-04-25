@@ -284,8 +284,8 @@ labels.try_number="3"'''
         resource = Resource(
             type="cloud_composer_environment",
             labels={
-                "environment.name": 'test-instancce',
-                "location": 'europpe-west-3',
+                "environment.name": 'test-instance',
+                "location": 'europe-west-3',
                 "project_id": "project_id",
             },
         )
@@ -304,8 +304,8 @@ labels.try_number="3"'''
                 filter=(
                     'resource.type="cloud_composer_environment"\n'
                     'logName="projects/project_id/logs/airflow"\n'
-                    'resource.labels."environment.name"="test-instancce"\n'
-                    'resource.labels.location="europpe-west-3"\n'
+                    'resource.labels."environment.name"="test-instance"\n'
+                    'resource.labels.location="europe-west-3"\n'
                     'resource.labels.project_id="project_id"\n'
                     'labels.task_id="task_for_testing_file_log_handler"\n'
                     'labels.dag_id="dag_for_testing_file_task_handler"\n'

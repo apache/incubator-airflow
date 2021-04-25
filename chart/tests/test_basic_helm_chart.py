@@ -14,11 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 import unittest
+from subprocess import CalledProcessError
 from typing import Any, Dict, List, Union
 
 import jmespath
+from parameterized import parameterized
 
 from tests.helm_template_generator import render_chart
 
@@ -133,3 +134,54 @@ class TestBaseChartTest(unittest.TestCase):
             if image.startswith(image_repo):
                 # Make sure that a command is not specified
                 assert "command" not in obj
+
+    def test_unsupported_executor(self):
+        with self.assertRaises(CalledProcessError) as ex_ctx:
+            render_chart(
+                "TEST-BASIC",
+                {
+                    "executor": "SequentialExecutor",
+                },
+            )
+        assert (
+            'executor must be one of the following: "LocalExecutor", "CeleryExecutor", '
+            '"KubernetesExecutor", "CeleryKubernetesExecutor"' in ex_ctx.exception.stderr.decode()
+        )
+
+    @parameterized.expand(
+        [
+            ("airflow",),
+            ("pod_template",),
+            ("flower",),
+            ("statsd",),
+            ("redis",),
+            ("pgbouncer",),
+            ("pgbouncerExporter",),
+            ("gitSync",),
+        ]
+    )
+    def test_invalid_pull_policy(self, image):
+        with self.assertRaises(CalledProcessError) as ex_ctx:
+            render_chart(
+                "TEST-BASIC",
+                {
+                    "images": {image: {"pullPolicy": "InvalidPolicy"}},
+                },
+            )
+        assert (
+            'pullPolicy must be one of the following: "Always", "Never", "IfNotPresent"'
+            in ex_ctx.exception.stderr.decode()
+        )
+
+    def test_invalid_dags_access_mode(self):
+        with self.assertRaises(CalledProcessError) as ex_ctx:
+            render_chart(
+                "TEST-BASIC",
+                {
+                    "dags": {"persistence": {"accessMode": "InvalidMode"}},
+                },
+            )
+        assert (
+            'accessMode must be one of the following: "ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"'
+            in ex_ctx.exception.stderr.decode()
+        )

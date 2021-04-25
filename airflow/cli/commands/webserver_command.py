@@ -188,7 +188,7 @@ class GunicornMonitor(LoggingMixin):
 
     def _reload_gunicorn(self) -> None:
         """
-        Send signal to reload the gunciron configuration. When gunciorn receive signals, it reload the
+        Send signal to reload the gunicorn configuration. When gunicorn receive signals, it reload the
         configuration, start the new worker processes with a new configuration and gracefully
         shutdown older workers.
         """

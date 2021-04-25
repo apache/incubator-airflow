@@ -19,6 +19,14 @@
 
 {% extends 'appbuilder/baselayout.html' %}
 
+{% block page_title -%}
+  {% if title is defined -%}
+    {{ title }} - {{ appbuilder.app_name }}
+  {% else -%}
+    {{ appbuilder.app_name }}
+  {% endif%}
+{% endblock %}
+
 {% block head_css %}
   {{ super() }}
 
@@ -79,13 +87,14 @@
 
   <script>
     // below variables are used in main.js
+    // keep as var, changing to const or let breaks other code
     var Airflow = {
       serverTimezone: '{{ server_timezone }}',
-      defaultUITimezone: '{{ default_ui_timezone }}'
+      defaultUITimezone: '{{ default_ui_timezone }}',
     };
     var hostName = '{{ hostname }}';
     var csrfToken = '{{ csrf_token() }}';
-    $("time[title]").tooltip()
+    $('time[title]').tooltip();
   </script>
   <!--[if IE ]>
   <script src="{{ url_for_asset('ie.js') }}"></script>

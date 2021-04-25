@@ -18,8 +18,15 @@
 # shellcheck source=scripts/ci/libraries/_script_init.sh
 . "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
 
+echo "${COLOR_BLUE}Disable swap${COLOR_RESET}"
 sudo swapoff -a
 sudo rm -f /swapfile
+
+echo "${COLOR_BLUE}Cleaning apt${COLOR_RESET}"
 sudo apt clean
-docker system prune --all --force
+
+echo "${COLOR_BLUE}Pruning docker${COLOR_RESET}"
+docker system prune --all --force --volumes
+
+echo "${COLOR_BLUE}Free disk space  ${COLOR_RESET}"
 df -h

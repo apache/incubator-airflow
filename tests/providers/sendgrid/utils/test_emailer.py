@@ -29,7 +29,7 @@ from airflow.providers.sendgrid.utils.emailer import send_email
 class TestSendEmailSendGrid(unittest.TestCase):
     # Unit test for sendgrid.send_email()
     def setUp(self):
-        self.recepients = ['foo@foo.com', 'bar@bar.com']
+        self.recipients = ['foo@foo.com', 'bar@bar.com']
         self.subject = 'sendgrid-send-email unit test'
         self.html_content = '<b>Foo</b> bar'
         self.carbon_copy = ['foo-cc@foo.com', 'bar-cc@bar.com']
@@ -88,7 +88,7 @@ class TestSendEmailSendGrid(unittest.TestCase):
             )
 
             send_email(
-                self.recepients,
+                self.recipients,
                 self.subject,
                 self.html_content,
                 cc=self.carbon_copy,
@@ -102,7 +102,7 @@ class TestSendEmailSendGrid(unittest.TestCase):
     @mock.patch('airflow.providers.sendgrid.utils.emailer._post_sendgrid_mail')
     def test_send_email_sendgrid_correct_email_extras(self, mock_post):
         send_email(
-            self.recepients,
+            self.recipients,
             self.subject,
             self.html_content,
             cc=self.carbon_copy,
@@ -116,7 +116,7 @@ class TestSendEmailSendGrid(unittest.TestCase):
     @mock.patch('airflow.providers.sendgrid.utils.emailer._post_sendgrid_mail')
     def test_send_email_sendgrid_sender(self, mock_post):
         send_email(
-            self.recepients,
+            self.recipients,
             self.subject,
             self.html_content,
             cc=self.carbon_copy,

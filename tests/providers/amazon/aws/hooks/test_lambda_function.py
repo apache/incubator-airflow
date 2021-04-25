@@ -46,7 +46,7 @@ class TestAwsLambdaHook:
             hook.invoke_lambda(payload=payload)
 
         mock_invoke.asset_called_once_with(
-            FunctionName="test_functin",
+            FunctionName="test_function",
             InvocationType="RequestResponse",
             LogType="None",
             Payload=payload,

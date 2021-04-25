@@ -56,7 +56,7 @@ def get_task_runner(local_task_job):
             task_runner_class = import_string(_TASK_RUNNER_NAME)
         except ImportError:
             raise AirflowConfigException(
-                f'The task runner could not be loaded. Please check "executor" key in "core" section. '
+                f'The task runner could not be loaded. Please check "task_runner" key in "core" section. '
                 f'Current value: "{_TASK_RUNNER_NAME}".'
             )
 

@@ -69,7 +69,7 @@ class TestSnowflakeToSlackOperator(unittest.TestCase):
             warehouse='test_warehouse',
         )
 
-        # Test that the get_pandas_df method is executed on the Snowflake hook with the prendered sql and
+        # Test that the get_pandas_df method is executed on the Snowflake hook with the pre-rendered sql and
         # correct params
         snowflake_hook.get_pandas_df.assert_called_once_with('sql 2017-01-01', parameters=['1', '2', '3'])
 
