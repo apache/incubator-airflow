@@ -64,33 +64,30 @@ KubernetesResultsType = Tuple[TaskInstanceKey, Optional[str], str, str, str]
 KubernetesWatchType = Tuple[str, str, Optional[str], Dict[str, str], str]
 
 
-class Borg:
-    """Borg class making all instances share state"""
+class ResourceVersion:
+    """
+    Track resourceVersion from Kubernetes
+
+    All instances of this class share the same state
+    """
 
     _shared_state = {}
-
-    def __init__(self):
-        self.__dict__ = self._shared_state
-
-
-class ResourceVersion(Borg):
-    """Track resourceVersion from Kubernetes"""
 
     def __init__(
         self,
         *,
-        kube_client: Optional[client.CoreV1Api] = None,
-        namespace: Optional[str] = None,
+        kube_client: client.CoreV1Api = None,
+        namespace: str = None,
         resource_version: Optional[str] = None,
     ):
-        Borg.__init__(self)
+        self.__dict__ = self._shared_state
         if resource_version:
             # Update the state
-            self._shared_state.update(resource_version=resource_version)
+            self.resource_version = resource_version
         if not hasattr(self, 'resource_version'):
             if not (kube_client and namespace):
-                raise AirflowException("kube_client and namespace is required")
-            re_version = get_resource_version(kube_client, namespace)
+                raise AirflowException("kube_client and namespace is required to get resource version")
+            re_version = get_latest_resource_version(kube_client, namespace)
             self._shared_state.update(resource_version=re_version)
 
     @classmethod
@@ -99,7 +96,7 @@ class ResourceVersion(Borg):
         cls._shared_state = {}
 
 
-def get_resource_version(kube_client: client.CoreV1Api, namespace: str):
+def get_latest_resource_version(kube_client: client.CoreV1Api, namespace: str):
     """
     List pods to get the latest resource version
 
@@ -164,8 +161,10 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
         self.log.info('Event: and now my watch begins starting at resource_version: %s', resource_version)
         watcher = watch.Watch()
 
-        kwargs = {'label_selector': f'airflow-worker={scheduler_job_id}'}
-        kwargs['resource_version'] = resource_version
+        kwargs = {
+            'label_selector': f'airflow-worker={scheduler_job_id}',
+            'resource_version': resource_version,
+        }
         if kube_config.kube_client_request_args:
             for key, value in kube_config.kube_client_request_args.items():
                 kwargs[key] = value
@@ -218,7 +217,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 'relisting pods to get the latest version. Error => %s',
                 (raw_object['message'],),
             )
-            return get_resource_version(kube_client, self.namespace)
+            return get_latest_resource_version(kube_client, self.namespace)
         raise AirflowException(
             'Kubernetes failure for %s with code %s and message: %s'
             % (raw_object['reason'], raw_object['code'], raw_object['message'])
@@ -303,10 +302,9 @@ class AirflowKubernetesScheduler(LoggingMixin):
         return resp
 
     def _make_kube_watcher(self) -> KubernetesJobWatcher:
-        resource_instance = ResourceVersion(
+        resource_version = ResourceVersion(
             kube_client=self.kube_client, namespace=self.kube_config.kube_namespace
-        )
-        resource_version = resource_instance.resource_version  # pylint: disable=no-member
+        ).resource_version  # pylint: disable=no-member
         watcher = KubernetesJobWatcher(
             watcher_queue=self.watcher_queue,
             namespace=self.kube_config.kube_namespace,
@@ -612,7 +610,7 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
             except Empty:
                 break
         if last_resource_version:
-            _ = ResourceVersion(resource_version=last_resource_version)
+            ResourceVersion(resource_version=last_resource_version)
 
         # pylint: disable=too-many-nested-blocks
         for _ in range(self.kube_config.worker_pods_creation_batch_size):
