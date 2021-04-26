@@ -82,8 +82,11 @@ class AsanaHook(BaseHook):
 
     def create_task(self, task_name: str, params: dict) -> dict:
         """
-        Creates an Asana task. For a complete list of possible parameters, see
-        https://developers.asana.com/docs/create-a-task
+        Creates an Asana task.
+        :param task_name: Name of the new task
+        :param params: Other task attributes, such as due_on, parent, and notes. For a complete list of possible
+        parameters, see https://developers.asana.com/docs/create-a-task
+        :return: A dict of attributes of the created task, including its gid
         """
         merged_params = self._merge_create_task_parameters(task_name, params)
         self._validate_create_task_parameters(merged_params)
@@ -91,10 +94,16 @@ class AsanaHook(BaseHook):
         return response
 
     def _merge_create_task_parameters(self, task_name: str, task_params: dict) -> dict:
-        """Merge create_task parameters with default params from the connection."""
+        """
+        Merge create_task parameters with default params from the connection.
+        :param task_name: Name of the task
+        :param task_params: Other task parameters which should override defaults from the connection
+        :return: A dict of merged parameters to use in the new task
+        """
         merged_params = {"name": task_name}
         if self.project:
             merged_params["projects"] = [self.project]
+        # Only use default workspace if user did not provide a project id
         elif self.workspace and not (task_params and ("projects" in task_params)):
             merged_params["workspace"] = self.workspace
         if task_params:
@@ -103,7 +112,11 @@ class AsanaHook(BaseHook):
 
     @staticmethod
     def _validate_create_task_parameters(params: dict) -> None:
-        """Check that user provided minimal create parameters."""
+        """
+        Check that user provided minimal parameters for task creation.
+        :param params: A dict of attributes the task to be created should have
+        :return: None; raises ValueError if `params` doesn't contain required parameters
+        """
         required_parameters = {"workspace", "projects", "parent"}
         if required_parameters.isdisjoint(params):
             raise ValueError(
@@ -111,14 +124,20 @@ class AsanaHook(BaseHook):
             )
 
     def delete_task(self, task_id: str) -> dict:
-        """Deletes an Asana task."""
+        """
+        Deletes an Asana task.
+        :param task_id: Asana GID of the task to delete
+        :return: A dict containing the response from Asana; this is an empty dict on success
+        """
         response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
         return response
 
     def find_task(self, params: dict) -> list:
         """
-        Retrieves a list of Asana tasks that match search parameters. For a complete list of parameters,
+        Retrieves a list of Asana tasks that match search parameters.
+        :param params: Attributes that matching tasks should have. For a complete list of possible parameters,
         see https://bit.ly/3uIqMj0
+        :return: A list of dicts containing attributes of matching Asana tasks
         """
         merged_params = self._merge_find_task_parameters(params)
         self._validate_find_task_parameters(merged_params)
@@ -126,7 +145,12 @@ class AsanaHook(BaseHook):
         return list(response)
 
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
-        """Merge find_task parameters with default params from the connection."""
+        """
+        Merge find_task parameters with default params from the connection.
+        :param search_parameters: Attributes that tasks matching the search should have; these override
+        defaults from the connection
+        :return: A dict of merged parameters to use in the search
+        """
         merged_params = {}
         if self.project:
             merged_params["project"] = self.project
@@ -139,7 +163,11 @@ class AsanaHook(BaseHook):
 
     @staticmethod
     def _validate_find_task_parameters(params: dict) -> None:
-        """Check that user provided minimal search parameters."""
+        """
+        Check that the user provided minimal search parameters.
+        :param params: Dict of parameters to be used in the search
+        :return: None; raises ValueError if search parameters do not contain minimum required attributes
+        """
         one_of_list = {"project", "section", "tag", "user_task_list"}
         both_of_list = {"assignee", "workspace"}
         contains_both = both_of_list.issubset(params)
@@ -152,18 +180,22 @@ class AsanaHook(BaseHook):
 
     def update_task(self, task_id: str, params: dict) -> dict:
         """
-        Updates an existing Asana task. For a complete list of possible parameters, see
+        Updates an existing Asana task.
+        :param task_id: Asana GID of task to update
+        :param params: New values of the task's attributes. For a complete list of possible parameters, see
         https://developers.asana.com/docs/update-a-task
+        :return: A dict containing the updated task's attributes
         """
         response = self.client.tasks.update(task_id, params)  # pylint: disable=no-member
         return response
 
     def create_project(self, params: dict) -> dict:
         """
-        Creates a new project. See
+        Creates a new project.
+        :param params: Attributes that the new project should have. See
         https://developers.asana.com/docs/create-a-project#create-a-project-parameters
-        for a list of possible parameters; you must specify at least one of
-        'workspace' and 'team'.
+        for a list of possible parameters.
+        :return: A dict containing the new project's attributes, including its GID.
         """
         merged_params = self._merge_project_parameters(params)
         self._validate_create_project_parameters(merged_params)
@@ -172,23 +204,34 @@ class AsanaHook(BaseHook):
 
     @staticmethod
     def _validate_create_project_parameters(params: dict) -> None:
-        """Check that user provided minimal create parameters."""
+        """
+        Check that user provided the minimum required parameters for project creation
+        :param params: Attributes that the new project should have
+        :return: None; raises a ValueError if `params` does not contain the minimum required attributes.
+        """
         required_parameters = {"workspace", "team"}
         if required_parameters.isdisjoint(params):
             raise ValueError(
-                f"You must specify at least one of {required_parameters} in the create_project parameters"
+                f"You must specify at least one of {required_parameters} in the create_project params"
             )
 
     def _merge_project_parameters(self, params: dict) -> dict:
-        """Merge parameters passed in to a project method with default params from the connection."""
+        """
+        Merge parameters passed into a project method with default params from the connection.
+        :param params: Parameters passed into one of the project methods, which should override
+        defaults from the connection
+        :return: A dict of merged parameters
+        """
         merged_params = {} if self.workspace is None else {"workspace": self.workspace}
         merged_params.update(params)
         return merged_params
 
     def find_project(self, params: dict) -> list:
         """
-        Searches for projects matching criteria. See https://bit.ly/31ZrZq6
+        Retrieves a list of Asana projects that match search parameters.
+        :param params: Attributes which matching projects should have. See https://bit.ly/31ZrZq6
         for a list of possible parameters.
+        :return: A list of dicts containing attributes of matching Asana projects
         """
         merged_params = self._merge_project_parameters(params)
         response = self.client.projects.find_all(merged_params)  # pylint: disable=no-member
@@ -196,14 +239,21 @@ class AsanaHook(BaseHook):
 
     def update_project(self, project_id: str, params: dict) -> dict:
         """
-        Updates an existing project. See
+        Updates an existing project.
+        :param project_id: Asana GID of the project to update
+        :param params: New attributes that the project should have. See
         https://developers.asana.com/docs/update-a-project#update-a-project-parameters
         for a list of possible parameters
+        :return: A dict containing the updated project's attributes
         """
         response = self.client.projects.update(project_id, params)  # pylint: disable=no-member
         return response
 
     def delete_project(self, project_id: str) -> dict:
-        """Deletes a project."""
+        """
+        Deletes a project.
+        :param project_id: Asana GID of the project to delete
+        :return: An empty dict if deletion was successful
+        """
         response = self.client.projects.delete(project_id)  # pylint: disable=no-member
         return response
