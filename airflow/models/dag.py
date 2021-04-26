@@ -1115,23 +1115,6 @@ class DAG(LoggingMixin):
         return tuple(graph_sorted)
 
     @provide_session
-    def set_dag_runs_state(
-        self,
-        state: str = State.RUNNING,
-        session: Session = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        dag_ids: List[str] = None,
-    ) -> None:
-        dag_ids = dag_ids or [self.dag_id]
-        query = session.query(DagRun).filter(DagRun.dag_id.in_(dag_ids))
-        if start_date:
-            query = query.filter(DagRun.execution_date >= start_date)
-        if end_date:
-            query = query.filter(DagRun.execution_date <= end_date)
-        query.update({DagRun.state: state}, synchronize_session='fetch')
-
-    @provide_session
     def clear(
         self,
         task_ids=None,
