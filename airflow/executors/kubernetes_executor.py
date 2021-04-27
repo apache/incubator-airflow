@@ -96,15 +96,14 @@ class ResourceVersion:
         cls._shared_state = {}
 
 
-def get_latest_resource_version(kube_client: client.CoreV1Api, namespace: str):
+def get_latest_resource_version(kube_client: client.CoreV1Api, namespace: str) -> None:
     """
     List pods to get the latest resource version
 
     See https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes
     """
     pod_list = kube_client.list_namespaced_pod(namespace)
-    resource_version = pod_list.metadata.resource_version
-    return resource_version
+    return pod_list.metadata.resource_version
 
 
 class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
