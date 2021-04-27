@@ -161,7 +161,6 @@ class TestKubernetesExecutor(unittest.TestCase):
             ('kubernetes', 'pod_template_file'): path,
         }
         with conf_vars(config):
-
             kubernetes_executor = self.kubernetes_executor
             kubernetes_executor.start()
             # Execute a task while the Api Throws errors
@@ -684,6 +683,20 @@ class TestKubernetesJobWatcher(unittest.TestCase):
         self.events.append({"type": "ERROR", "object": self.pod, "raw_object": raw_object})
         self._run()
         mock_get_resource_version.assert_called_once()
+
+    @mock.patch('airflow.executors.kubernetes_executor.get_latest_resource_version')
+    @mock.patch.object(KubernetesJobWatcher, '_run')
+    def test_apiexception_for_410_is_handled(self, mock_run, mock_get_resource_version):
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+        mock_run.side_effect = mock.Mock(side_effect=ApiException(status=410, reason='too old error'))
+        with self.assertRaises(ApiException):
+            self.watcher._run(
+                kube_client=self.kube_client,
+                resource_version=self.watcher.resource_version,
+                scheduler_job_id=self.watcher.scheduler_job_id,
+                kube_config=self.watcher.kube_config,
+            )
+            mock_get_resource_version.assert_called_once()
 
 
 class TestResourceVersion(unittest.TestCase):

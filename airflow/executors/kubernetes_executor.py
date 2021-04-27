@@ -136,6 +136,22 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 self.resource_version = self._run(
                     kube_client, self.resource_version, self.scheduler_job_id, self.kube_config
                 )
+            except ApiException as err:
+                if err.status == 410:
+                    self.log.info(
+                        "KubernetesJobWatcher encountered an error, error code: %s, reason: %s",
+                        err.status,
+                        err.reason,
+                    )
+                    self.log.info("Relisting pod to get the latest resource version")
+                    self.resource_version = get_latest_resource_version(kube_client, self.namespace)
+                else:
+                    self.log.exception(
+                        'KubernetesJobWatcher encountered an error, failing, error code: %s, reason: %s',
+                        err.status,
+                        err.reason,
+                    )
+                    raise
             except ReadTimeoutError:
                 self.log.warning(
                     "There was a timeout error accessing the Kube API. Retrying request.", exc_info=True
@@ -189,7 +205,6 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 'execution_date': annotations['execution_date'],
                 'try_number': annotations['try_number'],
             }
-
             self.process_status(
                 pod_id=task.metadata.name,
                 namespace=task.metadata.namespace,
