@@ -141,7 +141,7 @@ class AsanaDeleteTaskOperator(BaseOperator):
 class AsanaFindTaskOperator(BaseOperator):
     """
     This operator can be used to retrieve Asana tasks that match various filters.
-    For a complete list of filters, see https://bit.ly/3uIqMj0
+    See https://developers.asana.com/docs/update-a-task for a list of possible filters.
 
     .. seealso::
         For more information on how to use this operator, take a look at the guide:

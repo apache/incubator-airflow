@@ -135,8 +135,8 @@ class AsanaHook(BaseHook):
     def find_task(self, params: dict) -> list:
         """
         Retrieves a list of Asana tasks that match search parameters.
-        :param params: Attributes that matching tasks should have. For a complete list of possible parameters,
-        see https://bit.ly/3uIqMj0
+        :param params: Attributes that matching tasks should have. For a list of possible parameters,
+        see https://developers.asana.com/docs/get-multiple-tasks
         :return: A list of dicts containing attributes of matching Asana tasks
         """
         merged_params = self._merge_find_task_parameters(params)
@@ -182,7 +182,7 @@ class AsanaHook(BaseHook):
         """
         Updates an existing Asana task.
         :param task_id: Asana GID of task to update
-        :param params: New values of the task's attributes. For a complete list of possible parameters, see
+        :param params: New values of the task's attributes. For a list of possible parameters, see
         https://developers.asana.com/docs/update-a-task
         :return: A dict containing the updated task's attributes
         """
@@ -229,7 +229,8 @@ class AsanaHook(BaseHook):
     def find_project(self, params: dict) -> list:
         """
         Retrieves a list of Asana projects that match search parameters.
-        :param params: Attributes which matching projects should have. See https://bit.ly/31ZrZq6
+        :param params: Attributes which matching projects should have. See
+        https://developers.asana.com/docs/get-multiple-projects
         for a list of possible parameters.
         :return: A list of dicts containing attributes of matching Asana projects
         """
