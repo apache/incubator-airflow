@@ -17,13 +17,16 @@
 # under the License.
 
 """Connect to Asana."""
-
+import logging
 from typing import Any, Dict
 
-from asana import Client
 from cached_property import cached_property
 
 from airflow.hooks.base import BaseHook
+from asana import Client
+from asana.error import NotFoundError
+
+log = logging.getLogger(__name__)
 
 
 class AsanaHook(BaseHook):
@@ -127,10 +130,14 @@ class AsanaHook(BaseHook):
         """
         Deletes an Asana task.
         :param task_id: Asana GID of the task to delete
-        :return: A dict containing the response from Asana; this is an empty dict on success
+        :return: A dict containing the response from Asana
         """
-        response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
-        return response
+        try:
+            response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
+            return response
+        except NotFoundError:
+            self.log.info(f"Asana task {task_id} not found for deletion.")
+            return {}
 
     def find_task(self, params: dict) -> list:
         """
@@ -254,7 +261,11 @@ class AsanaHook(BaseHook):
         """
         Deletes a project.
         :param project_id: Asana GID of the project to delete
-        :return: An empty dict if deletion was successful
+        :return: A dict containing the response from Asana
         """
-        response = self.client.projects.delete(project_id)  # pylint: disable=no-member
-        return response
+        try:
+            response = self.client.projects.delete(project_id)  # pylint: disable=no-member
+            return response
+        except NotFoundError:
+            self.log.info(f"Asana project {project_id} not found for deletion.")
+            return {}
