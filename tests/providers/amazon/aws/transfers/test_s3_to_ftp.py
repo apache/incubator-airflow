@@ -17,7 +17,6 @@
 # under the License.
 import unittest
 from unittest import mock
-from unittest.mock import Mock
 
 from airflow.providers.amazon.aws.transfers.s3_to_ftp import S3ToFTPOperator
 
