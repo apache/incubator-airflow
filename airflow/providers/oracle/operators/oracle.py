@@ -23,7 +23,12 @@ from airflow.providers.oracle.hooks.oracle import OracleHook
 
 class OracleOperator(BaseOperator):
     """
-    Executes sql code in a specific Oracle database
+    Executes sql code in a specific Oracle database.
+
+    If BaseOperator.do_xcom_push is True, the bindvars will also be pushed
+    to an Xcom when the query completes. If a list of statements is provided,
+    the Xcom will be a list as well. Note that the bindvars reflect the type of
+    parameters argument given (dict or iterable).
 
     :param sql: the sql code to be executed. Can receive a str representing a sql statement,
         a list of str (sql statements), or reference to a template file.
@@ -62,4 +67,4 @@ class OracleOperator(BaseOperator):
     def execute(self, context) -> None:
         self.log.info('Executing: %s', self.sql)
         hook = OracleHook(oracle_conn_id=self.oracle_conn_id)
-        hook.run(self.sql, autocommit=self.autocommit, parameters=self.parameters)
+        return hook.run(self.sql, autocommit=self.autocommit, parameters=self.parameters)

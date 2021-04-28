@@ -250,3 +250,11 @@ class OracleHook(DbApiHook):
         self.log.info('[%s] inserted %s rows', table, row_count)
         cursor.close()
         conn.close()  # type: ignore[attr-defined]
+
+    def _run_command(self, cur, sql_statement, parameters):
+        super()._run_command(cur, sql_statement, parameters)
+        bindvars = cur.bindvars
+        if isinstance(bindvars, list):
+            return [v.getvalue() for v in bindvars]
+        if isinstance(bindvars, dict):
+            return {n: v.getvalue() for (n, v) in bindvars.items()}

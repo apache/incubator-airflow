@@ -39,6 +39,6 @@ class TestOracleOperator(unittest.TestCase):
             autocommit=autocommit,
             task_id=task_id,
         )
-        operator.execute(context=context)
-
+        result = operator.execute(context=context)
+        assert result == parameters
         mock_run.assert_called_once_with(sql, autocommit=autocommit, parameters=parameters)
