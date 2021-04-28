@@ -48,6 +48,7 @@ try:
     from functools import cached_property
 except ImportError:
     from cached_property import cached_property
+
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
@@ -280,8 +281,7 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
             )
 
     :type executor_config: dict
-    :param do_xcom_push: if True, an XCom is pushed containing the Operator's
-        result
+    :param do_xcom_push: if True, an XCom is pushed containing the Operator's result
     :type do_xcom_push: bool
     :param doc: Add documentation or notes to your Task objects that is visible in
         Task Instance details View in the Webserver
@@ -298,6 +298,8 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
     :param doc_yaml: Add documentation (in YAML format) or notes to your Task objects
         that is visible in Task Instance details View in the Webserver
     :type doc_yaml: str
+    :param latest_only: if True, operator will skip when its dag run is not the "latest"
+    :type latest_only: bool
     """
 
     # For derived classes to define which fields will get jinjaified
@@ -406,6 +408,7 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
         doc_json: Optional[str] = None,
         doc_yaml: Optional[str] = None,
         doc_rst: Optional[str] = None,
+        latest_only: bool = False,
         **kwargs,
     ):
         from airflow.models.dag import DagContext
@@ -556,6 +559,7 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
                     outlets,
                 ]
             )
+        self.latest_only = latest_only
 
     def __eq__(self, other):
         if type(self) is type(other):
@@ -822,9 +826,52 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
             raise AirflowException("Can't load operators")
         return {link.name: link for link in plugins_manager.global_operator_extra_links}
 
+    def _skip_if_not_latest(self, context: Optional[Any] = None) -> None:
+        """
+        Will raise :class:`~.AirflowSkipException` if dag run is not the latest dag run,
+        with the following exceptions:
+            - the operator's ``latest_only`` parameter is not set to ``True``
+            - the context dictionary has no dag run
+            - the context dictionary has no dag
+            - the ``context`` dictionary is ``None`` or empty
+            - the dag run is externally triggered
+        """
+        if not (self.latest_only is True and context):
+            return
+
+        import pendulum
+
+        from airflow.exceptions import AirflowSkipException
+
+        dag_run = context.get('dag_run')
+        if not dag_run:
+            return
+
+        if dag_run and dag_run.external_trigger:
+            self.log.info("Externally triggered DAG_Run: allowing execution to proceed.")
+            return
+
+        dag = context.get('dag')
+        if not dag:
+            return
+
+        now = pendulum.now('UTC')
+        left_window = dag.following_schedule(context['execution_date'])
+        right_window = dag.following_schedule(left_window)
+        self.log.info(  # pylint: disable=logging-fstring-interpolation
+            f"Checking latest only:\n"
+            f"\tleft_window: {left_window}\n"
+            f"\tright_window: {right_window}\n"
+            f"\tnow: {now}\n",
+        )
+
+        if not left_window < now <= right_window:
+            raise AirflowSkipException('Not latest execution; skipping...')
+
     @prepare_lineage
     def pre_execute(self, context: Any):
         """This hook is triggered right before self.execute() is called."""
+        self._skip_if_not_latest(context)
 
     def execute(self, context: Any):
         """

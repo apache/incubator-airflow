@@ -21,10 +21,11 @@ from datetime import date, datetime
 from unittest import mock
 
 import jinja2
+import pendulum
 import pytest
 from parameterized import parameterized
 
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowException, AirflowSkipException
 from airflow.lineage.entities import File
 from airflow.models import DAG
 from airflow.models.baseoperator import chain, cross_downstream
@@ -266,6 +267,70 @@ class TestBaseOperator(unittest.TestCase):
         )
         assert test_task.email_on_retry is False
         assert test_task.email_on_failure is True
+
+    @parameterized.expand([(True,), (False,)])
+    def test_latest_only_enabled(self, latest_only_enabled):
+        """
+        When enabled should skip if outside latest interval and run otherwise.
+        When disabled should not skip.
+        """
+
+        class MockDag:
+            @staticmethod
+            def following_schedule(execution_date):
+                return execution_date.add(days=1)
+
+        class MockDagRun:
+            external_trigger = False
+
+        op = DummyOperator(task_id='hello', latest_only=latest_only_enabled)
+
+        execution_date = pendulum.now().add(days=-1)
+        outside_of_latest = execution_date.add(hours=-36)
+        in_latest = execution_date.add(hours=-12)
+        base_context = {'dag': MockDag(), 'dag_run': MockDagRun()}
+        if latest_only_enabled:
+            with pytest.raises(AirflowSkipException):
+                op.pre_execute({**base_context, 'execution_date': outside_of_latest})
+            op.pre_execute({**base_context, 'execution_date': in_latest})
+        else:
+            op.pre_execute({**base_context, 'execution_date': outside_of_latest})
+
+    def test_latest_only_no_check(self):
+        """
+        Should not skip under these circumstances, even when not latest and latest_only enabled:
+            - the context dictionary has no dag run
+            - the context dictionary has no dag
+            - the ``context`` dictionary is ``None`` or empty
+            - the dag run is externally triggered
+        """
+
+        class MockDag:
+            @staticmethod
+            def following_schedule(execution_date):
+                return execution_date.add(days=1)
+
+        class MockDagRun:
+            def __init__(self, external_trigger=False):
+                self.external_trigger = external_trigger
+
+        op = DummyOperator(task_id='hello', latest_only=True)
+
+        execution_date = pendulum.now().add(days=-1)
+        outside_of_latest = execution_date.add(hours=-36)
+
+        for context in [
+            {
+                'dag': MockDag(),
+                'dag_run': MockDagRun(True),
+                'execution_date': outside_of_latest,
+            },  # external trigger
+            {'dag_run': MockDagRun(), 'execution_date': outside_of_latest},  # missing dag
+            {'dag': MockDag(), 'execution_date': outside_of_latest},  # missing dag_run
+            {},  # empty
+            None,  # None
+        ]:
+            op.pre_execute(context)  # should not skip
 
 
 class TestBaseOperatorMethods(unittest.TestCase):
