@@ -21,6 +21,7 @@ import itertools
 import json
 import logging
 import math
+import re
 import socket
 import sys
 import traceback
@@ -88,7 +89,6 @@ from airflow.api.common.experimental.mark_tasks import (
     set_dag_run_state_to_failed,
     set_dag_run_state_to_success,
 )
-from airflow.cli.commands.provider_command import _remove_rst_syntax
 from airflow.configuration import AIRFLOW_CONFIG, conf
 from airflow.exceptions import AirflowException
 from airflow.executors.executor_loader import ExecutorLoader
@@ -3178,7 +3178,7 @@ class PluginView(AirflowBaseView):
         )
 
 
-class ProvidersModelView(AirflowBaseView):
+class ProvidersView(AirflowBaseView):
     """View to show Airflow Providers"""
 
     default_view = 'list'
@@ -3208,7 +3208,7 @@ class ProvidersModelView(AirflowBaseView):
         for pi in providers_manager.providers.values():
             provider_data = {
                 "package_name": pi[1]["package-name"],
-                "description": _remove_rst_syntax(pi[1]["description"]),
+                "description": self.clean_description(pi[1]["description"]),
                 "version": pi[0],
             }
             providers.append(provider_data)
@@ -3221,6 +3221,12 @@ class ProvidersModelView(AirflowBaseView):
             title=title,
             doc_url=doc_url,
         )
+
+    def clean_description(self, description):
+        cd = re.sub("[`_]", "", description.strip(" \n.").strip("\""))
+        cd = re.sub("<", "<a href=\"", cd)
+        cd = re.sub(">", "\">[site]<a/>", cd)
+        return cd
 
 
 class PoolModelView(AirflowModelView):
