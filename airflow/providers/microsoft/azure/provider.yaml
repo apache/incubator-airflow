@@ -146,6 +146,10 @@ transfers:
     target-integration-name: Google Cloud Storage (GCS)
     how-to-guide: /docs/apache-airflow-providers-microsoft-azure/operators/azure_blob_to_gcs.rst
     python-module: airflow.providers.microsoft.azure.transfers.azure_blob_to_gcs
+  - source-integration-name: SSH File Transfer Protocol (SFTP)
+    target-integration-name: Microsoft Azure Blob Storage
+    how-to-guide: /docs/apache-airflow-providers-microsoft-azure/operators/sftp_to_wasb.rst
+    python-module: airflow.providers.microsoft.azure.transfers.sftp_to_wasb
 
 hook-class-names:
   - airflow.providers.microsoft.azure.hooks.base_azure.AzureBaseHook

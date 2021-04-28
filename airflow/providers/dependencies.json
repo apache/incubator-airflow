@@ -58,7 +58,8 @@
   ],
   "microsoft.azure": [
     "google",
-    "oracle"
+    "oracle",
+    "sftp"
   ],
   "microsoft.mssql": [
     "odbc"
