@@ -57,7 +57,7 @@ Container Registry used as cache
 For the CI builds of our we are using Container Registry to store results of the "Build Image" workflow
 and pass it to the "CI Build" workflow.
 
-Currently in master version of Airflow we run tests in 3 different versions of Python (3.6, 3.7, 3.8, 3.9)
+Currently in master version of Airflow we run tests in 4 different versions of Python (3.6, 3.7, 3.8, 3.9)
 which means that we have to build 6 images (3 CI ones and 3 PROD ones). Yet we run around 12 jobs
 with each of the CI images. That is a lot of time to just build the environment to run. Therefore
 we are utilising ``workflow_run`` feature of GitHub Actions.
