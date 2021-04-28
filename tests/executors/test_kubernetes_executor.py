@@ -159,7 +159,6 @@ class TestKubernetesExecutor(unittest.TestCase):
             ('kubernetes', 'pod_template_file'): path,
         }
         with conf_vars(config):
-
             kubernetes_executor = self.kubernetes_executor
             kubernetes_executor.start()
             # Execute a task while the Api Throws errors
@@ -672,3 +671,37 @@ class TestKubernetesJobWatcher(unittest.TestCase):
 
         self._run()
         self.watcher.watcher_queue.put.assert_not_called()
+
+    def test_container_status_of_waiting_with_errimagepull_fails_pod(self):
+        self.pod.status.phase = "Pending"
+        self.pod.status.container_statuses = [
+            k8s.V1ContainerStatus(
+                container_id=None,
+                image="apache/airflow:2.0.1-python3.8",
+                image_id="",
+                name="base",
+                ready="false",
+                restart_count=0,
+                state=k8s.V1ContainerState(waiting=k8s.V1ContainerStateWaiting(reason='ErrImagePull')),
+            )
+        ]
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+        self._run()
+        self.watcher.watcher_queue.put.assert_called()
+
+    def test_init_container_status_of_waiting_with_errimagepull_fails_pod(self):
+        self.pod.status.phase = "Pending"
+        self.pod.status.init_container_statuses = [
+            k8s.V1ContainerStatus(
+                container_id=None,
+                image="apache/airflow:2.0.1-python3.8",
+                image_id="",
+                name="base",
+                ready="false",
+                restart_count=0,
+                state=k8s.V1ContainerState(waiting=k8s.V1ContainerStateWaiting(reason='ErrImagePull')),
+            )
+        ]
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+        self._run()
+        self.watcher.watcher_queue.put.assert_called()

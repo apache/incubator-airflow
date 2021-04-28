@@ -35,6 +35,8 @@ from dateutil import parser
 from kubernetes import client, watch
 from kubernetes.client import Configuration, models as k8s
 from kubernetes.client.models import V1Pod
+from kubernetes.client.models.v1_container_status import V1ContainerStatus
+from kubernetes.client.models.v1_pod_status import V1PodStatus
 from kubernetes.client.rest import ApiException
 from urllib3.exceptions import ReadTimeoutError
 
@@ -147,6 +149,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 watcher.stream, kube_client.list_namespaced_pod, self.namespace, **kwargs
             )
         for event in list_worker_pods():
+            self.log.debug("%s", event)
             task = event['object']
             self.log.info('Event: %s had an event of type %s', task.metadata.name, event['type'])
             if event['type'] == 'ERROR':
@@ -162,7 +165,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
             self.process_status(
                 pod_id=task.metadata.name,
                 namespace=task.metadata.namespace,
-                status=task.status.phase,
+                status=task.status,
                 annotations=task_instance_related_annotations,
                 resource_version=task.metadata.resource_version,
                 event=event,
@@ -190,25 +193,35 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
         self,
         pod_id: str,
         namespace: str,
-        status: str,
+        status: V1PodStatus,
         annotations: Dict[str, str],
         resource_version: str,
         event: Any,
     ) -> None:
         """Process status response"""
-        if status == 'Pending':
-            if event['type'] == 'DELETED':
+        pod_status = status.phase
+        if pod_status == 'Pending':
+            # Check container statuses
+            container_statuses = status.container_statuses
+            init_container_statuses = status.init_container_statuses
+            if container_statuses and self._container_image_pull_err(container_statuses):
+                self.log.info('Event: Failed to start pod %s, a container has an ErrImagePull', pod_id)
+                self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
+            elif init_container_statuses and self._container_image_pull_err(init_container_statuses):
+                self.log.info('Event: Failed to start pod %s, a container has an ErrImagePull', pod_id)
+                self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
+            elif event['type'] == 'DELETED':
                 self.log.info('Event: Failed to start pod %s', pod_id)
                 self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
             else:
                 self.log.info('Event: %s Pending', pod_id)
-        elif status == 'Failed':
+        elif pod_status == 'Failed':
             self.log.error('Event: %s Failed', pod_id)
             self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
-        elif status == 'Succeeded':
+        elif pod_status == 'Succeeded':
             self.log.info('Event: %s Succeeded', pod_id)
             self.watcher_queue.put((pod_id, namespace, None, annotations, resource_version))
-        elif status == 'Running':
+        elif pod_status == 'Running':
             self.log.info('Event: %s is Running', pod_id)
         else:
             self.log.warning(
@@ -220,6 +233,13 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 annotations,
                 resource_version,
             )
+
+    def _container_image_pull_err(
+        self,
+        statuses: List[V1ContainerStatus],
+    ):
+        """Monitor pod container statuses"""
+        return any(container_status.state.waiting.reason == 'ErrImagePull' for container_status in statuses)
 
 
 class AirflowKubernetesScheduler(LoggingMixin):
