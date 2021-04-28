@@ -428,7 +428,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_access_control_with_non_existent_role(self):
         with pytest.raises(AirflowException) as ctx:
-            self.security_manager._sync_dag_view_permissions(
+            self.security_manager.sync_perm_for_dag(
                 dag_id='access-control-test',
                 access_control={
                     'this-role-does-not-exist': [permissions.ACTION_CAN_EDIT, permissions.ACTION_CAN_READ]
@@ -486,7 +486,7 @@ class TestSecurity(unittest.TestCase):
                 permissions=[],
             )
             self.expect_user_is_in_role(user, rolename='team-a')
-            self.security_manager._sync_dag_view_permissions(
+            self.security_manager.sync_perm_for_dag(
                 'access_control_test',
                 access_control={'team-a': [permissions.ACTION_CAN_EDIT, permissions.ACTION_CAN_READ]},
             )
@@ -514,12 +514,12 @@ class TestSecurity(unittest.TestCase):
                 permissions=[],
             )
             self.expect_user_is_in_role(user, rolename='team-a')
-            self.security_manager._sync_dag_view_permissions(
+            self.security_manager.sync_perm_for_dag(
                 'access_control_test', access_control={'team-a': READ_WRITE}
             )
             self.assert_user_has_dag_perms(perms=READ_WRITE, dag_id='access_control_test', user=user)
 
-            self.security_manager._sync_dag_view_permissions(
+            self.security_manager.sync_perm_for_dag(
                 'access_control_test', access_control={'team-a': READ_ONLY}
             )
             self.assert_user_has_dag_perms(
@@ -574,7 +574,7 @@ class TestSecurity(unittest.TestCase):
         dagbag.collect_dags_from_db = collect_dags_from_db_mock
         dagbag_mock.return_value = dagbag
 
-        self.security_manager._sync_dag_view_permissions = mock.Mock()
+        self.security_manager.sync_perm_for_dag = mock.Mock()
 
         for dag in dags:
             dag_resource_name = permissions.resource_name_for_dag(dag.dag_id)
@@ -593,7 +593,7 @@ class TestSecurity(unittest.TestCase):
             assert ('can_read', dag_resource_name) in all_perms
             assert ('can_edit', dag_resource_name) in all_perms
 
-        self.security_manager._sync_dag_view_permissions.assert_called_once_with(
+        self.security_manager.sync_perm_for_dag.assert_called_once_with(
             permissions.resource_name_for_dag('has_access_control'), access_control
         )
 

@@ -677,7 +677,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
                     self._merge_perm(action_name, dag_resource_name)
 
             if dag.access_control:
-                self._sync_dag_view_permissions(dag_resource_name, dag.access_control)
+                self.sync_perm_for_dag(dag_resource_name, dag.access_control)
 
     def update_admin_permission(self):
         """
