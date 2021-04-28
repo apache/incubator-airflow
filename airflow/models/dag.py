@@ -579,9 +579,10 @@ class DAG(LoggingMixin):
             return NullTimeTable()
         if interval == "@once":
             return OnceTimeTable()
-        if not isinstance(interval, str):
-            assert isinstance(interval, (timedelta, relativedelta))
+        if isinstance(interval, (timedelta, relativedelta)):
             return DeltaDataIntervalTimeTable(interval)
+        if not isinstance(interval, str):
+            raise ValueError(f"Impossible schedule_interval type {interval!r}")
         tz = pendulum.timezone(self.timezone.name)
         return CronDataIntervalTimeTable(interval, tz)
 

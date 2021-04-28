@@ -127,7 +127,7 @@ class CronSchedule(Schedule):
         elif next_start > current_time:
             new_start = self.get_prev(last_start)
         else:
-            raise AssertionError("next schedule shouldn't be earlier")
+            raise ValueError("next schedule shouldn't be earlier")
         if restriction.earliest is None:
             earliest = new_start
         else:
