@@ -140,7 +140,7 @@ def parse_template_string(template_string):
         return template_string, None
 
 
-def render_log_filename(ti: "TaskInstance", try_number, filename_template):
+def render_log_filename(ti: "TaskInstance", try_number, filename_template) -> str:
     """
     Given task instance, try_number, filename_template, return the rendered log
     filename
@@ -184,7 +184,7 @@ def merge_dicts(dict1: Dict, dict2: Dict) -> Dict:
     return merged
 
 
-def partition(pred: Callable[[T], bool], iterable: Iterable[T]):
+def partition(pred: Callable[[T], bool], iterable: Iterable[T]) -> Tuple[Iterable[T], Iterable[T]]:
     """Use a predicate to partition entries into false entries and true entries"""
     iter_1, iter_2 = tee(iterable)
     return filterfalse(pred, iter_1), filter(pred, iter_2)
