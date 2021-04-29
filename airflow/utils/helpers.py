@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from airflow.models import TaskInstance
 
 KEY_REGEX = re.compile(r'^[\w.-]+$')
-CAMELCASE_TO_SNAKE_CASE_REGEX = re.compile('(?!^)([A-Z]+)')
+CAMELCASE_TO_SNAKE_CASE_REGEX = re.compile(r'(?!^)([A-Z]+)')
 
 T = TypeVar('T')  # pylint: disable=invalid-name
 S = TypeVar('S')  # pylint: disable=invalid-name
