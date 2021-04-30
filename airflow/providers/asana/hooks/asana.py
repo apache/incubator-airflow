@@ -20,11 +20,11 @@
 import logging
 from typing import Any, Dict
 
+from asana import Client
+from asana.error import NotFoundError
 from cached_property import cached_property
 
 from airflow.hooks.base import BaseHook
-from asana import Client
-from asana.error import NotFoundError
 
 log = logging.getLogger(__name__)
 

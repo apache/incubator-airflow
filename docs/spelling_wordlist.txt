@@ -18,14 +18,6 @@ AppBuilder
 Arg
 Args
 Asana
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-asctime
-ashb
->>>>>>> Add licences and begin updating docs
-=======
->>>>>>> Reformatting to comply with black etc
 Async
 Atlassian
 Auth

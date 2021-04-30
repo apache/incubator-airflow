@@ -32,8 +32,8 @@ Using the Operator
 The AsanaCreateTaskOperator minimally requires the new task's name and
 the Asana connection to use to connect to your account (``conn_id``). There are many other
 `task attributes you can specify <https://developers.asana.com/docs/create-a-task>`_
-through the ``task_parameters``. You must specify at least one of 'workspace',
-'parent', or 'projects' in the ``task_parameters`` or in the connection.
+through the ``task_parameters``. You must specify at least one of ``workspace``,
+``parent``, or ``projects`` in the ``task_parameters`` or in the connection.
 
 
 .. _howto/operator:AsanaDeleteTaskOperator:
@@ -42,7 +42,7 @@ AsanaDeleteTaskOperator
 =======================
 
 Use the :class:`~airflow.providers.asana.operators.AsanaDeleteTaskOperator` to
-update an existing Asana task.
+delete an existing Asana task.
 
 
 Using the Operator
@@ -65,7 +65,7 @@ Using the Operator
 ^^^^^^^^^^^^^^^^^^
 
 The AsanaFindTaskOperator requires a dict of search parameters following the description
-`here <https://github.com/Asana/python-asana/blob/ec5f178606251e2776a72a82f660cc1521516988/asana/resources/tasks.py#L176>`_.
+`here <https://developers.asana.com/docs/get-multiple-tasks>`_.
 Use the ``conn_id`` parameter to specify the Asana connection to use to connect
 to your account. Any parameters provided through the connection will be used in the
 search if not overridden in the ``search_parameters``.
