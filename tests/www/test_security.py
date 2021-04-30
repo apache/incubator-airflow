@@ -561,45 +561,44 @@ class TestSecurity(unittest.TestCase):
 
     @mock.patch("airflow.www.security.DagBag")
     def test_create_dag_specific_permissions(self, dagbag_mock):
-        access_control = {'Public': {permissions.ACTION_CAN_READ}}
-        dags = [
-            DAG('has_access_control', access_control=access_control),
-            DAG('no_access_control'),
-        ]
+        with mock.patch('airflow.www.security.AirflowSecurityManager.sync_perm_for_dag', mock.Mock()):
+            access_control = {'Public': {permissions.ACTION_CAN_READ}}
+            dags = [
+                DAG('has_access_control', access_control=access_control),
+                DAG('no_access_control'),
+            ]
 
-        collect_dags_from_db_mock = mock.Mock()
-        dagbag = mock.Mock()
+            collect_dags_from_db_mock = mock.Mock()
+            dagbag = mock.Mock()
 
-        dagbag.dags = {dag.dag_id: dag for dag in dags}
-        dagbag.collect_dags_from_db = collect_dags_from_db_mock
-        dagbag_mock.return_value = dagbag
+            dagbag.dags = {dag.dag_id: dag for dag in dags}
+            dagbag.collect_dags_from_db = collect_dags_from_db_mock
+            dagbag_mock.return_value = dagbag
 
-        self.security_manager.sync_perm_for_dag = mock.Mock()
+            for dag in dags:
+                dag_resource_name = permissions.resource_name_for_dag(dag.dag_id)
+                all_perms = self.security_manager.get_all_permissions()
+                assert ('can_read', dag_resource_name) not in all_perms
+                assert ('can_edit', dag_resource_name) not in all_perms
 
-        for dag in dags:
-            dag_resource_name = permissions.resource_name_for_dag(dag.dag_id)
-            all_perms = self.security_manager.get_all_permissions()
-            assert ('can_read', dag_resource_name) not in all_perms
-            assert ('can_edit', dag_resource_name) not in all_perms
-
-        self.security_manager.create_dag_specific_permissions()
-
-        dagbag_mock.assert_called_once_with(read_dags_from_db=True)
-        collect_dags_from_db_mock.assert_called_once_with()
-
-        for dag in dags:
-            dag_resource_name = permissions.resource_name_for_dag(dag.dag_id)
-            all_perms = self.security_manager.get_all_permissions()
-            assert ('can_read', dag_resource_name) in all_perms
-            assert ('can_edit', dag_resource_name) in all_perms
-
-        self.security_manager.sync_perm_for_dag.assert_called_once_with(
-            permissions.resource_name_for_dag('has_access_control'), access_control
-        )
-
-        del dagbag.dags["has_access_control"]
-        with assert_queries_count(1):  # one query to get all perms; dagbag is mocked
             self.security_manager.create_dag_specific_permissions()
+
+            dagbag_mock.assert_called_once_with(read_dags_from_db=True)
+            collect_dags_from_db_mock.assert_called_once_with()
+
+            for dag in dags:
+                dag_resource_name = permissions.resource_name_for_dag(dag.dag_id)
+                all_perms = self.security_manager.get_all_permissions()
+                assert ('can_read', dag_resource_name) in all_perms
+                assert ('can_edit', dag_resource_name) in all_perms
+
+            self.security_manager.sync_perm_for_dag.assert_called_once_with(
+                permissions.resource_name_for_dag('has_access_control'), access_control
+            )
+
+            del dagbag.dags["has_access_control"]
+            with assert_queries_count(1):  # one query to get all perms; dagbag is mocked
+                self.security_manager.create_dag_specific_permissions()
 
     def test_get_all_permissions(self):
         with assert_queries_count(1):
