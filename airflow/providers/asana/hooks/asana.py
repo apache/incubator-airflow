@@ -17,7 +17,6 @@
 # under the License.
 
 """Connect to Asana."""
-import logging
 from typing import Any, Dict
 
 from asana import Client
@@ -25,8 +24,6 @@ from asana.error import NotFoundError
 from cached_property import cached_property
 
 from airflow.hooks.base import BaseHook
-
-log = logging.getLogger(__name__)
 
 
 class AsanaHook(BaseHook):
@@ -88,7 +85,7 @@ class AsanaHook(BaseHook):
         Creates an Asana task.
         :param task_name: Name of the new task
         :param params: Other task attributes, such as due_on, parent, and notes. For a complete list of possible
-        parameters, see https://developers.asana.com/docs/create-a-task
+            parameters, see https://developers.asana.com/docs/create-a-task
         :return: A dict of attributes of the created task, including its gid
         """
         merged_params = self._merge_create_task_parameters(task_name, params)
@@ -143,7 +140,7 @@ class AsanaHook(BaseHook):
         """
         Retrieves a list of Asana tasks that match search parameters.
         :param params: Attributes that matching tasks should have. For a list of possible parameters,
-        see https://developers.asana.com/docs/get-multiple-tasks
+            see https://developers.asana.com/docs/get-multiple-tasks
         :return: A list of dicts containing attributes of matching Asana tasks
         """
         merged_params = self._merge_find_task_parameters(params)
@@ -155,7 +152,7 @@ class AsanaHook(BaseHook):
         """
         Merge find_task parameters with default params from the connection.
         :param search_parameters: Attributes that tasks matching the search should have; these override
-        defaults from the connection
+            defaults from the connection
         :return: A dict of merged parameters to use in the search
         """
         merged_params = {}
@@ -190,7 +187,7 @@ class AsanaHook(BaseHook):
         Updates an existing Asana task.
         :param task_id: Asana GID of task to update
         :param params: New values of the task's attributes. For a list of possible parameters, see
-        https://developers.asana.com/docs/update-a-task
+            https://developers.asana.com/docs/update-a-task
         :return: A dict containing the updated task's attributes
         """
         response = self.client.tasks.update(task_id, params)  # pylint: disable=no-member
@@ -200,8 +197,8 @@ class AsanaHook(BaseHook):
         """
         Creates a new project.
         :param params: Attributes that the new project should have. See
-        https://developers.asana.com/docs/create-a-project#create-a-project-parameters
-        for a list of possible parameters.
+            https://developers.asana.com/docs/create-a-project#create-a-project-parameters
+            for a list of possible parameters.
         :return: A dict containing the new project's attributes, including its GID.
         """
         merged_params = self._merge_project_parameters(params)
@@ -226,7 +223,7 @@ class AsanaHook(BaseHook):
         """
         Merge parameters passed into a project method with default params from the connection.
         :param params: Parameters passed into one of the project methods, which should override
-        defaults from the connection
+            defaults from the connection
         :return: A dict of merged parameters
         """
         merged_params = {} if self.workspace is None else {"workspace": self.workspace}
@@ -237,8 +234,8 @@ class AsanaHook(BaseHook):
         """
         Retrieves a list of Asana projects that match search parameters.
         :param params: Attributes which matching projects should have. See
-        https://developers.asana.com/docs/get-multiple-projects
-        for a list of possible parameters.
+            https://developers.asana.com/docs/get-multiple-projects
+            for a list of possible parameters.
         :return: A list of dicts containing attributes of matching Asana projects
         """
         merged_params = self._merge_project_parameters(params)
@@ -250,8 +247,8 @@ class AsanaHook(BaseHook):
         Updates an existing project.
         :param project_id: Asana GID of the project to update
         :param params: New attributes that the project should have. See
-        https://developers.asana.com/docs/update-a-project#update-a-project-parameters
-        for a list of possible parameters
+            https://developers.asana.com/docs/update-a-project#update-a-project-parameters
+            for a list of possible parameters
         :return: A dict containing the updated project's attributes
         """
         response = self.client.projects.update(project_id, params)  # pylint: disable=no-member
