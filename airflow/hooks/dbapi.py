@@ -178,10 +178,10 @@ class DbApiHook(BaseHook):
                 self.set_autocommit(conn, autocommit)
 
             with closing(conn.cursor()) as cur:
-                results = []
-                for sql_statement in sql:
-                    result = self._run_command(cur, sql_statement, parameters)
-                    results.append(result)
+                results = [
+                    self._run_command(cur, sql_statement, parameters)
+                    for sql_statement in sql
+                ]
 
             # If autocommit was set to False for db that supports autocommit,
             # or if db does not supports autocommit, we do a manual commit.
