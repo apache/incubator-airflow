@@ -119,7 +119,7 @@ Pyenv and setting up virtual-env
       libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
       xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
 
-  $ sudo apt install build-essentials python3.6-dev python3.7-dev python3.8-dev python-dev openssl \
+  $ sudo apt install build-essentials python3.6-dev python3.7-dev python3.8-dev python3.9-dev python-dev openssl \
        sqlite sqlite-dev default-libmysqlclient-dev libmysqld-dev postgresql
 
 2. Install pyenv

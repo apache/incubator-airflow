@@ -58,7 +58,7 @@ We approached the problem by:
 3) Even more optimisation came from limiting the scope of tests to only "default" matrix parameters. So far
    in Airflow we always run all tests for all matrix combinations. The primary matrix components are:
 
-   * Python versions (currently 3.6, 3.7, 3.8)
+   * Python versions (currently 3.6, 3.7, 3.8, 3.9)
    * Backend types (currently MySQL/Postgres)
    * Backed version (currently MySQL 5.7, MySQL 8, Postgres 9.6, Postgres 13
 

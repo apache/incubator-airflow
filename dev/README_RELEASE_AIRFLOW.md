@@ -231,7 +231,7 @@ In case you need, you can also build and push the images manually:
 ```shell script
 export VERSION_RC=<VERSION_HERE>
 export DOCKER_REPO=docker.io/apache/airflow
-for python_version in "3.6" "3.7" "3.8"
+for python_version in "3.6" "3.7" "3.8" "3.9"
 (
   export DOCKER_TAG=${VERSION_RC}-python${python_version}
   ./scripts/ci/images/ci_build_dockerhub.sh
@@ -252,7 +252,7 @@ also performs image verification before the images are pushed.
 ### Airflow 1.10:
 
 ```shell script
-for python_version in "2.7" "3.5" "3.6" "3.7" "3.8"
+for python_version in "2.7" "3.5" "3.6" "3.7" "3.8" "3.9"
 do
     ./breeze build-image --production-image --python ${python_version} \
         --image-tag apache/airflow:${VERSION_RC}-python${python_version} --build-cache-local
@@ -682,7 +682,7 @@ In case you need, you can also build and push the images manually:
 ```shell script
 export VERSION=<VERSION_HERE>
 export DOCKER_REPO=docker.io/apache/airflow
-for python_version in "3.6" "3.7" "3.8"
+for python_version in "3.6" "3.7" "3.8" "3.9"
 (
   export DOCKER_TAG=${VERSION}-python${python_version}
   ./scripts/ci/images/ci_build_dockerhub.sh
@@ -703,7 +703,7 @@ also performs image verification before the images are pushed.
 ### Airflow 1.10:
 
 ```shell script
-for python_version in "2.7" "3.5" "3.6" "3.7" "3.8"
+for python_version in "2.7" "3.5" "3.6" "3.7" "3.8" "3.9"
 do
     ./breeze build-image --production-image --python ${python_version} \
         --image-tag apache/airflow:${VERSION}-python${python_version} --build-cache-local
