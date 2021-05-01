@@ -182,7 +182,7 @@ class TestPostRole(TestRoleEndpoint):
     def test_post_should_respond_200(self):
         payload = {
             'name': 'Test2',
-            'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
         }
         response = self.client.post("/api/v1/roles", json=payload, environ_overrides={'REMOTE_USER': "test"})
         assert response.status_code == 200
@@ -193,47 +193,47 @@ class TestPostRole(TestRoleEndpoint):
         [
             (
                 {
-                    'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+                    'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
                 },
                 "{'name': ['Missing data for required field.']}",
             ),
             (
                 {
                     'name': "TestRole",
-                    'actionss': [
+                    'permissionss': [
                         {
-                            'resource': {'name': 'Connections'},  # actionss not correct
+                            'resource': {'name': 'Connections'},  # permissionss not correct
                             'action': {'name': 'can_create'},
                         }
                     ],
                 },
-                "{'actionss': ['Unknown field.']}",
+                "{'permissionss': ['Unknown field.']}",
             ),
             (
                 {
                     'name': "TestRole",
-                    'actions': [
+                    'permissions': [
                         {
                             'resources': {'name': 'Connections'},  # resources is invalid, should be resource
                             'action': {'name': 'can_create'},
                         }
                     ],
                 },
-                "{'actions': {0: {'resources': ['Unknown field.']}}}",
+                "{'permissions': {0: {'resources': ['Unknown field.']}}}",
             ),
             (
                 {
                     'name': "TestRole",
-                    'actions': [
+                    'permissions': [
                         {'resource': {'name': 'Connections'}, 'actions': {'name': 'can_create'}}
                     ],  # actions is invalid, should be action
                 },
-                "{'actions': {0: {'actions': ['Unknown field.']}}}",
+                "{'permissions': {0: {'actions': ['Unknown field.']}}}",
             ),
             (
                 {
                     'name': "TestRole",
-                    'actions': [
+                    'permissions': [
                         {
                             'resource': {'name': 'FooBars'},  # FooBars is not a resource
                             'action': {'name': 'can_create'},
@@ -245,7 +245,7 @@ class TestPostRole(TestRoleEndpoint):
             (
                 {
                     'name': "TestRole",
-                    'actions': [
+                    'permissions': [
                         {'resource': {'name': 'Connections'}, 'action': {'name': 'can_amend'}}
                     ],  # can_amend is not an action
                 },
@@ -266,7 +266,7 @@ class TestPostRole(TestRoleEndpoint):
     def test_post_should_respond_409_already_exist(self):
         payload = {
             'name': 'Test',
-            'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+            'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
         }
         response = self.client.post("/api/v1/roles", json=payload, environ_overrides={'REMOTE_USER': "test"})
         assert response.status_code == 409
@@ -282,7 +282,7 @@ class TestPostRole(TestRoleEndpoint):
             "/api/v1/roles",
             json={
                 'name': 'Test2',
-                'actions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
+                'permissions': [{'resource': {'name': 'Connections'}, 'action': {'name': 'can_create'}}],
             },
         )
 
@@ -339,21 +339,21 @@ class TestPatchRole(TestRoleEndpoint):
             (
                 {
                     "name": "mytest2",
-                    "actions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
+                    "permissions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
                 },
                 "mytest2",
                 [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
             ),
         ]
     )
-    def test_patch_should_respond_200(self, payload, expected_name, expected_actions):
+    def test_patch_should_respond_200(self, payload, expected_name, expected_permissions):
         role = create_role(self.app, 'mytestrole')
         response = self.client.patch(
             f"/api/v1/roles/{role.name}", json=payload, environ_overrides={'REMOTE_USER': "test"}
         )
         assert response.status_code == 200
         assert response.json['name'] == expected_name
-        assert response.json["actions"] == expected_actions
+        assert response.json["permissions"] == expected_permissions
 
     @parameterized.expand(
         [
@@ -361,7 +361,7 @@ class TestPatchRole(TestRoleEndpoint):
                 "?update_mask=name",
                 {
                     "name": "mytest2",
-                    "actions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
+                    "permissions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
                 },
                 "mytest2",
                 [],
@@ -370,7 +370,7 @@ class TestPatchRole(TestRoleEndpoint):
                 "?update_mask=name, actions",  # both name and actions in update mask
                 {
                     "name": "mytest2",
-                    "actions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
+                    "permissions": [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
                 },
                 "mytest2",
                 [{"resource": {"name": "Connections"}, "action": {"name": "can_create"}}],
@@ -378,7 +378,7 @@ class TestPatchRole(TestRoleEndpoint):
         ]
     )
     def test_patch_should_respond_200_with_update_mask(
-        self, update_mask, payload, expected_name, expected_actions
+        self, update_mask, payload, expected_name, expected_permissions
     ):
         role = create_role(self.app, "mytestrole")
         assert role.permissions == []
@@ -389,7 +389,7 @@ class TestPatchRole(TestRoleEndpoint):
         )
         assert response.status_code == 200
         assert response.json['name'] == expected_name
-        assert response.json['actions'] == expected_actions
+        assert response.json['permissions'] == expected_permissions
 
     def test_patch_should_respond_400_for_invalid_fields_in_update_mask(self):
         role = create_role(self.app, "mytestrole")
@@ -407,28 +407,28 @@ class TestPatchRole(TestRoleEndpoint):
             (
                 {
                     "name": "testme",
-                    "permissions": [  # Using permissions instead of actions should raise
+                    "actions": [  # Using actions instead of permissions should raise
                         {"resource": {"name": "Connections"}, "action": {"name": "can_create"}}
                     ],
                 },
-                "{'permissions': ['Unknown field.']}",
+                "{'actions': ['Unknown field.']}",
             ),
             (
                 {
                     "name": "testme",
-                    "actions": [
+                    "permissions": [
                         {
                             "view_menu": {"name": "Connections"},  # Using view_menu instead of resource
                             "action": {"name": "can_create"},
                         }
                     ],
                 },
-                "{'actions': {0: {'view_menu': ['Unknown field.']}}}",
+                "{'permissions': {0: {'view_menu': ['Unknown field.']}}}",
             ),
             (
                 {
                     "name": "testme",
-                    "actions": [
+                    "permissions": [
                         {
                             "resource": {"name": "FooBars"},  # Using wrong resource name
                             "action": {"name": "can_create"},
@@ -440,7 +440,7 @@ class TestPatchRole(TestRoleEndpoint):
             (
                 {
                     "name": "testme",
-                    "actions": [
+                    "permissions": [
                         {
                             "resource": {"name": "Connections"},  # Using wrong action name
                             "action": {"name": "can_invalid"},
