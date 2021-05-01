@@ -31,8 +31,8 @@ class TestSnowflakeHook(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
-        self.cur = mock.MagicMock()
-        self.cur2 = mock.MagicMock()
+        self.cur = mock.MagicMock(rowcount=0)
+        self.cur2 = mock.MagicMock(rowcount=0)
 
         self.cur.sfqid = 'uuid'
         self.cur2.sfqid = 'uuid2'

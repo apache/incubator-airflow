@@ -212,7 +212,7 @@ class TestPinotDbApiHook(unittest.TestCase):
         self.conn.port = '1000'
         self.conn.conn_type = 'http'
         self.conn.extra_dejson = {'endpoint': 'query/sql'}
-        self.cur = mock.MagicMock()
+        self.cur = mock.MagicMock(rowcount=0)
         self.conn.cursor.return_value = self.cur
         self.conn.__enter__.return_value = self.cur
         self.conn.__exit__.return_value = None

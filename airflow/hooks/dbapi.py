@@ -152,7 +152,7 @@ class DbApiHook(BaseHook):
                     cur.execute(sql)
                 return cur.fetchone()
 
-    def run(self, sql, autocommit=False, parameters=None):
+    def run(self, sql, autocommit=False, parameters=None, handler=None):
         """
         Runs a command or a list of commands. Pass a list of sql
         statements to the sql parameter to get them to execute
@@ -166,7 +166,9 @@ class DbApiHook(BaseHook):
         :type autocommit: bool
         :param parameters: The parameters to render the SQL query with.
         :type parameters: dict or iterable
-        :return: command result.
+        :param handler: The result handler which is called after each statement.
+        :type handler: Callable which gets a cursor object.
+        :return: query results if handler was provided.
         """
 
         scalar = isinstance(sql, str)
@@ -178,15 +180,20 @@ class DbApiHook(BaseHook):
                 self.set_autocommit(conn, autocommit)
 
             with closing(conn.cursor()) as cur:
-                results = [
+                results = []
+                for sql_statement in sql:
                     self._run_command(cur, sql_statement, parameters)
-                    for sql_statement in sql
-                ]
+                    if handler is not None:
+                        result = handler(cur)
+                        results.append(result)
 
             # If autocommit was set to False for db that supports autocommit,
             # or if db does not supports autocommit, we do a manual commit.
             if not self.get_autocommit(conn):
                 conn.commit()
+
+        if handler is None:
+            return
 
         if scalar:
             return results[0]

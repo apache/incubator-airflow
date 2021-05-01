@@ -67,4 +67,25 @@ class OracleOperator(BaseOperator):
     def execute(self, context) -> None:
         self.log.info('Executing: %s', self.sql)
         hook = OracleHook(oracle_conn_id=self.oracle_conn_id)
-        return hook.run(self.sql, autocommit=self.autocommit, parameters=self.parameters)
+
+        def handler(cur):
+            bindvars = cur.bindvars
+
+            if isinstance(bindvars, list):
+                bindvars = [v.getvalue() for v in bindvars]
+            elif isinstance(bindvars, dict):
+                bindvars = {n: v.getvalue() for (n, v) in bindvars.items()}
+            else:
+                raise TypeError(bindvars)
+
+            return {
+                "bindvars": bindvars,
+                "rows": cur.fetchall(),
+            }
+
+        return hook.run(
+            self.sql,
+            autocommit=self.autocommit,
+            parameters=self.parameters,
+            handler=handler
+        )
