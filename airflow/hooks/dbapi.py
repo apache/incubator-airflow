@@ -203,7 +203,9 @@ class DbApiHook(BaseHook):
             cur.execute(sql_statement, parameters)
         else:
             cur.execute(sql_statement)
-        if hasattr(cur, 'rowcount'):
+
+        # According to PEP 249, this is -1 when query result is not applicable.
+        if cur.rowcount >= 0:
             self.log.info("Rows affected: %s", cur.rowcount)
 
     def set_autocommit(self, conn, autocommit):
