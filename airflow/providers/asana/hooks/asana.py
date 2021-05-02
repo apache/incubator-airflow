@@ -84,8 +84,8 @@ class AsanaHook(BaseHook):
         """
         Creates an Asana task.
         :param task_name: Name of the new task
-        :param params: Other task attributes, such as due_on, parent, and notes. For a complete list of possible
-            parameters, see https://developers.asana.com/docs/create-a-task
+        :param params: Other task attributes, such as due_on, parent, and notes. For a complete list
+            of possible parameters, see https://developers.asana.com/docs/create-a-task
         :return: A dict of attributes of the created task, including its gid
         """
         merged_params = self._merge_create_task_parameters(task_name, params)
@@ -133,7 +133,7 @@ class AsanaHook(BaseHook):
             response = self.client.tasks.delete_task(task_id)  # pylint: disable=no-member
             return response
         except NotFoundError:
-            self.log.info(f"Asana task {task_id} not found for deletion.")
+            self.log.info("Asana task %s not found for deletion.", task_id)
             return {}
 
     def find_task(self, params: dict) -> list:
@@ -264,5 +264,5 @@ class AsanaHook(BaseHook):
             response = self.client.projects.delete(project_id)  # pylint: disable=no-member
             return response
         except NotFoundError:
-            self.log.info(f"Asana project {project_id} not found for deletion.")
+            self.log.info("Asana project %s not found for deletion.", project_id)
             return {}

@@ -61,7 +61,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": ["1"]}
-        self.assertEqual(expected_merged_params, hook._merge_create_task_parameters("test", {}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_create_task_parameters("test", {})  # pylint: disable=W0212
+        )
 
     def test_merge_create_task_parameters_specified_project(self):
         """
@@ -74,7 +76,8 @@ class TestAsanaHook(unittest.TestCase):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": ["1", "2"]}
         self.assertEqual(
-            expected_merged_params, hook._merge_create_task_parameters("test", {"projects": ["1", "2"]})
+            expected_merged_params,
+            hook._merge_create_task_parameters("test", {"projects": ["1", "2"]}),  # pylint: disable=W0212
         )
 
     def test_merge_create_task_parameters_specified_workspace(self):
@@ -87,7 +90,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "workspace": "1"}
-        self.assertEqual(expected_merged_params, hook._merge_create_task_parameters("test", {}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_create_task_parameters("test", {})  # pylint: disable=W0212
+        )
 
     def test_merge_create_task_parameters_default_project_overrides_default_workspace(self):
         """
@@ -103,7 +108,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": ["1"]}
-        self.assertEqual(expected_merged_params, hook._merge_create_task_parameters("test", {}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_create_task_parameters("test", {})  # pylint: disable=W0212
+        )
 
     def test_merge_create_task_parameters_specified_project_overrides_default_workspace(self):
         """
@@ -120,7 +127,8 @@ class TestAsanaHook(unittest.TestCase):
             hook = AsanaHook()
         expected_merged_params = {"name": "test", "projects": ["2"]}
         self.assertEqual(
-            expected_merged_params, hook._merge_create_task_parameters("test", {"projects": ["2"]})
+            expected_merged_params,
+            hook._merge_create_task_parameters("test", {"projects": ["2"]}),  # pylint: disable=W0212
         )
 
     def test_merge_find_task_parameters_default_project(self):
@@ -133,7 +141,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "1"}
-        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_find_task_parameters({})  # pylint: disable=W0212
+        )
 
     def test_merge_find_task_parameters_specified_project(self):
         """
@@ -145,7 +155,10 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "2"}
-        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({"project": "2"}))
+        self.assertEqual(
+            expected_merged_params,
+            hook._merge_find_task_parameters({"project": "2"}),  # pylint: disable=W0212
+        )
 
     def test_merge_find_task_parameters_default_workspace(self):
         """
@@ -157,7 +170,10 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"workspace": "1", "assignee": "1"}
-        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({"assignee": "1"}))
+        self.assertEqual(
+            expected_merged_params,
+            hook._merge_find_task_parameters({"assignee": "1"}),  # pylint: disable=W0212
+        )
 
     def test_merge_find_task_parameters_specified_workspace(self):
         """
@@ -170,7 +186,8 @@ class TestAsanaHook(unittest.TestCase):
             hook = AsanaHook()
         expected_merged_params = {"workspace": "2", "assignee": "1"}
         self.assertEqual(
-            expected_merged_params, hook._merge_find_task_parameters({"workspace": "2", "assignee": "1"})
+            expected_merged_params,
+            hook._merge_find_task_parameters({"workspace": "2", "assignee": "1"}),  # pylint: disable=W0212
         )
 
     def test_merge_find_task_parameters_default_project_overrides_workspace(self):
@@ -186,7 +203,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "1"}
-        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_find_task_parameters({})  # pylint: disable=W0212
+        )
 
     def test_merge_find_task_parameters_specified_project_overrides_workspace(self):
         """
@@ -202,7 +221,10 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"project": "2"}
-        self.assertEqual(expected_merged_params, hook._merge_find_task_parameters({"project": "2"}))
+        self.assertEqual(
+            expected_merged_params,
+            hook._merge_find_task_parameters({"project": "2"}),  # pylint: disable=W0212
+        )
 
     def test_merge_project_parameters(self):
         """
@@ -213,7 +235,9 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"workspace": "1", "name": "name"}
-        self.assertEqual(expected_merged_params, hook._merge_project_parameters({"name": "name"}))
+        self.assertEqual(
+            expected_merged_params, hook._merge_project_parameters({"name": "name"})  # pylint: disable=W0212
+        )
 
     def test_merge_project_parameters_override(self):
         """
@@ -224,4 +248,7 @@ class TestAsanaHook(unittest.TestCase):
         with patch.object(AsanaHook, "get_connection", return_value=conn):
             hook = AsanaHook()
         expected_merged_params = {"workspace": "2"}
-        self.assertEqual(expected_merged_params, hook._merge_project_parameters({"workspace": "2"}))
+        self.assertEqual(
+            expected_merged_params,
+            hook._merge_project_parameters({"workspace": "2"}),  # pylint: disable=W0212
+        )
