@@ -15,6 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from inspect import signature
 from typing import Iterable, Mapping, Optional, Union
 
 from airflow.models import BaseOperator
@@ -83,9 +84,14 @@ class OracleOperator(BaseOperator):
                 "rows": cur.fetchall(),
             }
 
-        return hook.run(
-            self.sql,
-            autocommit=self.autocommit,
-            parameters=self.parameters,
-            handler=handler
-        )
+        kwargs = {
+            "autocommit": self.autocommit,
+            "parameters": self.parameters,
+        }
+
+        # For backwards compatibility, if the hook implementation does not
+        # support the "handler" keyword argument, we omit it.
+        if "handler" in signature(hook.run).parameters:
+            kwargs["handler"] = handler
+
+        return hook.run(self.sql, **kwargs)

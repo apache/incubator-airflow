@@ -23,7 +23,7 @@ from airflow.providers.oracle.operators.oracle import OracleOperator
 
 
 class TestOracleOperator(unittest.TestCase):
-    @mock.patch.object(OracleHook, 'run')
+    @mock.patch.object(OracleHook, 'run', autospec=OracleHook.run)
     def test_execute(self, mock_run):
         sql = 'SELECT * FROM test_table'
         oracle_conn_id = 'oracle_default'
@@ -41,6 +41,6 @@ class TestOracleOperator(unittest.TestCase):
         )
         result = operator.execute(context=context)
         assert len(mock_run.mock_calls) == 1
-        assert mock_run.mock_calls[0].args == (sql, )
+        assert mock_run.mock_calls[0].args[1] == sql
         assert mock_run.mock_calls[0].kwargs["autocommit"] is autocommit
         assert mock_run.mock_calls[0].kwargs["parameters"] is parameters
