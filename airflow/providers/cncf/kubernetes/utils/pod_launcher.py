@@ -129,7 +129,7 @@ class PodLauncher(LoggingMixin):
                     raise AirflowException("Pod took too long to start")
                 time.sleep(1)
 
-    def monitor_pod(self, pod: V1Pod, get_logs: bool) -> Tuple[State, Optional[str]]:
+    def monitor_pod(self, pod: V1Pod, get_logs: bool) -> Tuple[State, V1Pod, Optional[str]]:
         """
         Monitors a pod and returns the final state
 
@@ -167,7 +167,8 @@ class PodLauncher(LoggingMixin):
         while self.pod_is_running(pod):
             self.log.info('Pod %s has state %s', pod.metadata.name, State.RUNNING)
             time.sleep(2)
-        return self._task_status(self.read_pod(pod)), result
+        pod_info = self.read_pod(pod)
+        return self._task_status(pod_info), pod_info, result
 
     def parse_log_line(self, line: str) -> Tuple[str, str]:
         """

@@ -360,25 +360,21 @@ class KubernetesPodOperator(BaseOperator):  # pylint: disable=too-many-instance-
 
             if len(pod_list.items) == 1:
                 try_numbers_match = self._try_numbers_match(context, pod_list.items[0])
-                final_state, result = self.handle_pod_overlap(
+                final_state, pod_info, result = self.handle_pod_overlap(
                     labels, try_numbers_match, launcher, pod_list.items[0]
                 )
             else:
                 self.log.info("creating pod with labels %s and launcher %s", labels, launcher)
-                final_state, _, result = self.create_new_pod_for_operator(labels, launcher)
+                final_state, _, pod_info, result = self.create_new_pod_for_operator(labels, launcher)
             if final_state != State.SUCCESS:
-                if self.is_delete_operator_pod:
-                    status = final_state
-                else:
-                    status = self.client.read_namespaced_pod(self.pod.metadata.name, self.namespace)
-                raise AirflowException(f'Pod {self.pod.metadata.name} returned a failure: {status}')
+                raise AirflowException(f'Pod {self.pod.metadata.name} returned a failure: {pod_info}')
             return result
         except AirflowException as ex:
             raise AirflowException(f'Pod Launching failed: {ex}')
 
     def handle_pod_overlap(
         self, labels: dict, try_numbers_match: bool, launcher: Any, pod: k8s.V1Pod
-    ) -> Tuple[State, Optional[str]]:
+    ) -> Tuple[State, k8s.V1Pod, Optional[str]]:
         """
 
         In cases where the Scheduler restarts while a KubernetesPodOperator task is running,
@@ -403,12 +399,12 @@ class KubernetesPodOperator(BaseOperator):  # pylint: disable=too-many-instance-
             log_line += " Will attach to this pod and monitor instead of starting new one"
             self.log.info(log_line)
             self.pod = pod
-            final_state, result = self.monitor_launched_pod(launcher, pod)
+            final_state, pod_info, result = self.monitor_launched_pod(launcher, pod)
         else:
             log_line += f"creating pod with labels {labels} and launcher {launcher}"
             self.log.info(log_line)
-            final_state, _, result = self.create_new_pod_for_operator(labels, launcher)
-        return final_state, result
+            final_state, _, pod_info, result = self.create_new_pod_for_operator(labels, launcher)
+        return final_state, pod_info, result
 
     @staticmethod
     def _get_pod_identifying_label_string(labels) -> str:
@@ -521,17 +517,17 @@ class KubernetesPodOperator(BaseOperator):  # pylint: disable=too-many-instance-
         self.log.debug("Starting pod:\n%s", yaml.safe_dump(self.pod.to_dict()))
         try:
             launcher.start_pod(self.pod, startup_timeout=self.startup_timeout_seconds)
-            final_state, result = launcher.monitor_pod(pod=self.pod, get_logs=self.get_logs)
+            final_state, pod_info, result = launcher.monitor_pod(pod=self.pod, get_logs=self.get_logs)
         except AirflowException:
             if self.log_events_on_failure:
-                for event in launcher.read_pod_events(self.pod).items:
+                for event in pod_info.items:
                     self.log.error("Pod Event: %s - %s", event.reason, event.message)
             raise
         finally:
             if self.is_delete_operator_pod:
                 self.log.debug("Deleting pod for task %s", self.task_id)
                 launcher.delete_pod(self.pod)
-        return final_state, self.pod, result
+        return final_state, self.pod, pod_info, result
 
     def patch_already_checked(self, pod: k8s.V1Pod):
         """Add an "already tried annotation to ensure we only retry once"""
@@ -548,17 +544,17 @@ class KubernetesPodOperator(BaseOperator):  # pylint: disable=too-many-instance-
         :return:
         """
         try:
-            (final_state, result) = launcher.monitor_pod(pod, get_logs=self.get_logs)
+            (final_state, pod_info, result) = launcher.monitor_pod(pod, get_logs=self.get_logs)
         finally:
             if self.is_delete_operator_pod:
                 launcher.delete_pod(pod)
         if final_state != State.SUCCESS:
             if self.log_events_on_failure:
-                for event in launcher.read_pod_events(pod).items:
+                for event in pod_info.items:
                     self.log.error("Pod Event: %s - %s", event.reason, event.message)
             self.patch_already_checked(self.pod)
             raise AirflowException(f'Pod returned a failure: {final_state}')
-        return final_state, result
+        return final_state, pod_info, result
 
     def on_kill(self) -> None:
         if self.pod:
