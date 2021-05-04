@@ -53,7 +53,6 @@ from airflow.models.serialized_dag import SerializedDagModel
 from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.plugins_manager import AirflowPlugin, EntryPointSource
-from airflow.providers_manager import ProvidersManager
 from airflow.security import permissions
 from airflow.ti_deps.dependencies_states import QUEUEABLE_STATES, RUNNABLE_STATES
 from airflow.utils import dates, timezone
@@ -391,8 +390,6 @@ class TestProvidersView(TestBase):
     def test_should_list_providers_on_page_with_details(self):
         resp = self.client.get('/providers')
         self.check_content_in_response("Providers", resp)
-        self.check_content_in_response("source", resp)
-        self.check_content_in_response("<em>$PLUGINS_FOLDER/</em>test_plugin.py", resp)
 
     def test_endpoint_should_not_be_unauthenticated(self):
         self.logout()
