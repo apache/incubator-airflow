@@ -3183,7 +3183,7 @@ class ProvidersView(AirflowBaseView):
 
     default_view = 'list'
 
-    class_permission_name = permissions.RESOURCE_PROVIDERS
+    class_permission_name = permissions.RESOURCE_PROVIDER
 
     method_permission_name = {
         'list': 'read',
@@ -3197,7 +3197,7 @@ class ProvidersView(AirflowBaseView):
     @expose('/providers')
     @auth.has_access(
         [
-            (permissions.ACTION_CAN_READ, permissions.RESOURCE_PLUGIN),
+            (permissions.ACTION_CAN_READ, permissions.RESOURCE_PROVIDER),
         ]
     )
     def list(self):
@@ -3206,9 +3206,10 @@ class ProvidersView(AirflowBaseView):
 
         providers = []
         for pi in providers_manager.providers.values():
+            provider_info = pi[1]
             provider_data = {
-                "package_name": pi[1]["package-name"],
-                "description": self.clean_description(pi[1]["description"]),
+                "package_name": provider_info["package-name"],
+                "description": self._clean_description(provider_info["description"]),
                 "version": pi[0],
             }
             providers.append(provider_data)
@@ -3222,7 +3223,7 @@ class ProvidersView(AirflowBaseView):
             doc_url=doc_url,
         )
 
-    def clean_description(self, description):
+    def _clean_description(self, description):
         cd = re.sub("[`_]", "", description.strip(" \n.").strip("\""))
         cd = re.sub("<", "<a href=\"", cd)
         cd = re.sub(">", "\">[site]<a/>", cd)

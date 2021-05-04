@@ -380,8 +380,6 @@ class TestProvidersView(TestBase):
     def test_should_list_providers_on_page_with_details(self):
         resp = self.client.get('/providers')
         self.check_content_in_response("Providers", resp)
-        self.check_content_in_response("source", resp)
-        self.check_content_in_response("<em>$PLUGINS_FOLDER/</em>test_plugin.py", resp)
 
     def test_endpoint_should_not_be_unauthenticated(self):
         self.logout()
