@@ -139,7 +139,28 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
             self.password = password
             self.schema = schema
             self.port = port
-            self.extra = extra
+            self.extra = self.validate_extra(extra)
+
+    @staticmethod
+    def validate_extra(extra: str) -> Optional[str]:
+        """
+        `extra` parameter is a JSON encoded object. This methods validates that the data
+        adheres to this specification.
+
+        :param extra: The extra section of the .
+        :type extra: str
+
+        :return str
+        """
+        if not extra:
+            return None
+
+        try:
+            json.loads(extra)
+        except JSONDecodeError as e:
+            raise AirflowException("The `extra` section of a Connection must be valid JSON") from e
+
+        return extra
 
     def parse_from_uri(self, **uri):
         """This method is deprecated. Please use uri parameter in constructor."""

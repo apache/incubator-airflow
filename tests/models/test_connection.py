@@ -72,18 +72,20 @@ class TestConnection(unittest.TestCase):
         is set to a non-base64-encoded string and the extra is stored without
         encryption.
         """
-        test_connection = Connection(extra='testextra')
+        extra = '{"test":"extra"}'
+        test_connection = Connection(extra=extra)
         assert not test_connection.is_extra_encrypted
-        assert test_connection.extra == 'testextra'
+        assert test_connection.extra == extra
 
     @conf_vars({('core', 'fernet_key'): Fernet.generate_key().decode()})
     def test_connection_extra_with_encryption(self):
         """
         Tests extras on a new connection with encryption.
         """
-        test_connection = Connection(extra='testextra')
+        extra = '{"test":"extra"}'
+        test_connection = Connection(extra=extra)
         assert test_connection.is_extra_encrypted
-        assert test_connection.extra == 'testextra'
+        assert test_connection.extra == extra
 
     def test_connection_extra_with_encryption_rotate_fernet_key(self):
         """
@@ -92,22 +94,23 @@ class TestConnection(unittest.TestCase):
         key1 = Fernet.generate_key()
         key2 = Fernet.generate_key()
 
+        extra = '{"test":"extra"}'
         with conf_vars({('core', 'fernet_key'): key1.decode()}):
-            test_connection = Connection(extra='testextra')
+            test_connection = Connection(extra=extra)
             assert test_connection.is_extra_encrypted
-            assert test_connection.extra == 'testextra'
-            assert Fernet(key1).decrypt(test_connection._extra.encode()) == b'testextra'
+            assert test_connection.extra == extra
+            assert Fernet(key1).decrypt(test_connection._extra.encode()) == bytes(extra, 'utf-8')
 
         # Test decrypt of old value with new key
         with conf_vars({('core', 'fernet_key'): ','.join([key2.decode(), key1.decode()])}):
             crypto._fernet = None
-            assert test_connection.extra == 'testextra'
+            assert test_connection.extra == extra
 
             # Test decrypt of new value with new key
             test_connection.rotate_fernet_key()
             assert test_connection.is_extra_encrypted
-            assert test_connection.extra == 'testextra'
-            assert Fernet(key2).decrypt(test_connection._extra.encode()) == b'testextra'
+            assert test_connection.extra == extra
+            assert Fernet(key2).decrypt(test_connection._extra.encode()) == bytes(extra, 'utf-8')
 
     test_from_uri_params = [
         UriTestCaseConfig(
@@ -601,3 +604,15 @@ class TestConnection(unittest.TestCase):
             ),
         ):
             Connection(conn_id="TEST_ID", uri="mysql://", schema="AAA")
+
+    def test_connection_extra_validation_raises(self):
+        with self.assertRaises(AirflowException):
+            Connection(extra='extra')
+
+    def test_connection_extra_validation_allows_valid_json(self):
+        con = Connection(extra='{"foo":"bar", "baz":"taz"}')
+        assert con.extra_dejson == {'foo': 'bar', 'baz': "taz"}
+
+    def test_connection_extra_validation_allows_none(self):
+        con = Connection(extra=None)
+        assert con.extra_dejson == {}
