@@ -62,14 +62,19 @@ class Trigger(Base):
 
     @classmethod
     @provide_session
-    def runnable(cls, session=None):
+    def runnable(
+        cls, session=None, partition_id=None, partition_total=None
+    ):  # pylint: disable=unused-argument
         """
-        Returns all "runnable" triggers.
+        Returns all "runnable" triggers, optionally filtering down by partition.
 
-        This is currently the entire set of triggers, but this is here to
-        provide a place to add consistent-hash-sharding selection in future.
+        This is a pretty basic partition algorithm for now, but it does the job.
         """
-        return session.query(cls).all()
+        # Efficient short-circuit for "no partitioning"
+        if partition_id is None:
+            return session.query(cls).all()
+        # Split into modulo-based partitions
+        raise NotImplementedError()
 
     @classmethod
     def from_object(cls, trigger: BaseTrigger):

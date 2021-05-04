@@ -16,8 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from airflow.triggers.temporal import DateTimeTrigger
 from airflow.sensors.base import BaseSensorOperator
+from airflow.triggers.temporal import DateTimeTrigger
 from airflow.utils import timezone
 
 
@@ -38,7 +38,15 @@ class TimeSensor(BaseSensorOperator):
         return timezone.make_naive(timezone.utcnow(), self.dag.timezone).time() > self.target_time
 
 
-class AsyncTimeSensor(BaseSensorOperator):
+class TimeSensorAsync(BaseSensorOperator):
+    """
+    Waits until the specified time of the day, freeing up a worker slot while
+    it is waiting.
+
+    :param target_time: time after which the job succeeds
+    :type target_time: datetime.time
+    """
+
     @apply_defaults
     def __init__(self, *, target_time, **kwargs):
         super().__init__(**kwargs)
@@ -48,6 +56,6 @@ class AsyncTimeSensor(BaseSensorOperator):
         self.log.info("Kicking off trigger deferral")
         self.defer(trigger=DateTimeTrigger(moment=self.target_time), method_name="execute_complete")
 
-    def execute_complete(self, context, event=None):
+    def execute_complete(self, context, event=None):  # pylint: disable=unused-argument
+        """Callback for when the trigger fires - returns immediately."""
         self.log.info("Trigger complete, sensor complete")
-        return
