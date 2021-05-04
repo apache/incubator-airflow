@@ -18,8 +18,9 @@
 
 import json
 import warnings
+from inspect import signature
 from json import JSONDecodeError
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
 from sqlalchemy import Boolean, Column, Integer, String, Text
@@ -379,7 +380,12 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
         raise AirflowNotFoundException(f"The conn_id `{conn_id}` isn't defined")
 
     @classmethod
-    def from_dict(cls, conn_dict: Dict) -> 'Connection':
+    def get_connection_parameter_names(cls) -> Set[str]:
+        """Returns :class:`airflow.models.connection.Connection` constructor parameters."""
+        return {k for k in signature(cls.__init__).parameters.keys() if k != "self"}
+
+    @classmethod
+    def from_dict(cls, conn_id: str, conn_dict: Dict) -> 'Connection':
         """
         Create a connection from a dictionary.
 
@@ -387,4 +393,35 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
             e.g., {'conn_id': '', 'conn_type': '', 'login': '', ...}
         :return: connection
         """
+        if not isinstance(conn_dict, dict):
+            raise AirflowException(
+                f"Unexpected conn_dict type: {type(conn_dict)}. "
+                "The connection must be defined as a dictionary."
+            )
+
+        connection_parameter_names = cls.get_connection_parameter_names() | {"extra_dejson"}
+        current_keys = set(conn_dict.keys())
+        if not current_keys.issubset(connection_parameter_names):
+            illegal_keys = current_keys - connection_parameter_names
+            illegal_keys_list = ", ".join(sorted(illegal_keys))
+            raise AirflowException(
+                f"The object have illegal keys: {illegal_keys_list}. "
+                f"The dictionary can only contain the following keys: {connection_parameter_names}"
+            )
+        if "extra" in conn_dict and "extra_dejson" in conn_dict:
+            raise AirflowException(
+                "The extra and extra_dejson parameters are mutually exclusive. "
+                "Please provide only one parameter."
+            )
+        if "extra_dejson" in conn_dict:
+            conn_dict["extra"] = json.dumps(conn_dict["extra_dejson"])
+            del conn_dict["extra_dejson"]
+
+        if "conn_id" in current_keys and conn_id != conn_dict["conn_id"]:
+            raise AirflowException(
+                f"Mismatch conn_id. "
+                f"The dictionary key has the conn_dict: {conn_dict['conn_id']}. "
+                f"The item has the conn_dict: {conn_id}."
+            )
+
         return Connection(**conn_dict)

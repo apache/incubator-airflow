@@ -16,11 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Objects relating to retrieving connections and variables from local file"""
-import json
 import logging
 import warnings
-from inspect import signature
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from airflow.exceptions import AirflowException, ConnectionNotUnique
 from airflow.secrets.base_secrets import BaseSecretsBackend
@@ -31,51 +29,6 @@ log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from airflow.models.connection import Connection
-
-
-def get_connection_parameter_names() -> Set[str]:
-    """Returns :class:`airflow.models.connection.Connection` constructor parameters."""
-    from airflow.models.connection import Connection
-
-    return {k for k in signature(Connection.__init__).parameters.keys() if k != "self"}
-
-
-def _create_connection(conn_id: str, value: Any):
-    """Creates a connection based on a URL or JSON object."""
-    from airflow.models.connection import Connection
-
-    if isinstance(value, str):
-        return Connection(conn_id=conn_id, uri=value)
-    if isinstance(value, dict):
-        connection_parameter_names = get_connection_parameter_names() | {"extra_dejson"}
-        current_keys = set(value.keys())
-        if not current_keys.issubset(connection_parameter_names):
-            illegal_keys = current_keys - connection_parameter_names
-            illegal_keys_list = ", ".join(illegal_keys)
-            raise AirflowException(
-                f"The object have illegal keys: {illegal_keys_list}. "
-                f"The dictionary can only contain the following keys: {connection_parameter_names}"
-            )
-        if "extra" in value and "extra_dejson" in value:
-            raise AirflowException(
-                "The extra and extra_dejson parameters are mutually exclusive. "
-                "Please provide only one parameter."
-            )
-        if "extra_dejson" in value:
-            value["extra"] = json.dumps(value["extra_dejson"])
-            del value["extra_dejson"]
-
-        if "conn_id" in current_keys and conn_id != value["conn_id"]:
-            raise AirflowException(
-                f"Mismatch conn_id. "
-                f"The dictionary key has the value: {value['conn_id']}. "
-                f"The item has the value: {conn_id}."
-            )
-        value["conn_id"] = conn_id
-        return Connection(**value)
-    raise AirflowException(
-        f"Unexpected value type: {type(value)}. The connection can only be defined using a string or object."
-    )
 
 
 def load_variables(file_path: str) -> Dict[str, str]:
@@ -118,6 +71,8 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
     :return: A dictionary where the key contains a connection ID and the value contains the connection.
     :rtype: Dict[str, airflow.models.connection.Connection]
     """
+    from airflow.models.connection import Connection
+
     log.debug("Loading connection")
 
     secrets: Dict[str, Any] = _parse_file(file_path)
@@ -128,9 +83,19 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
                 raise ConnectionNotUnique(f"Found multiple values for {key} in {file_path}.")
 
             for secret_value in secret_values:
-                connection_by_conn_id[key] = _create_connection(key, secret_value)
+                if isinstance(secret_value, dict):
+                    connection_by_conn_id[key] = Connection.from_dict(key, secret_value)
+                elif isinstance(secret_value, str):
+                    connection_by_conn_id[key] = Connection(uri=secret_value)
+                else:
+                    raise AirflowException(f"Unexpected value type: {type(secret_value)}.")
         else:
-            connection_by_conn_id[key] = _create_connection(key, secret_values)
+            if isinstance(secret_values, dict):
+                connection_by_conn_id[key] = Connection.from_dict(key, secret_values)
+            elif isinstance(secret_values, str):
+                connection_by_conn_id[key] = Connection(uri=secret_values)
+            else:
+                raise AirflowException(f"Unexpected value type: {type(secret_values)}.")
 
     num_conn = len(connection_by_conn_id)
     log.debug("Loaded %d connections", num_conn)

@@ -256,7 +256,7 @@ def _import_helper(filepath):
                 continue
 
             conn_dict['conn_id'] = conn_id
-            connection = Connection.from_dict(conn_dict)
+            connection = Connection.from_dict(conn_id, conn_dict)
 
             session.add(connection)
             session.commit()

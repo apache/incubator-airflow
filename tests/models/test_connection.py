@@ -649,3 +649,122 @@ class TestConnection(unittest.TestCase):
             ]
         finally:
             session.rollback()
+
+    def test_connection_from_dict_with_valid_parameters(self):
+        conn_dict = {
+            'conn_id': 'test-conn-id',
+            'conn_type': 'login',
+            'login': 'test-login',
+            'password': 'test-password',
+            'host': 'test-host',
+            'extra': 'test-extra',
+            'schema': 'test-schema',
+        }
+        expected_conn = Connection(
+            conn_id='test-conn-id',
+            conn_type='login',
+            login='test-login',
+            password='test-password',
+            host='test-host',
+            extra='test-extra',
+            schema='test-schema',
+        )
+        actual_conn = Connection.from_dict(conn_dict['conn_id'], conn_dict)
+        assert actual_conn.get_uri() == expected_conn.get_uri()
+
+    def test_connection_from_dict_with_extra_dejson(self):
+        conn_dict = {
+            'conn_id': 'test-conn-id',
+            'conn_type': 'login',
+            'login': 'test-login',
+            'password': 'test-password',
+            'host': 'test-host',
+            'extra_dejson': 'test-extra-dejson',
+            'schema': 'test-schema',
+        }
+        expected_conn = Connection(
+            conn_id='test-conn-id',
+            conn_type='login',
+            login='test-login',
+            password='test-password',
+            host='test-host',
+            extra='"test-extra-dejson"',
+            schema='test-schema',
+        )
+        actual_conn = Connection.from_dict(conn_dict['conn_id'], conn_dict)
+        assert actual_conn.get_uri() == expected_conn.get_uri()
+
+    def test_connection_from_dict_with_extra_and_extra_dejson(self):
+        conn_dict = {
+            'conn_id': 'test-conn-id',
+            'conn_type': 'login',
+            'login': 'test-login',
+            'password': 'test-password',
+            'host': 'test-host',
+            'extra': 'test-extra',
+            'extra_dejson': 'test-extra-dejson',
+            'schema': 'test-schema',
+        }
+
+        with pytest.raises(
+            AirflowException,
+            match=re.escape(
+                "The extra and extra_dejson parameters are mutually exclusive. "
+                "Please provide only one parameter."
+            ),
+        ):
+            Connection.from_dict(conn_dict['conn_id'], conn_dict)
+
+    def test_connection_from_dict_with_mismatch_conn_id(self):
+        conn_dict = {
+            'conn_id': 'test-conn-id',
+            'conn_type': 'login',
+            'login': 'test-login',
+            'password': 'test-password',
+            'host': 'test-host',
+            'extra': 'test-extra',
+            'schema': 'test-schema',
+        }
+
+        with pytest.raises(
+            AirflowException,
+            match=re.escape(
+                "Mismatch conn_id. "
+                "The dictionary key has the conn_dict: test-conn-id. "
+                "The item has the conn_dict: mismatch-conn-id."
+            ),
+        ):
+            Connection.from_dict('mismatch-conn-id', conn_dict)
+
+    def test_connection_from_dict_with_illegal_key_names(self):
+        conn_dict = {
+            'conn_id': 'test-conn-id',
+            'conn_type': 'login',
+            'login': 'test-login',
+            'password': 'test-password',
+            'host': 'test-host',
+            'extra': 'test-extra',
+            'schema': 'test-schema',
+            'illegal1': 'test-content',
+            'illegal2': 'test-content',
+        }
+
+        with pytest.raises(
+            AirflowException,
+            match=(
+                "The object have illegal keys: illegal1, illegal2. "
+                "The dictionary can only contain the following keys: .*"
+            ),
+        ):
+            Connection.from_dict('mismatch-conn-id', conn_dict)
+
+    def test_connection_from_dict_with_non_dict_type(self):
+        value = 'not-a-dict'
+
+        with pytest.raises(
+            AirflowException,
+            match=(
+                "Unexpected conn_dict type: <class 'str'>. " "The connection must be defined as a dictionary."
+            ),
+        ):
+            Connection.from_dict('conn-id', value)
