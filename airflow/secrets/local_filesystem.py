@@ -79,23 +79,24 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
     connection_by_conn_id = {}
     for key, secret_values in list(secrets.items()):
         if isinstance(secret_values, list):
-            if len(secret_values) > 1:
+            # secret_values is either length 0, 1 or 2+ -- only length 1 is valid
+            if not secret_values:
+                log.debug("No secret values for %s", key)
+                continue
+
+            if len(secret_values) >= 2:
                 raise ConnectionNotUnique(f"Found multiple values for {key} in {file_path}.")
 
-            for secret_value in secret_values:
-                if isinstance(secret_value, dict):
-                    connection_by_conn_id[key] = Connection.from_dict(key, secret_value)
-                elif isinstance(secret_value, str):
-                    connection_by_conn_id[key] = Connection(uri=secret_value)
-                else:
-                    raise AirflowException(f"Unexpected value type: {type(secret_value)}.")
+            # secret_values must be of length one, so unpack it
+            elif secret_values:
+                secret_values = secret_values[0]
+
+        if isinstance(secret_values, dict):
+            connection_by_conn_id[key] = Connection.from_dict(key, secret_values)
+        elif isinstance(secret_values, str):
+            connection_by_conn_id[key] = Connection(uri=secret_values)
         else:
-            if isinstance(secret_values, dict):
-                connection_by_conn_id[key] = Connection.from_dict(key, secret_values)
-            elif isinstance(secret_values, str):
-                connection_by_conn_id[key] = Connection(uri=secret_values)
-            else:
-                raise AirflowException(f"Unexpected value type: {type(secret_values)}.")
+            raise AirflowException(f"Unexpected value type: {type(secret_values)}.")
 
     num_conn = len(connection_by_conn_id)
     log.debug("Loaded %d connections", num_conn)
