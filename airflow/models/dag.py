@@ -44,6 +44,7 @@ from typing import (
     cast,
 )
 
+import cached_property
 import jinja2
 import pendulum
 from croniter import croniter
@@ -65,6 +66,9 @@ from airflow.models.dagrun import DagRun
 from airflow.models.taskinstance import Context, TaskInstance, clear_task_instances
 from airflow.security import permissions
 from airflow.stats import Stats
+from airflow.timetables.base import TimeRestriction, TimeTable
+from airflow.timetables.interval import CronDataIntervalTimeTable, DeltaDataIntervalTimeTable
+from airflow.timetables.simple import NullTimeTable, OnceTimeTable
 from airflow.utils import timezone
 from airflow.utils.dates import cron_presets, date_range as utils_date_range
 from airflow.utils.file import correct_maybe_zipped
@@ -533,94 +537,54 @@ class DAG(LoggingMixin):
             "automated" DagRuns for this dag (scheduled or backfill, but not
             manual)
         """
-        if (
-            self.schedule_interval == "@once" and date_last_automated_dagrun
-        ) or self.schedule_interval is None:
-            # Manual trigger, or already created the run for @once, can short circuit
+        # XXX: The timezone.coerce_datetime calls in this function should not
+        # be necessary since the function annotation suggests it only accepts
+        # pendulum.DateTime, and someone is passing datetime.datetime into this
+        # function. We should fix whatever is doing that.
+        if self.is_subdag:
             return (None, None)
-        next_execution_date = self.next_dagrun_after_date(date_last_automated_dagrun)
-
-        if next_execution_date is None:
+        time_table: TimeTable = self.time_table
+        restriction = self._format_time_restriction()
+        if not self.catchup:
+            restriction = time_table.cancel_catchup(restriction)
+        next_info = time_table.next_dagrun_info(
+            timezone.coerce_datetime(date_last_automated_dagrun),
+            restriction,
+        )
+        if next_info is None:
             return (None, None)
+        return (next_info.data_interval.start, next_info.run_after)
 
-        if self.schedule_interval == "@once":
-            # For "@once" it can be created "now"
-            return (next_execution_date, next_execution_date)
-
-        return (next_execution_date, self.following_schedule(next_execution_date))
-
-    def next_dagrun_after_date(self, date_last_automated_dagrun: Optional[pendulum.DateTime]):
-        """
-        Get the next execution date after the given ``date_last_automated_dagrun``, according to
-        schedule_interval, start_date, end_date etc.  This doesn't check max active run or any other
-        "concurrency" type limits, it only performs calculations based on the various date and interval fields
-        of this dag and it's tasks.
-
-        :param date_last_automated_dagrun: The execution_date of the last scheduler or
-            backfill triggered run for this dag
-        :type date_last_automated_dagrun: pendulum.Pendulum
-        """
-        if not self.schedule_interval or self.is_subdag:
-            return None
-
-        # don't schedule @once again
-        if self.schedule_interval == '@once' and date_last_automated_dagrun:
-            return None
-
-        # don't do scheduler catchup for dag's that don't have dag.catchup = True
-        if not (self.catchup or self.schedule_interval == '@once'):
-            # The logic is that we move start_date up until
-            # one period before, so that timezone.utcnow() is AFTER
-            # the period end, and the job can be created...
-            now = timezone.utcnow()
-            next_start = self.following_schedule(now)
-            last_start = self.previous_schedule(now)
-            if next_start <= now or isinstance(self.schedule_interval, timedelta):
-                new_start = last_start
-            else:
-                new_start = self.previous_schedule(last_start)
-
-            if self.start_date:
-                if new_start >= self.start_date:
-                    self.start_date = new_start
-            else:
-                self.start_date = new_start
-
-        next_run_date = None
-        if not date_last_automated_dagrun:
-            # First run
-            task_start_dates = [t.start_date for t in self.tasks if t.start_date]
-            if task_start_dates:
-                next_run_date = self.normalize_schedule(min(task_start_dates))
-                self.log.debug("Next run date based on tasks %s", next_run_date)
+    def _format_time_restriction(self) -> TimeRestriction:
+        start_dates = [t.start_date for t in self.tasks if t.start_date]
+        if self.start_date is not None:
+            start_dates.append(self.start_date)
+        if start_dates:
+            restriction_earliest = timezone.coerce_datetime(min(start_dates))
         else:
-            next_run_date = self.following_schedule(date_last_automated_dagrun)
+            restriction_earliest = None
+        end_dates = [t.end_date for t in self.tasks if t.end_date]
+        if self.end_date is not None:
+            end_dates.append(self.end_date)
+        if end_dates:
+            restriction_latest = timezone.coerce_datetime(max(end_dates))
+        else:
+            restriction_latest = None
+        return TimeRestriction(restriction_earliest, restriction_latest)
 
-        if date_last_automated_dagrun and next_run_date:
-            while next_run_date <= date_last_automated_dagrun:
-                next_run_date = self.following_schedule(next_run_date)
-
-        # don't ever schedule prior to the dag's start_date
-        if self.start_date:
-            next_run_date = self.start_date if not next_run_date else max(next_run_date, self.start_date)
-            if next_run_date == self.start_date:
-                next_run_date = self.normalize_schedule(self.start_date)
-
-            self.log.debug("Dag start date: %s. Next run date: %s", self.start_date, next_run_date)
-
-        # Don't schedule a dag beyond its end_date (as specified by the dag param)
-        if next_run_date and self.end_date and next_run_date > self.end_date:
-            return None
-
-        # Don't schedule a dag beyond its end_date (as specified by the task params)
-        # Get the min task end date, which may come from the dag.default_args
-        task_end_dates = [t.end_date for t in self.tasks if t.end_date]
-        if task_end_dates and next_run_date:
-            min_task_end_date = min(task_end_dates)
-            if next_run_date > min_task_end_date:
-                return None
-
-        return next_run_date
+    @cached_property.cached_property
+    def time_table(self) -> TimeTable:
+        interval = self.schedule_interval
+        if interval is None:
+            return NullTimeTable()
+        if interval == "@once":
+            return OnceTimeTable()
+        if isinstance(interval, (timedelta, relativedelta)):
+            return DeltaDataIntervalTimeTable(interval)
+        if not isinstance(interval, str):
+            raise ValueError(f"Impossible schedule_interval type {interval!r}")
+        tz = pendulum.timezone(self.timezone.name)
+        return CronDataIntervalTimeTable(interval, tz)
 
     def get_run_dates(self, start_date, end_date=None):
         """

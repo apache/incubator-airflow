@@ -2314,7 +2314,7 @@ class TestSchedulerJob(unittest.TestCase):
         dag = self.dagbag.get_dag(dag_id)
         dr = dag.create_dagrun(
             run_type=DagRunType.SCHEDULED,
-            execution_date=dag.next_dagrun_after_date(None),
+            execution_date=dag.next_dagrun_info(None)[0],
             state=State.RUNNING,
         )
 

@@ -17,6 +17,7 @@
 # under the License.
 #
 import datetime as dt
+from typing import Optional, Union
 
 import pendulum
 from pendulum.datetime import DateTime
@@ -171,3 +172,14 @@ def parse(string: str, timezone=None) -> DateTime:
     :param string: time string
     """
     return pendulum.parse(string, tz=timezone or TIMEZONE, strict=False)  # type: ignore
+
+
+def coerce_datetime(v: Union[None, dt.datetime, DateTime]) -> Optional[DateTime]:
+    """Convert whatever is passed in to ``pendulum.DateTime``."""
+    if v is None:
+        return None
+    if isinstance(v, DateTime):
+        return v
+    if v.tzinfo is None:
+        v = make_aware(v)
+    return pendulum.instance(v)
