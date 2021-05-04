@@ -17,6 +17,7 @@
 import unittest
 from unittest import mock
 
+import pendulum
 import pytest
 from kubernetes.client.rest import ApiException
 from requests.exceptions import BaseHTTPError
@@ -198,12 +199,15 @@ class TestPodLauncher(unittest.TestCase):
             self.pod_launcher.read_pod(mock.sentinel)
 
     def test_parse_log_line(self):
-        timestamp, message = self.pod_launcher.parse_log_line(
-            '2020-10-08T14:16:17.793417674Z Valid message\n'
-        )
+        log_message = "This should return no timestamp"
+        timestamp, line = self.pod_launcher.parse_log_line(log_message)
+        self.assertEqual(timestamp, None)
+        self.assertEqual(line, log_message)
 
-        assert timestamp == '2020-10-08T14:16:17.793417674Z'
-        assert message == 'Valid message'
+        real_timestamp = "2020-10-08T14:16:17.793417674Z"
+        timestamp, line = self.pod_launcher.parse_log_line(" ".join([real_timestamp, log_message]))
+        self.assertEqual(timestamp, pendulum.parse(real_timestamp))
+        self.assertEqual(line, log_message)
 
         with pytest.raises(Exception):
             self.pod_launcher.parse_log_line('2020-10-08T14:16:17.793417674ZInvalidmessage\n')
