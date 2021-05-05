@@ -117,7 +117,6 @@ class MongoToS3Operator(BaseOperator):
                 mongo_collection=self.mongo_collection,
                 query=cast(dict, self.mongo_query),
                 mongo_db=self.mongo_db,
-                allowDiskUse=self.allow_disk_use,
             )
 
         # Performs transform then stringifies the docs results into json format
