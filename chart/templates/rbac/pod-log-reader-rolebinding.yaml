@@ -32,6 +32,7 @@ metadata:
   name: {{ .Release.Name }}-pod-log-reader-rolebinding
   labels:
     tier: airflow
+    component: pod-log-reader
     release: {{ .Release.Name }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: {{ .Release.Service }}
