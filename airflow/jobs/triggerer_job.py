@@ -25,7 +25,7 @@ import sys
 import threading
 import time
 from collections import deque
-from typing import Deque, Dict, Tuple, Type, TypedDict
+from typing import Deque, Dict, List, Optional, Set, Tuple, Type, TypedDict
 
 from airflow.jobs.base_job import BaseJob
 from airflow.models.trigger import Trigger
@@ -47,8 +47,31 @@ class TriggererJob(BaseJob, LoggingMixin):
 
     __mapper_args__ = {'polymorphic_identity': 'TriggererJob'}
 
-    def __init__(self, *args, **kwargs):
+    partition_ids: Optional[List[int]] = None
+    partition_total: Optional[int] = None
+
+    def __init__(self, partition=None, *args, **kwargs):
+        # Call superclass
         super().__init__(*args, **kwargs)
+        # Decode partition information
+        self.partition_ids, self.partition_total = None, None
+        if partition:  # pylint: disable=too-many-nested-blocks
+            try:
+                # The partition format is "1,2,3/10" where the numbers before
+                # the slash are the partitions we represent, and the number
+                # after is the total number. Most users will just have a single
+                # partition number, e.g. "2/10".
+                ids_str, total_str = partition.split("/", 1)
+                self.partition_total = int(total_str)
+                self.partition_ids = []
+                for id_str in ids_str.split(","):
+                    id_number = int(id_str)
+                    if id_number <= 0 or id_number > self.partition_total:
+                        raise ValueError(f"Partition number {id_number} is impossible")
+                    self.partition_ids.append(id_number)
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid partition specification: {partition}")
+        # Set up runner async thread
         self.runner = TriggerRunner()
 
     def register_signals(self) -> None:
@@ -63,7 +86,16 @@ class TriggererJob(BaseJob, LoggingMixin):
         sys.exit(os.EX_OK)
 
     def _execute(self) -> None:
-        self.log.info("Starting the triggerer")
+        if self.partition_ids is None:
+            self.log.info("Starting the triggerer")
+        elif len(self.partition_ids) == 1:
+            self.log.info(
+                "Starting the triggerer (partition %s of %s)", self.partition_ids[0], self.partition_total
+            )
+        else:
+            self.log.info(
+                "Starting the triggerer (partitions %s of %s)", self.partition_ids, self.partition_total
+            )
 
         try:
             self.runner.start()
@@ -99,8 +131,10 @@ class TriggererJob(BaseJob, LoggingMixin):
         adds them to our runner, and then removes ones from it we no longer
         need.
         """
-        requested_triggers = Trigger.runnable()
-        self.runner.update_triggers({x.id: x for x in requested_triggers})
+        requested_trigger_ids = Trigger.runnable_ids(
+            partition_ids=self.partition_ids, partition_total=self.partition_total
+        )
+        self.runner.update_triggers(set(requested_trigger_ids))
 
     def _handle_events(self):
         """
@@ -195,6 +229,7 @@ class TriggerRunner(threading.Thread, LoggingMixin):
             # Every minute, log status
             if time.time() - last_status >= 60:
                 self.log.info("%i triggers currently running", len(self.triggers))
+                last_status = time.time()
         # Wait for watchdog to complete
         await watchdog
 
@@ -301,21 +336,26 @@ class TriggerRunner(threading.Thread, LoggingMixin):
 
     # Main-thread sync API
 
-    def update_triggers(self, requested_triggers: Dict[int, Trigger]):
+    def update_triggers(self, requested_trigger_ids: Set[int]):
         """
         Called from the main thread to request that we update what
         triggers we're running.
         """
-        requested_trigger_ids = set(requested_triggers.keys())
         current_trigger_ids = set(self.triggers.keys())
         # Work out the two difference sets
         new_trigger_ids = requested_trigger_ids.difference(current_trigger_ids)
         old_trigger_ids = current_trigger_ids.difference(requested_trigger_ids)
+        # Bulk-fetch new trigger records
+        new_triggers = Trigger.bulk_fetch(new_trigger_ids)
         # Add in new triggers
         for new_id in new_trigger_ids:
+            # Check it didn't vanish in the meantime
+            if new_id not in new_triggers:
+                self.log.warning("Trigger ID %s disappeared before we could start it", new_id)
+                continue
             # Resolve trigger record into an actual class instance
-            trigger_class = self.get_trigger_by_classpath(requested_triggers[new_id].classpath)
-            self.to_create.append((new_id, trigger_class(**requested_triggers[new_id].kwargs)))
+            trigger_class = self.get_trigger_by_classpath(new_triggers[new_id].classpath)
+            self.to_create.append((new_id, trigger_class(**new_triggers[new_id].kwargs)))
         # Remove old triggers
         for old_id in old_trigger_ids:
             self.to_delete.append(old_id)

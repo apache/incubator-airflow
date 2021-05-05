@@ -141,7 +141,7 @@ High Availability
 
 Triggers are designed from the ground-up to be highly-available and run on multiple hosts at once; if you want to run a highly-available setup, simply run multiple copies of ``triggerer`` on multiple hosts. Much like ``scheduler``, they will automatically co-exist with correct locking and HA.
 
-Depending on how much work the triggers are doing, you can fit approximately thousands of triggers on a single ``triggerer`` host. By default, every ``triggerer`` will run all triggers; if you want, you can choose to *partition* (*shard*) your triggers by passing ``--partition`` to the ``triggerer`` process.
+Depending on how much work the triggers are doing, you can fit thousands to tens of thousands of triggers on a single ``triggerer`` host. By default, every ``triggerer`` will run all triggers; if you want, you can choose to *partition* (*shard*) your triggers by passing ``--partition`` to the ``triggerer`` process.
 
 For example, if you want to run two partitions with two triggerers per partition, you would run these four processes on different hosts:
 
@@ -158,7 +158,7 @@ Under the hood, Airflow uses consistent hashing to evenly distribute triggers ac
 * ``airflow triggerer --partition=2/3``
 * ``airflow triggerer --partition=3/3``
 
-Note that every extra ``triggerer`` you run will result in an extra persistent connection to your database; this is generally the only scaling limit the triggerers have.
+Note that every extra ``triggerer`` you run will result in an extra persistent connection to your database.
 
 
 Smart Sensors

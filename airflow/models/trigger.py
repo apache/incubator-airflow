@@ -15,8 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+import jump
 from sqlalchemy import BigInteger, Column, String
 
 from airflow.models.base import Base
@@ -61,19 +62,30 @@ class Trigger(Base):
 
     @classmethod
     @provide_session
-    def runnable(
-        cls, session=None, partition_id=None, partition_total=None
+    def runnable_ids(
+        cls, session=None, partition_ids: Optional[List[int]] = None, partition_total: Optional[int] = None
     ):  # pylint: disable=unused-argument
         """
-        Returns all "runnable" triggers, optionally filtering down by partition.
+        Returns all "runnable" triggers IDs, optionally filtering down by partition.
 
         This is a pretty basic partition algorithm for now, but it does the job.
         """
-        # Efficient short-circuit for "no partitioning"
-        if partition_id is None:
-            return session.query(cls).all()
-        # Split into modulo-based partitions
-        raise NotImplementedError()
+        # NOTE: It's possible in future that we could try and pre-calculate a
+        # partition entry in a large virtual ring (e.g. 4096 buckets) and store
+        # that in the DB for more direct querying, but for now Jump is fast
+        # enough of a hash to do this all locally - about 0.1s per million hashes
+
+        # Retrieve all IDs first
+        trigger_ids = [row[0] for row in session.query(cls.id).all()]
+
+        # Short-circuit for "no partitioning"
+        if partition_ids is None or partition_total is None:
+            return trigger_ids
+
+        # Go through and map each trigger ID to a partition number,
+        # using a quick, consistent hash (Jump), keeping only the ones that
+        # match one of our partition IDs
+        return [x for x in trigger_ids if jump.hash(x, partition_total) + 1 in partition_ids]
 
     @classmethod
     def from_object(cls, trigger: BaseTrigger):
@@ -83,6 +95,15 @@ class Trigger(Base):
         """
         classpath, kwargs = trigger.serialize()
         return cls(classpath=classpath, kwargs=kwargs)
+
+    @classmethod
+    @provide_session
+    def bulk_fetch(cls, ids: List[int], session=None) -> Dict[int, "Trigger"]:
+        """
+        Fetches all of the Triggers by ID and returns a dict mapping
+        ID -> Trigger instance
+        """
+        return {obj.id: obj for obj in session.query(cls).filter(cls.id.in_(ids)).all()}
 
     @classmethod
     @provide_session
