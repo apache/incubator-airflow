@@ -25,7 +25,7 @@ import sys
 import threading
 import time
 from collections import deque
-from typing import Deque, Dict, Tuple, Type
+from typing import Deque, Dict, Tuple, Type, TypedDict
 
 from airflow.jobs.base_job import BaseJob
 from airflow.models.trigger import Trigger
@@ -113,6 +113,24 @@ class TriggererJob(BaseJob, LoggingMixin):
             # Tell the model to wake up its tasks
             Trigger.submit_event(trigger_id=trigger_id, event=event)
 
+    def _handle_failed_triggers(self):
+        """
+        Handles "failed" triggers - ones that errored or exited before they
+        sent an event. Task Instances that depend on them need failing.
+        """
+        while self.runner.failed_triggers:
+            # Tell the model to fail this trigger's deps
+            trigger_id = self.runner.failed_triggers.popleft()
+            Trigger.submit_failure(trigger_id=trigger_id)
+
+
+class TriggerDetails(TypedDict):
+    """Type class for the trigger details dictionary"""
+
+    task: asyncio.Task
+    name: str
+    events: int
+
 
 class TriggerRunner(threading.Thread, LoggingMixin):
     """
@@ -124,8 +142,8 @@ class TriggerRunner(threading.Thread, LoggingMixin):
     done via Deques.
     """
 
-    # Maps trigger IDs to their running tasks
-    triggers: Dict[int, asyncio.Task]
+    # Maps trigger IDs to their running tasks and other info
+    triggers: Dict[int, TriggerDetails]
 
     # Cache for looking up triggers by classpath
     trigger_cache: Dict[str, Type[BaseTrigger]]
@@ -138,6 +156,9 @@ class TriggerRunner(threading.Thread, LoggingMixin):
 
     # Outbound queue of events
     events: Deque[Tuple[int, TriggerEvent]]
+
+    # Outbound queue of failed triggers
+    failed_triggers: Deque[int]
 
     # Should-we-stop flag
     stop: bool = False
@@ -159,32 +180,82 @@ class TriggerRunner(threading.Thread, LoggingMixin):
         """
         Main (asynchronous) logic loop.
 
-        The loop in here runs trigger addition/deletion, and then coexists
-        with the triggers running in separate tasks via its sleep.
+        The loop in here runs trigger addition/deletion/cleanup. Actual
+        triggers run in their own separate coroutines.
         """
         watchdog = create_task(self.block_watchdog())
+        last_status = time.time()
         while not self.stop:
-            # If we have any triggers to create, do so
-            while self.to_create:
-                trigger_id, trigger_instance = self.to_create.popleft()
-                if trigger_id not in self.triggers:
-                    self.triggers[trigger_id] = create_task(self.run_trigger(trigger_id, trigger_instance))
-                else:
-                    print("TRIGGER INSERTED TWICE")
-            # If we have any triggers to delete, do it
-            while self.to_delete:
-                trigger_id = self.to_delete.popleft()
-                if trigger_id in self.triggers:
-                    # We only delete if it did not exit already
-                    self.triggers[trigger_id].cancel()
-            # Clean up any exited triggers
-            for trigger_id, task in list(self.triggers.items()):
-                if task.done():
-                    del self.triggers[trigger_id]
+            # Run core logic
+            await self.create_triggers()
+            await self.delete_triggers()
+            await self.cleanup_finished_triggers()
             # Sleep for a bit
             await asyncio.sleep(1)
+            # Every minute, log status
+            if time.time() - last_status >= 60:
+                self.log.info("%i triggers currently running", len(self.triggers))
         # Wait for watchdog to complete
         await watchdog
+
+    async def create_triggers(self):
+        """
+        Drain the to_create queue and create all triggers that have been
+        requested in the DB that we don't yet have.
+        """
+        while self.to_create:
+            trigger_id, trigger_instance = self.to_create.popleft()
+            if trigger_id not in self.triggers:
+                self.triggers[trigger_id] = {
+                    "task": create_task(self.run_trigger(trigger_id, trigger_instance)),
+                    "name": f"{trigger_instance!r} (ID {trigger_id})",
+                    "events": 0,
+                }
+            else:
+                self.log.warning("Trigger %s had insertion attempted twice", trigger_id)
+
+    async def delete_triggers(self):
+        """
+        Drain the to_delete queue and ensure all triggers that are not in the
+        DB are cancelled, so the cleanup job deletes them.
+        """
+        while self.to_delete:
+            trigger_id = self.to_delete.popleft()
+            if trigger_id in self.triggers:
+                # We only delete if it did not exit already
+                self.triggers[trigger_id]["task"].cancel()
+
+    async def cleanup_finished_triggers(self):
+        """
+        Go through all trigger tasks (coroutines) and clean up entries for
+        ones that have exited, optionally warning users if the exit was
+        not normal.
+        """
+        for trigger_id, details in list(self.triggers.items()):
+            if details["task"].done():
+                # Check to see if it exited for good reasons
+                try:
+                    result = details["task"].result()
+                except (asyncio.CancelledError, SystemExit, KeyboardInterrupt):
+                    # These are "expected" exceptions
+                    pass
+                except BaseException as e:
+                    # This is potentially bad, so log it.
+                    self.log.error("Trigger %s exited with error %s", details["name"], e)
+                # See if they foolishly returned a TriggerEvent
+                if isinstance(result, TriggerEvent):
+                    self.log.error(
+                        "Trigger %s returned a TriggerEvent rather than yielding it", details["name"]
+                    )
+                # See if this exited without sending an event, in which case
+                # any task instances depending on it need to be failed
+                if details["events"] == 0:
+                    self.log.error(
+                        "Trigger %s exited without sending an event. Dependent tasks will be failed.",
+                        details["name"],
+                    )
+                    self.failed_triggers.append(trigger_id)
+                del self.triggers[trigger_id]
 
     async def block_watchdog(self):
         """
@@ -219,10 +290,11 @@ class TriggerRunner(threading.Thread, LoggingMixin):
         Wrapper which runs an actual trigger (they are async generators)
         and pushes their events into our outbound event deque.
         """
-        print(f"Running trigger {trigger}")
+        self.log.info("Trigger %s starting", self.triggers[trigger_id]['name'])
         try:
             async for event in trigger.run():
-                print(f"Trigger {trigger_id} fired: {event}")
+                self.log.info("Trigger %s fired: %s", self.triggers[trigger_id]['name'], event)
+                self.triggers[trigger_id]["events"] += 1
                 self.events.append((trigger_id, event))
         finally:  # CancelledError will get thrown in when we're stopped
             trigger.cleanup()
@@ -244,11 +316,9 @@ class TriggerRunner(threading.Thread, LoggingMixin):
             # Resolve trigger record into an actual class instance
             trigger_class = self.get_trigger_by_classpath(requested_triggers[new_id].classpath)
             self.to_create.append((new_id, trigger_class(**requested_triggers[new_id].kwargs)))
-            print(f"Requesting to add {new_id}")
         # Remove old triggers
         for old_id in old_trigger_ids:
             self.to_delete.append(old_id)
-            print(f"Requesting to delete {old_id}")
 
     def get_trigger_by_classpath(self, classpath: str) -> Type[BaseTrigger]:
         """

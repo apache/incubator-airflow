@@ -95,14 +95,15 @@ Writing Triggers
 A Trigger is written as a class that inherits from ``BaseTrigger``, and implements three methods:
 
 * ``__init__``, to receive arguments from Operators instantiating it
-* ``run``, an asynchronous method that runs its logic and uses ``yield`` to send one or more of ``TriggerEvent``
-* ``serialize``, which returns the information needed to re-construct this trigger, as a tuple of the classpath, and keyword arguments to pass to ``__init__``.
+* ``run``, an asynchronous method that runs its logic and yields one or more ``TriggerEvent`` instances as an asynchronous generator
+* ``serialize``, which returns the information needed to re-construct this trigger, as a tuple of the classpath, and keyword arguments to pass to ``__init__``
 
 There's also some design constraints to be aware of:
 
 * The ``run`` method *must be asynchronous* (using Python's asyncio), and correctly ``await`` whenever it does a blocking operation.
-* It *must be able to run in parallel* with other copies of itself, both from multiple tasks depending on the same kind of Trigger as well as high-availability scenarios.
-* When events are emitted, they *must* contain a payload that can be used to deduplicate events if the trigger is being run in multiple places.
+* ``run`` must ``yield`` its TriggerEvents, not return them. If it returns before yielding at least once event, Airflow will consider this an error and fail any Task Instances waiting on it. If it throws an exception, Airflow will also fail any dependent task instances.
+* A Trigger *must be able to run in parallel* with other copies of itself, both from multiple tasks depending on the same kind of Trigger as well as high-availability scenarios.
+* When events are emitted, they *must* contain a payload that can be used to deduplicate events if the trigger is being run in multiple places or multiple times.
 * A trigger may be suddenly removed from one process and started on a new one (if partitions are being changed, or a deployment is happening). You may provide an optional ``cleanup`` method that gets called when this happens.
 
 Here's the structure of a basic Trigger::

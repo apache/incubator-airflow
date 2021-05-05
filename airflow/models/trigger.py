@@ -18,7 +18,6 @@ import datetime
 from typing import Any, Dict, Optional
 
 from sqlalchemy import BigInteger, Column, String
-from sqlalchemy.orm.exc import NoResultFound
 
 from airflow.models.base import Base
 from airflow.models.taskinstance import TaskInstance
@@ -114,16 +113,9 @@ class Trigger(Base):
         Takes an event from an instance of itself, and triggers all dependent
         tasks to resume.
         """
-        try:
-            trigger = session.query(cls).filter(cls.id == trigger_id).one()
-        except NoResultFound:
-            # The trigger has already been deleted
-            # (another process did this, and then cleanup ran, already)
-            return
-        for task_instance in trigger.dependent_tasks(session=session):
-            # Check the task is in the "deferred" state (in case of race conditions)
-            if task_instance.state != State.DEFERRED:
-                return
+        for task_instance in session.query(TaskInstance).filter(
+            TaskInstance.trigger_id == trigger_id, TaskInstance.state == State.DEFERRED
+        ):
             # Add the event's payload into the kwargs for the task
             next_kwargs = task_instance.next_kwargs or {}
             next_kwargs["event"] = event.payload
@@ -133,16 +125,13 @@ class Trigger(Base):
             # Finally, mark it as scheduled so it gets re-queued
             task_instance.state = State.SCHEDULED
 
-    # Instance methods
-
+    @classmethod
     @provide_session
-    def dependent_tasks(self, session):
+    def submit_failure(cls, trigger_id, session=None):
         """
-        Returns all tasks that are currently dependent on this trigger
-        (i.e. they are in the DEFERRED state).
+        Called when a trigger has failed unexpectedtly, and we need to mark
+        everything that depended on it as failed.
         """
-        return (
-            session.query(TaskInstance)
-            .filter(TaskInstance.trigger_id == self.id, TaskInstance.state == State.DEFERRED)
-            .all()
-        )
+        session.query(TaskInstance).filter(
+            TaskInstance.trigger_id == trigger_id, TaskInstance.state == State.DEFERRED
+        ).update({TaskInstance.state == State.FAILED})
