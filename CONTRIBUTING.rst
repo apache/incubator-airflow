@@ -45,5 +45,6 @@ As you begin the contribution process, here are some additional resources you ma
 - `On Airflow's Official Docker Images <https://github.com/apache/airflow/blob/master/IMAGES.rst>`_
 - `Static Code Checks <https://github.com/apache/airflow/blob/master/STATIC_CODE_CHECKS.rst>`_
 - `How to Become an Airflow Committer or PMC <https://github.com/apache/airflow/blob/master/COMMITTERS.rst>`_
+- `How to Create a Community Provider <https://github.com/apache/airflow/blob/932f8c2e9360de6371031d4d71df00867a2776e6/docs/apache-airflow-providers/howto/create-update-providers.rst>`_
 
 Off you go! We sincerely appreciate your time and effort to make Apache Airflow the absolute best it can be. Every single PR counts. If you have trouble or want to seek help from the community as you navigate the contribution process, don't hesitate to join the `Dev List <https://airflow.apache.org/community/>`__ or the #airflow-how-to-pr channel in the `Apache  irflow Slack <https://apache-airflow-slack.herokuapp.com/>`__.
