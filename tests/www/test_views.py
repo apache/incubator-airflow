@@ -388,13 +388,33 @@ class TestPluginView(TestBase):
 
 class TestProvidersView(TestBase):
     def test_should_list_providers_on_page_with_details(self):
-        resp = self.client.get('/providers')
+        self.create_user_and_login(
+            username='should_list_providers_on_page_with_details_user',
+            role_name='should_list_providers_on_page_with_details_role',
+            perms=[
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE),
+                (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_ADMIN_MENU),
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_PROVIDER)
+            ],
+        )
+        resp = self.client.get('/providers', follow_redirects=True)
         self.check_content_in_response("Providers", resp)
 
     def test_endpoint_should_not_be_unauthenticated(self):
         self.logout()
         resp = self.client.get('/providers', follow_redirects=True)
         self.check_content_in_response("Sign In - Airflow", resp)
+
+    def test_user_without_authorization_should_not_see_page(self):
+        self.create_user_and_login(
+            username='user_without_authorization_should_not_see_page_user',
+            role_name='user_without_authorization_should_not_see_page_role',
+            perms=[
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE),
+            ],
+        )
+        resp = self.client.get('/providers', follow_redirects=True)
+        self.check_content_not_in_response("Providers", resp)
 
 
 class TestPoolModelView(TestBase):
