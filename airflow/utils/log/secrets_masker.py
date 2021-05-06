@@ -181,7 +181,7 @@ class SecretsMasker(logging.Filter):
         """
         Redact an any secrets found in ``item``, if it is a string.
 
-        If ``name`` is given, and it's a "sensitve" name (see
+        If ``name`` is given, and it's a "sensitive" name (see
         :func:`should_hide_value_for_key`) then all string values in the item
         is redacted.
 
@@ -195,7 +195,7 @@ class SecretsMasker(logging.Filter):
             if self.replacer:
                 # We can't replace specific values, but the key-based redacting
                 # can still happen, so we can't short-circuit, we need to walk
-                # the strucutre.
+                # the structure.
                 return self.replacer.sub('***', item)
             return item
         elif isinstance(item, (tuple, set)):

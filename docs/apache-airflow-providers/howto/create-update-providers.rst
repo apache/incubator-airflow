@@ -34,7 +34,7 @@ help you to set up tests and other dependencies.
 
 First, you need to set up your local development environment. See `Contribution Quick Start <https://github.com/apache/airflow/blob/master/CONTRIBUTING.rst>`_
 if you did not set up your local environment yet. We recommend using ``breeze`` to develop locally. This way you
-easily be able to have an environment more similar to the one executed by Github CI workflow.
+easily be able to have an environment more similar to the one executed by GitHub CI workflow.
 
   .. code-block:: bash
 
@@ -55,7 +55,7 @@ Most likely you have developed a version of the provider using some local custom
 transfer this code to the Airflow project. Below is described all the initial code structure that
 the provider may need. Understand that not all providers will need all the components described in this structure.
 If you still have doubts about building your provider, we recommend that you read the initial provider guide and
-open a issue on Github so the community can help you.
+open a issue on GitHub so the community can help you.
 
   .. code-block:: bash
 

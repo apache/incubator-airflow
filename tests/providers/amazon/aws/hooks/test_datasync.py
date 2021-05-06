@@ -43,7 +43,7 @@ class TestAwsDataSyncHook(unittest.TestCase):
 # mock_get_conn. We then override it to just return the locally created self.client instead of
 # the one created by the AWS self.hook.
 
-# Unfortunately this means we cant test the get_conn method - which is why we have it in a
+# Unfortunately this means we can't test the get_conn method - which is why we have it in a
 # separate class above
 
 

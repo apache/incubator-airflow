@@ -283,7 +283,7 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
 
     external_executor_id = Column(String(ID_LEN, **COLLATION_ARGS))
     # If adding new fields here then remember to add them to
-    # refresh_from_db() or they wont display in the UI correctly
+    # refresh_from_db() or they won't display in the UI correctly
 
     __table_args__ = (
         Index('ti_dag_state', dag_id, state),

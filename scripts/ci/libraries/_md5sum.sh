@@ -17,7 +17,7 @@
 # under the License.
 
 #
-# Verifies if stored md5sum of the file changed since the last tme ot was checked
+# Verifies if stored md5sum of the file changed since the last time it was checked
 # The md5sum files are stored in .build directory - you can delete this directory
 # If you want to rebuild everything from the scratch
 #
@@ -55,7 +55,7 @@ function md5sum::calculate_file_md5sum {
 
 #
 # Moves md5sum file from it's temporary location in CACHE_TMP_FILE_DIR to
-# BUILD_CACHE_DIR - thus updating stored MD5 sum fo the file
+# BUILD_CACHE_DIR - thus updating stored MD5 sum for the file
 #
 function md5sum::move_file_md5sum {
     local FILE="${1}"

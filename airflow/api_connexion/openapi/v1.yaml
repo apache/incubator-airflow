@@ -1881,7 +1881,7 @@ components:
       description: Log of user operations via CLI or Web UI.
       properties:
         event_log_id:
-          description: The evnet log ID
+          description: The event log ID
           type: integer
           readOnly: true
         when:

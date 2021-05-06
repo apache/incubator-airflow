@@ -90,8 +90,8 @@ class TestReapProcessGroup(unittest.TestCase):
             assert not psutil.pid_exists(child_pid.value)
         finally:
             try:
-                os.kill(parent_pid.value, signal.SIGKILL)  # terminate doesnt work here
-                os.kill(child_pid.value, signal.SIGKILL)  # terminate doesnt work here
+                os.kill(parent_pid.value, signal.SIGKILL)  # terminate doesn't work here
+                os.kill(child_pid.value, signal.SIGKILL)  # terminate doesn't work here
             except OSError:
                 pass
 

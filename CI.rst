@@ -106,7 +106,7 @@ Default is the GitHub Package Registry one. The Pull Request forks have no acces
 auto-detect the registry used when they wait for the images.
 
 You can interact with the GitHub Registry images (pull/push) via `Breeze <BREEZE.rst>`_  - you can
-pass ``--github-registry`` flag wih  either ``docker.pkg.github.com`` for GitHub Package Registry or
+pass ``--github-registry`` flag with either ``docker.pkg.github.com`` for GitHub Package Registry or
 ``ghcr.io`` for GitHub Container Registry and pull/push operations will be performed using the chosen
 registry, using appropriate naming convention. This allows building and pushing the images locally by
 committers who have access to push/pull those images.

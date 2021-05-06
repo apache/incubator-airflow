@@ -285,7 +285,7 @@ def main(num_runs, repeat, pre_create_dag_runs, executor_class, dag_ids):
 
     times = []
 
-    # Need a lambda to refer to the _latest_ value fo scheduler_job, not just
+    # Need a lambda to refer to the _latest_ value for scheduler_job, not just
     # the initial one
     code_to_test = lambda: scheduler_job.run()  # pylint: disable=unnecessary-lambda
 

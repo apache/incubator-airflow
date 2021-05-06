@@ -292,7 +292,7 @@ function push_pull_remove_images::push_prod_images() {
 }
 
 # waits for an image to be available in GitHub Packages. Should be run with `set +e`
-# the buid automatically determines which registry to use based one the images available
+# the build automatically determines which registry to use based one the images available
 function push_pull_remove_images::check_for_image_in_github_packages() {
     local github_repository_lowercase
     github_repository_lowercase="$(echo "${GITHUB_REPOSITORY}" |tr '[:upper:]' '[:lower:]')"

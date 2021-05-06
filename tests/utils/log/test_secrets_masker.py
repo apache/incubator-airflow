@@ -163,7 +163,7 @@ class TestSecretsMasker:
             # We don't mask dict _keys_.
             ({"secret", "other"}, None, {"data": {"secret": "secret"}}, {"data": {"secret": "***"}}),
             (
-                # Since this is a sensitve name, all the values should be redacted!
+                # Since this is a sensitive name, all the values should be redacted!
                 {"secret"},
                 "api_key",
                 {"other": "innoent", "nested": ["x", "y"]},

@@ -31,7 +31,7 @@ function parameters::save_to_file() {
 # parameters:
 # $1 - name of the variable
 # $2 - descriptive name of the parameter
-# $3 - flag used to set te parameter
+# $3 - flag used to set the parameter
 function parameters::check_allowed_param() {
     _VARIABLE_NAME="${1}"
     _VARIABLE_DESCRIPTIVE_NAME="${2}"

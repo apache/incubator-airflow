@@ -161,7 +161,7 @@ def get_all_dag_task_query(dag, session, state, task_ids, confirmed_dates):
 
 def get_subdag_runs(dag, session, state, task_ids, commit, confirmed_dates):
     """Go through subdag operators and create dag runs. We will only work
-    within the scope of the subdag. We wont propagate to the parent dag,
+    within the scope of the subdag. We won't propagate to the parent dag,
     but we will propagate from parent to subdag.
     """
     dags = [dag]

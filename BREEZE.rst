@@ -390,7 +390,7 @@ tmux session with four panes:
 
    - one to monitor the scheduler,
    - one for the webserver,
-   - one monitors and compiles Javascript files,
+   - one monitors and compiles JavaScript files,
    - one with a shell for additional commands.
 
 Managing Prod environment (with ``--production-image`` flag):

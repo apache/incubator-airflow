@@ -719,7 +719,7 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
                 # "almost never happen" since the DagParsingStat object is
                 # small, and in async mode this stat is not actually _required_
                 # for normal operation (It only drives "max runs")
-                self.log.debug("BlockingIOError recived trying to send DagParsingStat, ignoring")
+                self.log.debug("BlockingIOError received trying to send DagParsingStat, ignoring")
 
             if max_runs_reached:
                 self.log.info(
