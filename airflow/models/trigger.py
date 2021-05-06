@@ -56,6 +56,7 @@ class Trigger(Base):
     def __init__(
         self, classpath: str, kwargs: Dict[str, Any], created_date: Optional[datetime.datetime] = None
     ):
+        super().__init__()
         self.classpath = classpath
         self.kwargs = kwargs
         self.created_date = created_date or timezone.utcnow()
@@ -155,4 +156,4 @@ class Trigger(Base):
         """
         session.query(TaskInstance).filter(
             TaskInstance.trigger_id == trigger_id, TaskInstance.state == State.DEFERRED
-        ).update({TaskInstance.state == State.FAILED})
+        ).update({TaskInstance.state: State.FAILED})

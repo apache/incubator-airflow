@@ -89,3 +89,8 @@ class TriggerEvent:
 
     def __repr__(self) -> str:
         return f"TriggerEvent<{self.payload!r}>"
+
+    def __eq__(self, other):
+        if isinstance(other, TriggerEvent):
+            return other.payload == self.payload
+        return False

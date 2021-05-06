@@ -1,3 +1,4 @@
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -14,6 +15,28 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import unittest
+from unittest import mock
 
-from airflow.triggers.base import BaseTrigger  # noqa
-from airflow.triggers.temporal import DateTimeTrigger, TimeDeltaTrigger  # noqa
+from airflow.cli import cli_parser
+from airflow.cli.commands import triggerer_command
+
+
+class TestTriggererCommand(unittest.TestCase):
+    """
+    Tests the CLI interface and that it correctly calls the TriggererJob
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parser = cli_parser.get_parser()
+
+    @mock.patch("airflow.cli.commands.triggerer_command.TriggererJob")
+    def test_partition_argument(
+        self,
+        mock_scheduler_job,
+    ):
+        """Ensure that the partition argument is passed correctly"""
+        args = self.parser.parse_args(['triggerer', '--partition=1/2'])
+        triggerer_command.triggerer(args)
+        mock_scheduler_job.assert_called_once_with(partition="1/2")

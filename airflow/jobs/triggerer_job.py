@@ -119,13 +119,15 @@ class TriggererJob(BaseJob, LoggingMixin):
             # Clean out unused triggers
             Trigger.clean_unused()
             # Load/delete triggers
-            self._load_new_triggers()
+            self.load_triggers()
             # Handle events
-            self._handle_events()
+            self.handle_events()
+            # Handle failed triggers
+            self.handle_failed_triggers()
             # Idle sleep
             time.sleep(1)
 
-    def _load_new_triggers(self):
+    def load_triggers(self):
         """
         Queries the database to get the triggers we're supposed to be running,
         adds them to our runner, and then removes ones from it we no longer
@@ -136,7 +138,7 @@ class TriggererJob(BaseJob, LoggingMixin):
         )
         self.runner.update_triggers(set(requested_trigger_ids))
 
-    def _handle_events(self):
+    def handle_events(self):
         """
         Handles outbound events from triggers - dispatching them into the Trigger
         model where they are then pushed into the relevant task instances.
@@ -147,7 +149,7 @@ class TriggererJob(BaseJob, LoggingMixin):
             # Tell the model to wake up its tasks
             Trigger.submit_event(trigger_id=trigger_id, event=event)
 
-    def _handle_failed_triggers(self):
+    def handle_failed_triggers(self):
         """
         Handles "failed" triggers - ones that errored or exited before they
         sent an event. Task Instances that depend on them need failing.
@@ -204,6 +206,7 @@ class TriggerRunner(threading.Thread, LoggingMixin):
         self.to_create = deque()
         self.to_delete = deque()
         self.events = deque()
+        self.failed_triggers = deque()
 
     def run(self):
         """Sync entrypoint - just runs arun in an async loop."""
@@ -266,22 +269,26 @@ class TriggerRunner(threading.Thread, LoggingMixin):
         ones that have exited, optionally warning users if the exit was
         not normal.
         """
-        for trigger_id, details in list(self.triggers.items()):
+        for trigger_id, details in list(self.triggers.items()):  # pylint: disable=too-many-nested-blocks
             if details["task"].done():
                 # Check to see if it exited for good reasons
                 try:
                     result = details["task"].result()
                 except (asyncio.CancelledError, SystemExit, KeyboardInterrupt):
-                    # These are "expected" exceptions
-                    pass
+                    # These are "expected" exceptions and we stop processing here
+                    # If we don't, then the system requesting a trigger be removed -
+                    # which turns into CancelledError - results in a failure.
+                    del self.triggers[trigger_id]
+                    continue
                 except BaseException as e:
                     # This is potentially bad, so log it.
                     self.log.error("Trigger %s exited with error %s", details["name"], e)
-                # See if they foolishly returned a TriggerEvent
-                if isinstance(result, TriggerEvent):
-                    self.log.error(
-                        "Trigger %s returned a TriggerEvent rather than yielding it", details["name"]
-                    )
+                else:
+                    # See if they foolishly returned a TriggerEvent
+                    if isinstance(result, TriggerEvent):
+                        self.log.error(
+                            "Trigger %s returned a TriggerEvent rather than yielding it", details["name"]
+                        )
                 # See if this exited without sending an event, in which case
                 # any task instances depending on it need to be failed
                 if details["events"] == 0:
