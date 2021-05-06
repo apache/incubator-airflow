@@ -16,8 +16,10 @@
 # specific language governing permissions and limitations
 # under the License.
 import inspect
+import logging
 import os
 import pickle
+import subprocess
 import sys
 import types
 import warnings
@@ -35,6 +37,8 @@ from airflow.utils.decorators import apply_defaults
 from airflow.utils.operator_helpers import determine_kwargs
 from airflow.utils.process_utils import execute_in_subprocess
 from airflow.utils.python_virtualenv import prepare_virtualenv, write_python_script
+
+log = logging.getLogger(__name__)
 
 
 def task(python_callable: Optional[Callable] = None, multiple_outputs: Optional[bool] = None, **kwargs):
@@ -215,7 +219,146 @@ class ShortCircuitOperator(PythonOperator, SkipMixin):
         self.log.info("Done.")
 
 
-class PythonVirtualenvOperator(PythonOperator):
+class _BaseExternalPythonOperator(PythonOperator):
+    BASE_SERIALIZABLE_CONTEXT_KEYS = {
+        'ds_nodash',
+        'inlets',
+        'next_ds',
+        'next_ds_nodash',
+        'outlets',
+        'params',
+        'prev_ds',
+        'prev_ds_nodash',
+        'run_id',
+        'task_instance_key_str',
+        'test_mode',
+        'tomorrow_ds',
+        'tomorrow_ds_nodash',
+        'ts',
+        'ts_nodash',
+        'ts_nodash_with_tz',
+        'yesterday_ds',
+        'yesterday_ds_nodash',
+    }
+    PENDULUM_SERIALIZABLE_CONTEXT_KEYS = {
+        'execution_date',
+        'next_execution_date',
+        'prev_execution_date',
+        'prev_execution_date_success',
+        'prev_start_date_success',
+    }
+    AIRFLOW_SERIALIZABLE_CONTEXT_KEYS = {'macros', 'conf', 'dag', 'dag_run', 'task'}
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        *,
+        python_callable: Callable,
+        use_airflow: bool,
+        use_dill: bool = False,
+        use_pendulum: bool,
+        op_args: Optional[List] = None,
+        op_kwargs: Optional[Dict] = None,
+        string_args: Optional[Iterable[str]] = None,
+        templates_dict: Optional[Dict] = None,
+        templates_exts: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        if (
+            not isinstance(python_callable, types.FunctionType)
+            or isinstance(python_callable, types.LambdaType)
+            and python_callable.__name__ == "<lambda>"
+        ):
+            raise AirflowException('PythonVirtualenvOperator only supports functions for python_callable arg')
+        super().__init__(
+            python_callable=python_callable,
+            op_args=op_args,
+            op_kwargs=op_kwargs,
+            templates_dict=templates_dict,
+            templates_exts=templates_exts,
+            **kwargs,
+        )
+        self.string_args = string_args or []
+        self.use_airflow = use_airflow
+        self.use_dill = use_dill
+        self.use_pendulum = use_pendulum
+        self.pickling_library = dill if self.use_dill else pickle
+
+    def _get_serializable_context_keys(self):
+        serializable_context_keys = self.BASE_SERIALIZABLE_CONTEXT_KEYS.copy()
+        if self.use_airflow:
+            serializable_context_keys.update(self.AIRFLOW_SERIALIZABLE_CONTEXT_KEYS)
+        if self.use_airflow or self.use_pendulum:
+            serializable_context_keys.update(self.PENDULUM_SERIALIZABLE_CONTEXT_KEYS)
+        return serializable_context_keys
+
+    def execute(self, context: Dict):
+        serializable_context = {key: context[key] for key in self._get_serializable_context_keys()}
+        return super().execute(context=serializable_context)
+
+    def get_python_source(self):
+        """
+        Returns the source of self.python_callable
+        @return:
+        """
+        return dedent(inspect.getsource(self.python_callable))
+
+    def _write_args(self, filename):
+        if self.op_args or self.op_kwargs:
+            with open(filename, 'wb') as file:
+                self.pickling_library.dump({'args': self.op_args, 'kwargs': self.op_kwargs}, file)
+
+    def _write_string_args(self, filename):
+        with open(filename, 'w') as file:
+            file.write('\n'.join(map(str, self.string_args)))
+
+    def _read_result(self, filename):
+        if os.stat(filename).st_size == 0:
+            return None
+        with open(filename, 'rb') as file:
+            try:
+                return self.pickling_library.load(file)
+            except ValueError:
+                self.log.error(
+                    "Error deserializing result. Note that result deserialization "
+                    "is not supported across major Python versions."
+                )
+                raise
+
+    def _execute_callable_with(self, executable: str, env_root: str) -> Any:
+        if self.templates_dict:
+            self.op_kwargs['templates_dict'] = self.templates_dict
+
+        input_filename = os.path.join(env_root, 'script.in')
+        output_filename = os.path.join(env_root, 'script.out')
+        string_args_filename = os.path.join(env_root, 'script.out')
+        script_filename = os.path.join(env_root, 'script.py')
+
+        self._write_args(input_filename)
+        self._write_string_args(string_args_filename)
+        write_python_script(
+            jinja_context=dict(
+                op_args=self.op_args,
+                op_kwargs=self.op_kwargs,
+                pickling_library=self.pickling_library.__name__,
+                python_callable=self.python_callable.__name__,
+                python_callable_source=self.get_python_source(),
+            ),
+            filename=script_filename,
+        )
+
+        execute_in_subprocess(
+            cmd=[
+                executable,
+                script_filename,
+                input_filename,
+                output_filename,
+                string_args_filename,
+            ]
+        )
+        return self._read_result(output_filename)
+
+
+class PythonVirtualenvOperator(_BaseExternalPythonOperator):
     """
     Allows one to run a function in a virtualenv that is created and destroyed
     automatically (with certain caveats).
@@ -268,35 +411,6 @@ class PythonVirtualenvOperator(PythonOperator):
     :type templates_exts: list[str]
     """
 
-    BASE_SERIALIZABLE_CONTEXT_KEYS = {
-        'ds_nodash',
-        'inlets',
-        'next_ds',
-        'next_ds_nodash',
-        'outlets',
-        'params',
-        'prev_ds',
-        'prev_ds_nodash',
-        'run_id',
-        'task_instance_key_str',
-        'test_mode',
-        'tomorrow_ds',
-        'tomorrow_ds_nodash',
-        'ts',
-        'ts_nodash',
-        'ts_nodash_with_tz',
-        'yesterday_ds',
-        'yesterday_ds_nodash',
-    }
-    PENDULUM_SERIALIZABLE_CONTEXT_KEYS = {
-        'execution_date',
-        'next_execution_date',
-        'prev_execution_date',
-        'prev_execution_date_success',
-        'prev_start_date_success',
-    }
-    AIRFLOW_SERIALIZABLE_CONTEXT_KEYS = {'macros', 'conf', 'dag', 'dag_run', 'task'}
-
     @apply_defaults
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -314,12 +428,6 @@ class PythonVirtualenvOperator(PythonOperator):
         **kwargs,
     ):
         if (
-            not isinstance(python_callable, types.FunctionType)
-            or isinstance(python_callable, types.LambdaType)
-            and python_callable.__name__ == "<lambda>"
-        ):
-            raise AirflowException('PythonVirtualenvOperator only supports functions for python_callable arg')
-        if (
             python_version
             and str(python_version)[0] != str(sys.version_info.major)
             and (op_args or op_kwargs)
@@ -328,111 +436,142 @@ class PythonVirtualenvOperator(PythonOperator):
                 "Passing op_args or op_kwargs is not supported across different Python "
                 "major versions for PythonVirtualenvOperator. Please use string_args."
             )
+
+        requirements = list(requirements or [])
+        if not system_site_packages and use_dill and 'dill' not in requirements:
+            requirements.append('dill')
+
+        use_airflow = system_site_packages or 'apache-airflow' in requirements
+        use_pendulum = 'pendulum' in requirements and 'lazy_object_proxy' in requirements
+
         super().__init__(
             python_callable=python_callable,
+            use_airflow=use_airflow,
+            use_dill=use_dill,
+            use_pendulum=use_pendulum,
             op_args=op_args,
             op_kwargs=op_kwargs,
+            string_args=string_args,
             templates_dict=templates_dict,
             templates_exts=templates_exts,
             **kwargs,
         )
-        self.requirements = list(requirements or [])
-        self.string_args = string_args or []
+        self.requirements = requirements
         self.python_version = python_version
-        self.use_dill = use_dill
         self.system_site_packages = system_site_packages
-        if not self.system_site_packages and self.use_dill and 'dill' not in self.requirements:
-            self.requirements.append('dill')
-        self.pickling_library = dill if self.use_dill else pickle
-
-    def execute(self, context: Dict):
-        serializable_context = {key: context[key] for key in self._get_serializable_context_keys()}
-        return super().execute(context=serializable_context)
 
     def execute_callable(self):
         with TemporaryDirectory(prefix='venv') as tmp_dir:
-            if self.templates_dict:
-                self.op_kwargs['templates_dict'] = self.templates_dict
-
-            input_filename = os.path.join(tmp_dir, 'script.in')
-            output_filename = os.path.join(tmp_dir, 'script.out')
-            string_args_filename = os.path.join(tmp_dir, 'string_args.txt')
-            script_filename = os.path.join(tmp_dir, 'script.py')
-
             prepare_virtualenv(
                 venv_directory=tmp_dir,
                 python_bin=f'python{self.python_version}' if self.python_version else None,
                 system_site_packages=self.system_site_packages,
                 requirements=self.requirements,
             )
+            return self._execute_callable_with(f'{tmp_dir}/bin/python', tmp_dir)
 
-            self._write_args(input_filename)
-            self._write_string_args(string_args_filename)
-            write_python_script(
-                jinja_context=dict(
-                    op_args=self.op_args,
-                    op_kwargs=self.op_kwargs,
-                    pickling_library=self.pickling_library.__name__,
-                    python_callable=self.python_callable.__name__,
-                    python_callable_source=self.get_python_source(),
-                ),
-                filename=script_filename,
+
+class ExternalPythonOperator(_BaseExternalPythonOperator):
+    """Allows one to run a function against a Python interpreter (with certain caveats).
+
+    By using this operator, you promise to populate and manage the specified Python
+    interpreter's execution environment so it can run the provided function. Airflow
+    will not perform any setup before running the program against the interpreter.
+
+    The function must be defined using def, and not be part of a class. All imports
+    must happen inside the function and no variables outside of the scope may be
+    referenced. A global scope variable named ``virtualenv_string_args`` will be
+    available (populated by ``string_args``). In addition, one can pass stuff through
+    ``op_args`` and ``op_kwargs``, and one can use a return value.
+
+    Note that if the specified Python interpreter is of a different Python major version
+    than Airflow, you cannot use return values, ``op_args``, ``op_kwargs``, or use any
+    macros that are being provided to Airflow through plugins. You can use
+    ``string_args`` though.
+
+    :param python_callable: A python function with no references to outside variables,
+        defined with def, which will be run in a virtualenv
+    :type python_callable: function
+    :param python_executable: The Python interpreter to run. This should be an absolute
+        path on the local filesystem, such as ``/opt/python3.7/bin/python``.
+    :type python_executable: str
+    :param use_dill: Whether to use dill to serialize
+        the args and result (pickle is default). This allow more complex types
+        but requires you to include dill in your requirements.
+    :type use_dill: bool
+    :param use_airflow: Whether Airflow is available for the function. Set this to
+        *True* if the specified environment can ``import airflow``. This affects whether
+        Airflow will try to pass Airflow-related context into the function.
+    :type use_airflow: bool
+    :param use_pendulum: This affects whether Airflow will pass Pendulum-related context
+        into the function. Set this to ``True`` if the specified environment contains
+        both *pendulum* and *lazy-object-proxy*.
+    :type use_pendulum: bool
+    :param op_args: A list of positional arguments to pass to python_callable.
+    :type op_args: list
+    :param op_kwargs: A dict of keyword arguments to pass to python_callable.
+    :type op_kwargs: dict
+    :param string_args: Strings that are present in the global var
+        ``virtualenv_string_args``, available to ``python_callable`` at runtime as a
+        ``list[str]``. Note that args are split by newline.
+    :type string_args: list[str]
+    :param templates_dict: a dictionary where the values are templates that will get
+        templated by the Airflow engine sometime between ``__init__`` and ``execute``
+        takes place and are made available in your callable's context after the template
+        has been applied.
+    :type templates_dict: dict of str
+    :param templates_exts: a list of file extensions to resolve while processing
+        templated fields, for examples ``['.sql', '.hql']``.
+    :type templates_exts: list[str]
+    """
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        *,
+        python_callable: Callable,
+        python_executable: str,
+        use_airflow: bool,
+        use_dill: bool = False,
+        use_pendulum: bool,
+        op_args: Optional[List] = None,
+        op_kwargs: Optional[Dict] = None,
+        string_args: Optional[Iterable[str]] = None,
+        templates_dict: Optional[Dict] = None,
+        templates_exts: Optional[List[str]] = None,
+        **kwargs,
+    ) -> None:
+        proc = subprocess.run(  # pylint: disable=subprocess-run-check
+            [python_executable, '-Ic', 'import sys; print(sys.version_info[0])'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf8',
+        )
+        log.info('%s', proc.stderr)
+        if proc.returncode != 0:
+            raise AirflowException(f'Invalid Python executable: {python_executable!r}')
+        if (op_args or op_kwargs) and proc.stdout.strip() != str(sys.version_info.major):
+            raise AirflowException(
+                "Passing op_args or op_kwargs is not supported across different Python "
+                "major versions for ExternalPythonOperator. Please use string_args."
             )
 
-            execute_in_subprocess(
-                cmd=[
-                    f'{tmp_dir}/bin/python',
-                    script_filename,
-                    input_filename,
-                    output_filename,
-                    string_args_filename,
-                ]
-            )
+        super().__init__(
+            python_callable=python_callable,
+            use_airflow=use_airflow,
+            use_dill=use_dill,
+            use_pendulum=use_pendulum,
+            op_args=op_args,
+            op_kwargs=op_kwargs,
+            string_args=string_args,
+            templates_dict=templates_dict,
+            templates_exts=templates_exts,
+            **kwargs,
+        )
+        self.python_executable = python_executable
 
-            return self._read_result(output_filename)
-
-    def get_python_source(self):
-        """
-        Returns the source of self.python_callable
-        @return:
-        """
-        return dedent(inspect.getsource(self.python_callable))
-
-    def _write_args(self, filename):
-        if self.op_args or self.op_kwargs:
-            with open(filename, 'wb') as file:
-                self.pickling_library.dump({'args': self.op_args, 'kwargs': self.op_kwargs}, file)
-
-    def _get_serializable_context_keys(self):
-        def _is_airflow_env():
-            return self.system_site_packages or 'apache-airflow' in self.requirements
-
-        def _is_pendulum_env():
-            return 'pendulum' in self.requirements and 'lazy_object_proxy' in self.requirements
-
-        serializable_context_keys = self.BASE_SERIALIZABLE_CONTEXT_KEYS.copy()
-        if _is_airflow_env():
-            serializable_context_keys.update(self.AIRFLOW_SERIALIZABLE_CONTEXT_KEYS)
-        if _is_pendulum_env() or _is_airflow_env():
-            serializable_context_keys.update(self.PENDULUM_SERIALIZABLE_CONTEXT_KEYS)
-        return serializable_context_keys
-
-    def _write_string_args(self, filename):
-        with open(filename, 'w') as file:
-            file.write('\n'.join(map(str, self.string_args)))
-
-    def _read_result(self, filename):
-        if os.stat(filename).st_size == 0:
-            return None
-        with open(filename, 'rb') as file:
-            try:
-                return self.pickling_library.load(file)
-            except ValueError:
-                self.log.error(
-                    "Error deserializing result. Note that result deserialization "
-                    "is not supported across major Python versions."
-                )
-                raise
+    def execute_callable(self):
+        with TemporaryDirectory(prefix='ext-py') as tmp_dir:
+            return self._execute_callable_with(self.python_executable, tmp_dir)
 
 
 def get_current_context() -> Dict[str, Any]:

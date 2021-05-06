@@ -25,6 +25,7 @@ from airflow.utils.decorators import apply_defaults
 from airflow.utils.python_virtualenv import remove_task_decorator
 
 
+# pylint: disable=too-many-ancestors
 class _PythonVirtualenvDecoratedOperator(DecoratedOperator, PythonVirtualenvOperator):
     """
     Wraps a Python callable and captures args/kwargs when called for execution.
