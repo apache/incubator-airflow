@@ -146,10 +146,10 @@ class TestBaseChartTest(unittest.TestCase):
             (f"{release_name}-airflow-config", "ConfigMap", "config"),
             (f"{release_name}-airflow-create-user-job", "ServiceAccount", "create-user-job"),
             (f"{release_name}-airflow-flower", "ServiceAccount", "flower"),
-            (f"{release_name}-airflow-metadata", "Secret", "connection"),
+            (f"{release_name}-airflow-metadata", "Secret", None),
             (f"{release_name}-airflow-migrate-database-job", "ServiceAccount", "run-airflow-migrations"),
             (f"{release_name}-airflow-pgbouncer", "ServiceAccount", "pgbouncer"),
-            (f"{release_name}-airflow-result-backend", "Secret", "connection"),
+            (f"{release_name}-airflow-result-backend", "Secret", None),
             (f"{release_name}-airflow-redis", "ServiceAccount", "redis"),
             (f"{release_name}-airflow-scheduler", "ServiceAccount", "scheduler"),
             (f"{release_name}-airflow-statsd", "ServiceAccount", "statsd"),
@@ -157,7 +157,7 @@ class TestBaseChartTest(unittest.TestCase):
             (f"{release_name}-airflow-worker", "ServiceAccount", "worker"),
             (f"{release_name}-broker-url", "Secret", "redis"),
             (f"{release_name}-create-user", "Job", "create-user-job"),
-            (f"{release_name}-fernet-key", "Secret", "fernet-key"),
+            (f"{release_name}-fernet-key", "Secret", None),
             (f"{release_name}-flower", "Deployment", "flower"),
             (f"{release_name}-flower", "Service", "flower"),
             (f"{release_name}-flower-policy", "NetworkPolicy", "airflow-flower-policy"),
@@ -166,10 +166,10 @@ class TestBaseChartTest(unittest.TestCase):
             (f"{release_name}-pgbouncer-config", "Secret", "pgbouncer"),
             (f"{release_name}-pgbouncer-policy", "NetworkPolicy", "airflow-pgbouncer-policy"),
             (f"{release_name}-pgbouncer-stats", "Secret", "pgbouncer"),
-            (f"{release_name}-pod-launcher-role", "Role", "pod-launcher"),
-            (f"{release_name}-pod-launcher-rolebinding", "RoleBinding", "pod-launcher"),
-            (f"{release_name}-pod-log-reader-role", "Role", "pod-log-reader"),
-            (f"{release_name}-pod-log-reader-rolebinding", "RoleBinding", "pod-log-reader"),
+            (f"{release_name}-pod-launcher-role", "Role", None),
+            (f"{release_name}-pod-launcher-rolebinding", "RoleBinding", None),
+            (f"{release_name}-pod-log-reader-role", "Role", None),
+            (f"{release_name}-pod-log-reader-rolebinding", "RoleBinding", None),
             (f"{release_name}-redis", "Service", "redis"),
             (f"{release_name}-redis", "StatefulSet", "redis"),
             (f"{release_name}-redis-policy", "NetworkPolicy", "redis-policy"),
@@ -188,15 +188,17 @@ class TestBaseChartTest(unittest.TestCase):
             (f"{release_name}-worker-policy", "NetworkPolicy", "airflow-worker-policy"),
         ]
         for k8s_object_name, kind, component in kind_names_tuples:
-            assert kind_k8s_obj_labels_tuples.pop((k8s_object_name, kind)) == {
+            expected_labels = {
                 "label1": "value1",
                 "label2": "value2",
                 "tier": "airflow",
                 "release": release_name,
-                "component": component,
                 "heritage": "Helm",
                 "chart": mock.ANY,
             }
+            if component:
+                expected_labels["component"] = component
+            assert kind_k8s_obj_labels_tuples.pop((k8s_object_name, kind)) == expected_labels
 
         if kind_k8s_obj_labels_tuples:
             warnings.warn(f"Unchecked objects: {kind_k8s_obj_labels_tuples.keys()}")

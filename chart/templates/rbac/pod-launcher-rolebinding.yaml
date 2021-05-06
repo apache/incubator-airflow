@@ -34,7 +34,6 @@ metadata:
   name: {{ .Release.Name }}-pod-launcher-rolebinding
   labels:
     tier: airflow
-    component: pod-launcher
     release: {{ .Release.Name }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: {{ .Release.Service }}
