@@ -738,7 +738,11 @@ def drop_airflow_models(connection):
     dag_stats = Table('dag_stats', Base.metadata)
     dag_stats.drop(settings.engine, checkfirst=True)
 
-    Base.metadata.drop_all(connection)
+    # SQLAlchemy does not realise that TaskInstance depends on Trigger,
+    # so make sure task_instance is dropped first
+    Base.metadata.tables["task_instance"].drop()
+    Base.metadata.drop_all(connection, check=True)
+
     # we remove the Tables here so that if resetdb is run metadata does not keep the old tables.
     Base.metadata.remove(dag_stats)
     Base.metadata.remove(users)
