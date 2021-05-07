@@ -835,6 +835,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             location=DEFAULT_DATAFLOW_LOCATION,
             drain_pipeline=False,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=None,
         )
         mock_controller.return_value.wait_for_done.assert_called_once()
 
@@ -873,6 +874,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             location=TEST_LOCATION,
             drain_pipeline=False,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=None,
         )
         mock_controller.return_value.wait_for_done.assert_called_once()
 
@@ -913,6 +915,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             location=TEST_LOCATION,
             drain_pipeline=False,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=None,
         )
         mock_controller.return_value.wait_for_done.assert_called_once()
 
@@ -957,6 +960,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             project_number=TEST_PROJECT,
             drain_pipeline=False,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=None,
         )
         mock_uuid.assert_called_once_with()
 
@@ -1005,6 +1009,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             project_number=TEST_PROJECT,
             drain_pipeline=False,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=None,
         )
         mock_uuid.assert_called_once_with()
 
@@ -1037,6 +1042,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             poll_sleep=self.dataflow_hook.poll_sleep,
             num_retries=self.dataflow_hook.num_retries,
             cancel_timeout=DEFAULT_CANCEL_TIMEOUT,
+            wait_until_finished=self.dataflow_hook.wait_until_finished,
         )
         mock_controller.return_value.get_jobs.wait_for_done.assrt_called_once_with()
         mock_controller.return_value.get_jobs.assrt_called_once_with()
@@ -1110,6 +1116,7 @@ class TestDataflowTemplateHook(unittest.TestCase):
             project_number=TEST_PROJECT,
             num_retries=5,
             drain_pipeline=False,
+            wait_until_finished=None,
         )
         mock_controller.return_value.wait_for_done.assert_called_once()
         assert result == test_job

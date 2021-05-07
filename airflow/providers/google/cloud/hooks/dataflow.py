@@ -728,6 +728,7 @@ class DataflowHook(GoogleBaseHook):
             num_retries=self.num_retries,
             drain_pipeline=self.drain_pipeline,
             cancel_timeout=self.cancel_timeout,
+            wait_until_finished=self.wait_until_finished,
         )
         jobs_controller.wait_for_done()
         return response["job"]
@@ -774,6 +775,7 @@ class DataflowHook(GoogleBaseHook):
             poll_sleep=self.poll_sleep,
             num_retries=self.num_retries,
             cancel_timeout=self.cancel_timeout,
+            wait_until_finished=self.wait_until_finished,
         )
         jobs_controller.wait_for_done()
 
@@ -1030,6 +1032,7 @@ class DataflowHook(GoogleBaseHook):
             poll_sleep=self.poll_sleep,
             num_retries=self.num_retries,
             drain_pipeline=self.drain_pipeline,
+            wait_until_finished=self.wait_until_finished,
         )
         jobs_controller.wait_for_done()
 
