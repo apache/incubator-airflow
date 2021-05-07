@@ -1273,7 +1273,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  3.6 3.7 3.8
 
   -a, --install-airflow-version INSTALL_AIRFLOW_VERSION
-          Uses differen version of Airflow when building PROD image.
+          Uses different version of Airflow when building PROD image.
 
                  2.0.2 2.0.1 2.0.0 wheel sdist
 
@@ -2487,7 +2487,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
    Install different Airflow version during PROD image build
 
   -a, --install-airflow-version INSTALL_AIRFLOW_VERSION
-          Uses differen version of Airflow when building PROD image.
+          Uses different version of Airflow when building PROD image.
 
                  2.0.2 2.0.1 2.0.0 wheel sdist
 

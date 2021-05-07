@@ -2422,7 +2422,7 @@ function breeze::flag_local_file_mounting() {
 function breeze::flag_build_different_airflow_version() {
     echo "
 -a, --install-airflow-version INSTALL_AIRFLOW_VERSION
-        Uses differen version of Airflow when building PROD image.
+        Uses different version of Airflow when building PROD image.
 
 ${FORMATTED_INSTALL_AIRFLOW_VERSIONS}
 

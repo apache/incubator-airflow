@@ -151,7 +151,7 @@ class LocalTaskJob(BaseJob):
         self.log.info("Task exited with return code %s", return_code)
         self.task_instance.refresh_from_db()
         # task exited by itself, so we need to check for error file
-        # incase it failed due to runtime exception/error
+        # in case it failed due to runtime exception/error
         error = None
         if self.task_instance.state == State.RUNNING:
             # This is for a case where the task received a sigkill
