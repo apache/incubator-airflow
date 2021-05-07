@@ -1163,8 +1163,24 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
                 self._prepare_and_execute_task_with_callbacks(context, task)
             self.refresh_from_db(lock_for_update=True)
             self.state = State.SUCCESS
-        except TaskDeferred:
-            self.log.info("Task deferred, pausing execution")
+        except TaskDeferred as defer:
+            # The task has signalled it wants to defer execution based on
+            # a trigger.
+            self._defer_task(defer=defer)
+            self.log.info(self.state)
+            self.log.info(self.next_method)
+            self.log.info(
+                'Pausing task as DEFERRED. ' 'dag_id=%s, task_id=%s, execution_date=%s, start_date=%s',
+                self.dag_id,
+                self.task_id,
+                self._date_or_empty('execution_date'),
+                self._date_or_empty('start_date'),
+            )
+            if not test_mode:
+                session.add(Log(self.state, self))
+                session.merge(self)
+            session.commit()
+            return
         except AirflowSmartSensorException as e:
             self.log.info(e)
             return
@@ -1366,21 +1382,15 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
                 execute_callable = partial(execute_callable, **self.next_kwargs)
         # If a timeout is specified for the task, make it fail
         # if it goes beyond
-        try:
-            if task_copy.execution_timeout:
-                try:
-                    with timeout(task_copy.execution_timeout.total_seconds()):
-                        result = execute_callable(context=context)
-                except AirflowTaskTimeout:
-                    task_copy.on_kill()
-                    raise
-            else:
-                result = execute_callable(context=context)
-        except TaskDeferred as defer:
-            # The task has signalled it wants to defer execution based on
-            # a trigger.
-            self._defer_task(defer=defer)
-            raise
+        if task_copy.execution_timeout:
+            try:
+                with timeout(task_copy.execution_timeout.total_seconds()):
+                    result = execute_callable(context=context)
+            except AirflowTaskTimeout:
+                task_copy.on_kill()
+                raise
+        else:
+            result = execute_callable(context=context)
         # If the task returns a result, push an XCom containing it
         if task_copy.do_xcom_push and result is not None:
             self.xcom_push(key=XCOM_RETURN_KEY, value=result)
@@ -1404,6 +1414,9 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
         self.trigger_id = trigger_row.id
         self.next_method = defer.method_name
         self.next_kwargs = defer.kwargs or {}
+
+        # Decrement try number so the next one is the same try
+        self._try_number -= 1
 
         # Calculate timeout too if it was passed
         if defer.timeout is not None:

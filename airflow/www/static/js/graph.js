@@ -52,8 +52,7 @@ const mapTaskToNode = new Map();
 
 // Below variables are being used in dag.js
 
-const getTaskInstanceURL = `${taskInstancesUrl}?dag_id=${encodeURIComponent(dagId)}&execution_date=${
-  encodeURIComponent(executionDate)}`;
+const getTaskInstanceURL = `${taskInstancesUrl}?dag_id=${encodeURIComponent(dagId)}&execution_date=${encodeURIComponent(executionDate)}`;
 
 const duration = 500;
 const stateFocusMap = {
@@ -65,6 +64,7 @@ const stateFocusMap = {
   up_for_reschedule: false,
   up_for_retry: false,
   queued: false,
+  deferred: false,
   no_status: false,
 };
 const taskTip = d3.tip()
@@ -423,11 +423,11 @@ function initRefresh() {
 // Generate tooltip for a group node
 function groupTooltip(nodeId, tis) {
   const numMap = new Map([['success', 0],
-    ['failed', 0],
-    ['upstream_failed', 0],
-    ['up_for_retry', 0],
-    ['running', 0],
-    ['no_status', 0]]);
+  ['failed', 0],
+  ['upstream_failed', 0],
+  ['up_for_retry', 0],
+  ['running', 0],
+  ['no_status', 0]]);
   for (const child of getChildrenIds(g.node(nodeId))) {
     if (child in tis) {
       const ti = tis[child];

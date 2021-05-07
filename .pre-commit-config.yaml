@@ -187,8 +187,7 @@ repos:
         name: Check YAML files with yamllint
         entry: yamllint -c yamllint-config.yml --strict
         types: [yaml]
-        exclude:
-          ^.*init_git_sync\.template\.yaml$|^.*airflow\.template\.yaml$|^chart/(?:templates|files)/.*\.yaml$
+        exclude: ^.*init_git_sync\.template\.yaml$|^.*airflow\.template\.yaml$|^chart/(?:templates|files)/.*\.yaml$|openapi/.*\.yaml|pre-commit-config
   - repo: https://github.com/timothycrosley/isort
     rev: 5.8.0
     hooks:
@@ -225,7 +224,7 @@ repos:
         name: Lint OpenAPI using openapi-spec-validator
         entry: openapi-spec-validator --schema 3.0.0
         language: python
-        additional_dependencies: ['openapi-spec-validator']
+        additional_dependencies: ["openapi-spec-validator"]
         files: ^airflow/api_connexion/openapi/
       - id: lint-dockerfile
         name: Lint dockerfile
@@ -240,7 +239,7 @@ repos:
         files: ^setup\.cfg$|^setup\.py$
         pass_filenames: false
         entry: ./scripts/ci/pre_commit/pre_commit_check_order_setup.py
-        additional_dependencies: ['rich']
+        additional_dependencies: ["rich"]
       - id: setup-extra-packages
         name: Checks setup extra packages
         description: Checks if all the libraries in setup.py are listed in extra-packages-ref.rst file
@@ -248,7 +247,7 @@ repos:
         files: ^setup\.py$|^docs/apache-airflow/extra-packages-ref\.rst$
         pass_filenames: false
         entry: ./scripts/ci/pre_commit/pre_commit_check_setup_extra_packages_ref.py
-        additional_dependencies: ['rich==9.2.0']
+        additional_dependencies: ["rich==9.2.0"]
       - id: update-breeze-file
         name: Update output of breeze command in BREEZE.rst
         entry: ./scripts/ci/pre_commit/pre_commit_breeze_cmd_line.sh
@@ -363,7 +362,8 @@ repos:
       - id: provide-create-sessions
         language: pygrep
         name: Check provide_session and create_session imports
-        description: provide_session and create_session should be imported from airflow.utils.session
+        description:
+          provide_session and create_session should be imported from airflow.utils.session
           to avoid import cycles.
         entry: "from airflow\\.utils\\.db import.* (provide_session|create_session)"
         files: \.py$
@@ -405,7 +405,7 @@ repos:
         files: config\.yml$|default_airflow\.cfg$|default\.cfg$
         pass_filenames: false
         require_serial: true
-        additional_dependencies: ['pyyaml']
+        additional_dependencies: ["pyyaml"]
       - id: sort-in-the-wild
         name: Sort INTHEWILD.md alphabetically
         entry: ./scripts/ci/pre_commit/pre_commit_sort_in_the_wild.sh
@@ -450,7 +450,8 @@ repos:
         language: node
         files: ^airflow/www/.*\.(css|scss|sass)$
         # Keep dependency versions in sync w/ airflow/www/package.json
-        additional_dependencies: ['stylelint@13.3.1', 'stylelint-config-standard@20.0.0']
+        additional_dependencies:
+          ["stylelint@13.3.1", "stylelint-config-standard@20.0.0"]
       - id: providers-init-file
         name: Provider init file
         pass_filenames: false
@@ -464,7 +465,8 @@ repos:
         language: python
         require_serial: true
         files: provider\.yaml$|scripts/ci/pre_commit/pre_commit_check_provider_yaml_files\.py$|^docs/
-        additional_dependencies: ['PyYAML==5.3.1', 'jsonschema==3.2.0', 'tabulate==0.8.7']
+        additional_dependencies:
+          ["PyYAML==5.3.1", "jsonschema==3.2.0", "tabulate==0.8.7"]
       - id: mermaid
         name: Generate mermaid images
         entry: ./scripts/ci/pre_commit/pre_commit_mermaid.sh
@@ -484,7 +486,7 @@ repos:
           - --max-length=70
         language: python
         files: ^\.pre-commit-config\.yaml$
-        additional_dependencies: ['pyyaml']
+        additional_dependencies: ["pyyaml"]
         require_serial: true
         pass_filenames: false
       - id: airflow-providers-available
@@ -494,7 +496,7 @@ repos:
         files: setup\.py|^airflow/providers/.*\.py
         pass_filenames: false
         require_serial: true
-        additional_dependencies: ['rich']
+        additional_dependencies: ["rich"]
       - id: markdownlint
         name: Run markdownlint
         description: Checks the style of Markdown files.
@@ -502,7 +504,7 @@ repos:
         language: node
         types: [markdown]
         files: \.(md|mdown|markdown)$
-        additional_dependencies: ['markdownlint-cli']
+        additional_dependencies: ["markdownlint-cli"]
       - id: json-schema
         name: Lint JSON Schema files with JSON Schema
         entry: ./scripts/ci/pre_commit/pre_commit_json_schema.py
@@ -513,7 +515,8 @@ repos:
         pass_filenames: true
         files: .*\.schema\.json$
         require_serial: true
-        additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+        additional_dependencies:
+          ["jsonschema==3.2.0", "PyYAML==5.3.1", "requests==2.25.0"]
       - id: json-schema
         name: Lint JSON Schema files with JSON Schema
         entry: ./scripts/ci/pre_commit/pre_commit_json_schema.py
@@ -524,7 +527,8 @@ repos:
         pass_filenames: true
         files: scripts/ci/kubernetes/nodeport.yaml
         require_serial: true
-        additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+        additional_dependencies:
+          ["jsonschema==3.2.0", "PyYAML==5.3.1", "requests==2.25.0"]
       - id: json-schema
         name: Lint Docker compose files with JSON Schema
         entry: ./scripts/ci/pre_commit/pre_commit_json_schema.py
@@ -535,7 +539,8 @@ repos:
         pass_filenames: true
         files: ^scripts/ci/docker-compose/.+\.ya?ml$|docker-compose\.ya?ml$
         require_serial: true
-        additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+        additional_dependencies:
+          ["jsonschema==3.2.0", "PyYAML==5.3.1", "requests==2.25.0"]
       - id: json-schema
         name: Lint chart/values.yaml file with JSON Schema
         entry: ./scripts/ci/pre_commit/pre_commit_json_schema.py
@@ -546,7 +551,8 @@ repos:
         pass_filenames: true
         files: chart/values\.yaml$
         require_serial: true
-        additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+        additional_dependencies:
+          ["jsonschema==3.2.0", "PyYAML==5.3.1", "requests==2.25.0"]
       - id: json-schema
         name: Lint airflow/config_templates/config.yml file with JSON Schema
         entry: ./scripts/ci/pre_commit/pre_commit_json_schema.py
@@ -557,13 +563,14 @@ repos:
         pass_filenames: true
         files: airflow/config_templates/config\.yml$
         require_serial: true
-        additional_dependencies: ['jsonschema==3.2.0', 'PyYAML==5.3.1', 'requests==2.25.0']
+        additional_dependencies:
+          ["jsonschema==3.2.0", "PyYAML==5.3.1", "requests==2.25.0"]
       - id: flynt
         name: Convert to f-strings with flynt
         entry: flynt
         language: python
         language_version: python3
-        additional_dependencies: ['flynt==0.63']
+        additional_dependencies: ["flynt==0.63"]
         files: \.py$
         ## ADD MOST PRE-COMMITS ABOVE THAT LINE
         # The below pre-commits are those requiring CI image to be built
@@ -623,7 +630,7 @@ repos:
       - id: ui-lint
         name: ESLint against airflow/ui
         language: node
-        'types_or': [javascript, tsx, ts]
+        "types_or": [javascript, tsx, ts]
         files: ^airflow/ui/
         entry: ./scripts/ci/static_checks/eslint.sh
         pass_filenames: false

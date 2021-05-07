@@ -1,5 +1,3 @@
-# pylint: disable=no-name-in-module
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
+
 import asyncio
 import importlib
 import os
@@ -25,11 +23,12 @@ import sys
 import threading
 import time
 from collections import deque
-from typing import Deque, Dict, List, Optional, Set, Tuple, Type, TypedDict
+from typing import Deque, Dict, List, Optional, Set, Tuple, Type
 
 from airflow.jobs.base_job import BaseJob
 from airflow.models.trigger import Trigger
 from airflow.triggers.base import BaseTrigger, TriggerEvent
+from airflow.typing_compat import TypedDict
 from airflow.utils.asyncio import create_task
 from airflow.utils.log.logging_mixin import LoggingMixin
 
@@ -55,24 +54,33 @@ class TriggererJob(BaseJob, LoggingMixin):
         super().__init__(*args, **kwargs)
         # Decode partition information
         self.partition_ids, self.partition_total = None, None
-        if partition:  # pylint: disable=too-many-nested-blocks
-            try:
-                # The partition format is "1,2,3/10" where the numbers before
-                # the slash are the partitions we represent, and the number
-                # after is the total number. Most users will just have a single
-                # partition number, e.g. "2/10".
-                ids_str, total_str = partition.split("/", 1)
-                self.partition_total = int(total_str)
-                self.partition_ids = []
-                for id_str in ids_str.split(","):
-                    id_number = int(id_str)
-                    if id_number <= 0 or id_number > self.partition_total:
-                        raise ValueError(f"Partition number {id_number} is impossible")
-                    self.partition_ids.append(id_number)
-            except (ValueError, TypeError):
-                raise ValueError(f"Invalid partition specification: {partition}")
+        if partition:
+            self.partition_ids, self.partition_total = self.decode_partition(partition)
         # Set up runner async thread
         self.runner = TriggerRunner()
+
+    def decode_partition(self, partition: str) -> Tuple[List[int], int]:
+        """
+        Given a string-format partition specification, returns the list of
+        partition IDs it represents and the partition total.
+        """
+        try:
+            # The partition format is "1,2,3/10" where the numbers before
+            # the slash are the partitions we represent, and the number
+            # after is the total number. Most users will just have a single
+            # partition number, e.g. "2/10".
+            ids_str, total_str = partition.split("/", 1)
+            partition_total = int(total_str)
+            partition_ids = []
+            for id_str in ids_str.split(","):
+                id_number = int(id_str)
+                # Bounds checking (they're 1-indexed, which might catch people out)
+                if id_number <= 0 or id_number > self.partition_total:
+                    raise ValueError(f"Partition number {id_number} is impossible")
+                self.partition_ids.append(id_number)
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid partition specification: {partition}")
+        return partition_ids, partition_total
 
     def register_signals(self) -> None:
         """Register signals that stop child processes"""
@@ -81,11 +89,16 @@ class TriggererJob(BaseJob, LoggingMixin):
 
     def _exit_gracefully(self, signum, frame) -> None:  # pylint: disable=unused-argument
         """Helper method to clean up processor_agent to avoid leaving orphan processes."""
-        self.log.info("Exiting gracefully upon receiving signal %s", signum)
-        # TODO: Add graceful trigger exit
-        sys.exit(os.EX_OK)
+        # The first time, try to exit nicely
+        if not self.runner.stop:
+            self.log.info("Exiting gracefully upon receiving signal %s", signum)
+            self.runner.stop = True
+        else:
+            self.log.warning("Forcing exit due to second exit signal %s", signum)
+            sys.exit(os.EX_SOFTWARE)
 
     def _execute(self) -> None:
+        # Display custom startup ack depending on plurality of partitions
         if self.partition_ids is None:
             self.log.info("Starting the triggerer")
         elif len(self.partition_ids) == 1:
@@ -98,13 +111,18 @@ class TriggererJob(BaseJob, LoggingMixin):
             )
 
         try:
+            # Kick off runner thread
             self.runner.start()
+            # Start our own DB loop in the main thread
             self._run_trigger_loop()
         except Exception:  # pylint: disable=broad-except
             self.log.exception("Exception when executing TriggererJob._run_trigger_loop")
             raise
         finally:
             self.log.info("Waiting for triggers to clean up")
+            # Tell the subthread to stop and then wait for it.
+            # If the user interrupts/terms again, _graceful_exit will allow them
+            # to force-kill here.
             self.runner.stop = True
             self.runner.join()
             self.log.info("Exited trigger loop")
@@ -115,7 +133,7 @@ class TriggererJob(BaseJob, LoggingMixin):
 
         This runs synchronously and handles all database reads/writes.
         """
-        while True:
+        while not self.runner.stop:
             # Clean out unused triggers
             Trigger.clean_unused()
             # Load/delete triggers
@@ -211,7 +229,7 @@ class TriggerRunner(threading.Thread, LoggingMixin):
     def run(self):
         """Sync entrypoint - just runs arun in an async loop."""
         # Pylint complains about this with a 3.6 base, can remove with 3.7+
-        asyncio.run(self.arun())  # # pylint: disable=no-member
+        asyncio.run(self.arun())  # pylint: disable=no-member
 
     async def arun(self):
         """
@@ -338,7 +356,11 @@ class TriggerRunner(threading.Thread, LoggingMixin):
                 self.log.info("Trigger %s fired: %s", self.triggers[trigger_id]['name'], event)
                 self.triggers[trigger_id]["events"] += 1
                 self.events.append((trigger_id, event))
-        finally:  # CancelledError will get thrown in when we're stopped
+        finally:
+            # CancelledError will get injected when we're stopped - which is
+            # fine, the cleanup process will understand that, but we want to
+            # allow triggers a chance to cleanup, either in that case or if
+            # they exit cleanly.
             trigger.cleanup()
 
     # Main-thread sync API
@@ -347,6 +369,10 @@ class TriggerRunner(threading.Thread, LoggingMixin):
         """
         Called from the main thread to request that we update what
         triggers we're running.
+
+        Works out the differences - ones to add, and ones to remove - then
+        adds them to the deques so the subthread can actually mutate the running
+        trigger set.
         """
         current_trigger_ids = set(self.triggers.keys())
         # Work out the two difference sets

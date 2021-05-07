@@ -159,6 +159,10 @@ span.skipped {
   background-color: #f8cec8;
 }
 
+span.deferred {
+  background-color: lightseagreen;
+}
+
 .d3-tip {
   background: rgba(0, 0, 0, 0.85);
   color: #fff;

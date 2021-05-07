@@ -42,6 +42,7 @@ following steps:
         "upstream_failed": 'orange',
         "skipped": 'darkorchid',
         "scheduled": 'tan',
+        "deferred": 'lightseagreen',
       }
 
 
