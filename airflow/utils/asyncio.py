@@ -19,5 +19,7 @@ try:
     from asyncio import create_task  # noqa: F401 pylint: disable=unused-import
 except ImportError:
     # create_task is not present in Python 3.6. Once Airflow is at 3.7+, we can
-    # remove this helper
-    raise RuntimeError("Airflow's async functionality is only available on Python 3.7+")
+    # remove this helper.
+    def create_task(*args, **kwargs):
+        """A version of create_task that always errors."""
+        raise RuntimeError("Airflow's async functionality is only available on Python 3.7+")

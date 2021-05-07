@@ -50,6 +50,9 @@ class TriggererJob(BaseJob, LoggingMixin):
     partition_total: Optional[int] = None
 
     def __init__(self, partition=None, *args, **kwargs):
+        # Make sure we can actually run
+        if not hasattr(asyncio, "create_task"):
+            raise RuntimeError("The triggerer/deferred operators only work on Python 3.7 and above.")
         # Call superclass
         super().__init__(*args, **kwargs)
         # Decode partition information
