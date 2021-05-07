@@ -3063,6 +3063,19 @@ class TestTriggerDag(TestBase):
         run = self.session.query(DR).filter(DR.dag_id == test_dag_id).first()
         assert run is None
 
+    def test_trigger_dag_conf_not_dict(self):
+        test_dag_id = "example_bash_operator"
+
+        DR = models.DagRun  # pylint: disable=invalid-name
+        self.session.query(DR).delete()
+        self.session.commit()
+
+        response = self.client.post(f'trigger?dag_id={test_dag_id}', data={'conf': 'string and not a dict'})
+        self.check_content_in_response('must be a dict', response)
+
+        run = self.session.query(DR).filter(DR.dag_id == test_dag_id).first()
+        assert run is None
+
     def test_trigger_dag_form(self):
         test_dag_id = "example_bash_operator"
         resp = self.client.get(f'trigger?dag_id={test_dag_id}')

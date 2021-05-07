@@ -88,6 +88,12 @@ def trigger_dag(dag_id):
     conf = None
     if 'conf' in data:
         conf = data['conf']
+        if not isinstance(conf, dict):
+            error_message = 'Dag Run conf must be a dictionary object, other types are not supported'
+            log.error(error_message)
+            response = jsonify({'error': error_message})
+            response.status_code = 400
+            return response
 
     execution_date = None
     if 'execution_date' in data and data['execution_date'] is not None:

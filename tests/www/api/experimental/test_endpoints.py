@@ -148,9 +148,25 @@ class TestApiExperimental(TestBase):
     def test_trigger_dag(self):
         url_template = '/api/experimental/dags/{}/dag_runs'
         run_id = 'my_run' + utcnow().isoformat()
+
+        # Test error for nonexistent dag
+        response = self.client.post(
+            url_template.format('does_not_exist_dag'), data=json.dumps({}), content_type="application/json"
+        )
+        assert 404 == response.status_code
+
+        # Test error for bad conf data
         response = self.client.post(
             url_template.format('example_bash_operator'),
-            data=json.dumps({'run_id': run_id}),
+            data=json.dumps({'conf': 'This is a string not a dict'}),
+            content_type="application/json",
+        )
+        assert 400 == response.status_code
+
+        # Test OK case
+        response = self.client.post(
+            url_template.format('example_bash_operator'),
+            data=json.dumps({'run_id': run_id, 'conf': {'param': 'value'}}),
             content_type="application/json",
         )
         self.assert_deprecated(response)
@@ -167,12 +183,6 @@ class TestApiExperimental(TestBase):
         dag_run_id = dag_run.run_id
         assert run_id == dag_run_id
         assert dag_run_id == response['run_id']
-
-        # Test error for nonexistent dag
-        response = self.client.post(
-            url_template.format('does_not_exist_dag'), data=json.dumps({}), content_type="application/json"
-        )
-        assert 404 == response.status_code
 
     def test_trigger_dag_for_date(self):
         url_template = '/api/experimental/dags/{}/dag_runs'
