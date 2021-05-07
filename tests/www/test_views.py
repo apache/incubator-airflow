@@ -269,6 +269,52 @@ class TestConnectionModelView(TestBase):
         cmv = ConnectionModelView()
         cmv.prefill_form(form=mock_form, pk=1)
 
+    def test_duplicate_connection(self):
+        """Test Duplicate multiple connection with suffix"""
+        conn1 = Connection(
+            conn_id='test_duplicate_gcp_connection',
+            conn_type='Google Cloud',
+            description='Google Cloud Connection',
+        )
+
+        conn2 = Connection(
+            conn_id='test_duplicate_mysql_connection',
+            conn_type='FTP',
+            description='MongoDB2',
+            host='localhost',
+            schema='airflow',
+            port=3306,
+        )
+
+        conn3 = Connection(
+            conn_id='test_duplicate_postgres_connection_copy1',
+            conn_type='FTP',
+            description='Postgres',
+            host='localhost',
+            schema='airflow',
+            port=3306,
+        )
+
+        self.clear_table(Connection)
+        self.session.add_all([conn1, conn2, conn3])
+        self.session.commit()
+
+        mock_form = mock.Mock()
+        mock_form.data = {"action": "mulduplicate", "rowid": [conn1.id, conn3.id]}
+        resp = self.client.post('/connection/action_post', data=mock_form.data, follow_redirects=True)
+
+        expected_result = {
+            'test_duplicate_gcp_connection',
+            'test_duplicate_gcp_connection_copy1',
+            'test_duplicate_mysql_connection',
+            'test_duplicate_postgres_connection_copy1',
+            'test_duplicate_postgres_connection_copy2',
+        }
+        response = {conn[0] for conn in self.session.query(Connection.conn_id).all()}
+
+        assert resp.status_code == 200
+        assert expected_result == response
+
 
 class TestVariableModelView(TestBase):
     def setUp(self):
