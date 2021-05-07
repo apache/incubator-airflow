@@ -18,7 +18,7 @@ import datetime
 from typing import Any, Dict, List, Optional
 
 import jump
-from sqlalchemy import BigInteger, Column, String
+from sqlalchemy import BigInteger, Column, String, func
 
 from airflow.models.base import Base
 from airflow.models.taskinstance import TaskInstance
@@ -113,20 +113,19 @@ class Trigger(Base):
         Deletes all triggers that have no tasks/DAGs dependent on them
         (triggers have a one-to-many relationship to both)
         """
-        # TODO: Write this as only two SQL queries once I figure out joins in SQLAlchemy
-        for trigger in session.query(cls).all():
-            # Get all tasks that refer to us (not necessarily that are waiting on us)
-            referencing_tasks = session.query(TaskInstance).filter(TaskInstance.trigger_id == trigger.id)
-            # For each task, if it's not waiting on us, remove our reference
-            dependent = False
-            for task in referencing_tasks:
-                if task.state != State.DEFERRED:
-                    task.trigger_id = None
-                else:
-                    dependent = True
-            # If there were no dependents, delete us
-            if not dependent:
-                session.delete(trigger)
+        # Update all task instances with trigger IDs that are not DEFERRED to remove them
+        session.query(TaskInstance).filter(
+            TaskInstance.state != State.DEFERRED, TaskInstance.trigger_id.isnot(None)
+        ).update({TaskInstance.trigger_id: None})
+        # Get all triggers that have no task instances depending on them, and delete them
+        session.query(cls).filter(
+            cls.id.in_(
+                session.query(cls.id)
+                .join(TaskInstance, cls.id == TaskInstance.trigger_id, isouter=True)
+                .group_by(cls.id)
+                .having(func.count(TaskInstance.trigger_id) == 0)
+            )
+        ).delete(synchronize_session=False)
 
     @classmethod
     @provide_session
