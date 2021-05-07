@@ -150,7 +150,7 @@ class Trigger(Base):
     @provide_session
     def submit_failure(cls, trigger_id, session=None):
         """
-        Called when a trigger has failed unexpectedtly, and we need to mark
+        Called when a trigger has failed unexpectedly, and we need to mark
         everything that depended on it as failed.
         """
         session.query(TaskInstance).filter(
