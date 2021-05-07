@@ -31,7 +31,7 @@ from airflow.hooks.base import BaseHook
 from airflow.models import Connection
 from airflow.utils import cli as cli_utils
 from airflow.utils.cli import suppress_logs_and_warning
-from airflow.utils.parse import _parse_file
+from airflow.utils.parse import parse_file
 from airflow.utils.session import create_session
 
 
@@ -248,7 +248,7 @@ def connections_import(args):
 
 def _import_helper(filepath):
     """Load connections from a file and save them to the DB. On collision, skip."""
-    connections_dict = _parse_file(filepath)
+    connections_dict = parse_file(filepath)
     with create_session() as session:
         for conn_id, conn_dict in connections_dict.items():
             if session.query(Connection).filter(Connection.conn_id == conn_id).first():

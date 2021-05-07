@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from airflow.exceptions import AirflowException, ConnectionNotUnique
 from airflow.secrets.base_secrets import BaseSecretsBackend
 from airflow.utils.log.logging_mixin import LoggingMixin
-from airflow.utils.parse import _parse_file
+from airflow.utils.parse import parse_file
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def load_variables(file_path: str) -> Dict[str, str]:
     """
     log.debug("Loading variables from a text file")
 
-    secrets = _parse_file(file_path)
+    secrets = parse_file(file_path)
     invalid_keys = [key for key, values in secrets.items() if isinstance(values, list) and len(values) != 1]
     if invalid_keys:
         raise AirflowException(f'The "{file_path}" file contains multiple values for keys: {invalid_keys}')
@@ -75,7 +75,7 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
 
     log.debug("Loading connection")
 
-    secrets: Dict[str, Any] = _parse_file(file_path)
+    secrets: Dict[str, Any] = parse_file(file_path)
     connection_by_conn_id = {}
     for key, secret_values in list(secrets.items()):
         if isinstance(secret_values, list):

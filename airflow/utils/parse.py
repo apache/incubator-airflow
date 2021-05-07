@@ -134,7 +134,7 @@ FILE_PARSERS = {
 }
 
 
-def _parse_file(file_path: str) -> Dict[str, Any]:
+def parse_file(file_path: str) -> Dict[str, Any]:
     """
     Based on the file extension format, selects a parser, and parses the file.
 
