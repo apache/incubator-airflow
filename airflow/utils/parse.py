@@ -122,7 +122,7 @@ def _parse_json_file(file_path: str) -> Tuple[Dict[str, Any], List[FileSyntaxErr
     except JSONDecodeError as e:
         return {}, [FileSyntaxError(line_no=int(e.lineno), message=e.msg)]
     if not isinstance(contents_dict, dict):
-        return {}, [FileSyntaxError(line_no=1, message="The file should contain the object.")]
+        return {}, [FileSyntaxError(line_no=1, message="The file should contain an object.")]
 
     return contents_dict, []
 
