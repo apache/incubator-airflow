@@ -96,7 +96,7 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
         elif isinstance(secret_values, str):
             connection_by_conn_id[key] = Connection(uri=secret_values)
         else:
-            raise AirflowException(f"Unexpected value type: {type(secret_values)}.")
+            raise AirflowException(f"Unexpected value type: {type(secret_values).__name__}.")
 
     num_conn = len(connection_by_conn_id)
     log.debug("Loaded %d connections", num_conn)
