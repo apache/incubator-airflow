@@ -26,7 +26,7 @@ from dateutil import relativedelta
 from sqlalchemy import event, nullsfirst
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.session import Session
-from sqlalchemy.types import DateTime, JSON, Text, TypeDecorator
+from sqlalchemy.types import JSON, DateTime, Text, TypeDecorator
 
 from airflow.configuration import conf
 
@@ -102,12 +102,12 @@ class ExtendedJSON(TypeDecorator):
     def process_bind_param(self, value, dialect):
         from airflow.serialization.serialized_objects import BaseSerialization
 
-        return BaseSerialization._serialize(value)
+        return BaseSerialization._serialize(value)  # pylint: disable=protected-access
 
     def process_result_value(self, value, dialect):
         from airflow.serialization.serialized_objects import BaseSerialization
 
-        return BaseSerialization._deserialize(value)
+        return BaseSerialization._deserialize(value)  # pylint: disable=protected-access
 
 
 class Interval(TypeDecorator):
