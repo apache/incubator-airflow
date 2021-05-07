@@ -127,7 +127,7 @@ class SerializedDagModel(Base):
                 .first()
                 is not None
             ):
-                return
+                return False
 
         log.debug("Checking if DAG (%s) changed", dag.dag_id)
         new_serialized_dag = cls(dag)
