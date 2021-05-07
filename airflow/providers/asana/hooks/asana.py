@@ -83,6 +83,7 @@ class AsanaHook(BaseHook):
     def create_task(self, task_name: str, params: dict) -> dict:
         """
         Creates an Asana task.
+
         :param task_name: Name of the new task
         :param params: Other task attributes, such as due_on, parent, and notes. For a complete list
             of possible parameters, see https://developers.asana.com/docs/create-a-task
@@ -96,6 +97,7 @@ class AsanaHook(BaseHook):
     def _merge_create_task_parameters(self, task_name: str, task_params: dict) -> dict:
         """
         Merge create_task parameters with default params from the connection.
+
         :param task_name: Name of the task
         :param task_params: Other task parameters which should override defaults from the connection
         :return: A dict of merged parameters to use in the new task
@@ -114,6 +116,7 @@ class AsanaHook(BaseHook):
     def _validate_create_task_parameters(params: dict) -> None:
         """
         Check that user provided minimal parameters for task creation.
+
         :param params: A dict of attributes the task to be created should have
         :return: None; raises ValueError if `params` doesn't contain required parameters
         """
@@ -126,6 +129,7 @@ class AsanaHook(BaseHook):
     def delete_task(self, task_id: str) -> dict:
         """
         Deletes an Asana task.
+
         :param task_id: Asana GID of the task to delete
         :return: A dict containing the response from Asana
         """
@@ -139,6 +143,7 @@ class AsanaHook(BaseHook):
     def find_task(self, params: dict) -> list:
         """
         Retrieves a list of Asana tasks that match search parameters.
+
         :param params: Attributes that matching tasks should have. For a list of possible parameters,
             see https://developers.asana.com/docs/get-multiple-tasks
         :return: A list of dicts containing attributes of matching Asana tasks
@@ -151,6 +156,7 @@ class AsanaHook(BaseHook):
     def _merge_find_task_parameters(self, search_parameters: dict) -> dict:
         """
         Merge find_task parameters with default params from the connection.
+
         :param search_parameters: Attributes that tasks matching the search should have; these override
             defaults from the connection
         :return: A dict of merged parameters to use in the search
@@ -169,6 +175,7 @@ class AsanaHook(BaseHook):
     def _validate_find_task_parameters(params: dict) -> None:
         """
         Check that the user provided minimal search parameters.
+
         :param params: Dict of parameters to be used in the search
         :return: None; raises ValueError if search parameters do not contain minimum required attributes
         """
@@ -185,6 +192,7 @@ class AsanaHook(BaseHook):
     def update_task(self, task_id: str, params: dict) -> dict:
         """
         Updates an existing Asana task.
+
         :param task_id: Asana GID of task to update
         :param params: New values of the task's attributes. For a list of possible parameters, see
             https://developers.asana.com/docs/update-a-task
@@ -196,6 +204,7 @@ class AsanaHook(BaseHook):
     def create_project(self, params: dict) -> dict:
         """
         Creates a new project.
+
         :param params: Attributes that the new project should have. See
             https://developers.asana.com/docs/create-a-project#create-a-project-parameters
             for a list of possible parameters.
@@ -210,6 +219,7 @@ class AsanaHook(BaseHook):
     def _validate_create_project_parameters(params: dict) -> None:
         """
         Check that user provided the minimum required parameters for project creation
+
         :param params: Attributes that the new project should have
         :return: None; raises a ValueError if `params` does not contain the minimum required attributes.
         """
@@ -222,6 +232,7 @@ class AsanaHook(BaseHook):
     def _merge_project_parameters(self, params: dict) -> dict:
         """
         Merge parameters passed into a project method with default params from the connection.
+
         :param params: Parameters passed into one of the project methods, which should override
             defaults from the connection
         :return: A dict of merged parameters
@@ -233,6 +244,7 @@ class AsanaHook(BaseHook):
     def find_project(self, params: dict) -> list:
         """
         Retrieves a list of Asana projects that match search parameters.
+
         :param params: Attributes which matching projects should have. See
             https://developers.asana.com/docs/get-multiple-projects
             for a list of possible parameters.
@@ -245,6 +257,7 @@ class AsanaHook(BaseHook):
     def update_project(self, project_id: str, params: dict) -> dict:
         """
         Updates an existing project.
+
         :param project_id: Asana GID of the project to update
         :param params: New attributes that the project should have. See
             https://developers.asana.com/docs/update-a-project#update-a-project-parameters
@@ -257,6 +270,7 @@ class AsanaHook(BaseHook):
     def delete_project(self, project_id: str) -> dict:
         """
         Deletes a project.
+
         :param project_id: Asana GID of the project to delete
         :return: A dict containing the response from Asana
         """
