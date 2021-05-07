@@ -1244,7 +1244,8 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                     simple_task_instance=SimpleTaskInstance(ti),
                     msg=msg % (ti, state, ti.state, info),
                 )
-
+                self.log.info("Setting task instance state to `%s` as reported by the executor", state)
+                ti.set_state(state)
                 self.processor_agent.send_callback_to_execute(request)
 
         return len(event_buffer)
