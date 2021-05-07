@@ -109,6 +109,11 @@ def viewer_client(app):
     return client_with_login(app, username="test_viewer", password="test_viewer")
 
 
+@pytest.fixture()
+def user_client(app):
+    return client_with_login(app, username="test_user", password="test_user")
+
+
 @pytest.fixture(scope="module")
 def client_factory(app):
     def factory(name, role_name, permissions):
