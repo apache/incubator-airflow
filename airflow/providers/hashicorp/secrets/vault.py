@@ -18,8 +18,10 @@
 """Objects relating to sourcing connections & variables from Hashicorp Vault"""
 from typing import Optional
 
+from airflow.models.connection import Connection
 from airflow.providers.hashicorp._internal_client.vault_client import _VaultClient  # noqa
 from airflow.secrets import BaseSecretsBackend
+from airflow.secrets.local_filesystem import _create_connection
 from airflow.utils.log.logging_mixin import LoggingMixin
 
 
@@ -179,6 +181,20 @@ class VaultBackend(BaseSecretsBackend, LoggingMixin):
             **kwargs,
         )
 
+    def get_response(self, conn_id: str) -> Optional[dict]:
+        """
+        Get data from Vault
+
+        :type conn_id: str
+        :rtype: dict
+        :return: The data from the Vault path if exists
+        """
+        if self.connections_path is None:
+            return None
+
+        secret_path = self.build_path(self.connections_path, conn_id)
+        return self.vault_client.get_secret(secret_path=secret_path)
+
     def get_conn_uri(self, conn_id: str) -> Optional[str]:
         """
         Get secret value from Vault. Store the secret in the form of URI
@@ -188,12 +204,28 @@ class VaultBackend(BaseSecretsBackend, LoggingMixin):
         :rtype: str
         :return: The connection uri retrieved from the secret
         """
-        if self.connections_path is None:
+        response = self.get_response(conn_id)
+
+        return response.get("conn_uri") if response else None
+
+    def get_connection(self, conn_id: str) -> Optional[Connection]:
+        """
+        Get connection from Vault as secret. Prioritize conn_uri if exists,
+        if not fall back to normal Connection creation.
+
+        :type conn_id: str
+        :rtype: Connection
+        :return: A Connection object constructed from Vault data
+        """
+        response = self.get_response(conn_id)
+        if response is None:
             return None
-        else:
-            secret_path = self.build_path(self.connections_path, conn_id)
-            response = self.vault_client.get_secret(secret_path=secret_path)
-            return response.get("conn_uri") if response else None
+
+        uri = response.get("conn_uri")
+        if uri:
+            return uri
+
+        return _create_connection(conn_id, response)
 
     def get_variable(self, key: str) -> Optional[str]:
         """
