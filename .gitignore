@@ -18,6 +18,9 @@ airflow/www/static/dist
 /logs/
 airflow-webserver.pid
 
+# dask-distributed unit test artifacts
+dask-worker-space/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
