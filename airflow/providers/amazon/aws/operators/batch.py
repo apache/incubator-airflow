@@ -176,7 +176,6 @@ class AwsBatchOperator(BaseOperator):
             self.job_id = response["jobId"]
 
             self.log.info("AWS Batch job (%s) started: %s", self.job_id, response)
-
         except Exception as e:
             self.log.error("AWS Batch job (%s) failed submission", self.job_id)
             raise AirflowException(e)
@@ -184,21 +183,19 @@ class AwsBatchOperator(BaseOperator):
     def monitor_job(self, context: Dict):  # pylint: disable=unused-argument
         """
         Monitor an AWS Batch job
+        monitor_job can raise an exception or an AirflowTaskTimeout can be raised if execution_timeout
+        is given while creating the task. These exceptions should be handled in taskinstance.py
+        instead of here like it was previously done
 
         :raises: AirflowException
         """
         if not self.job_id:
             raise AirflowException('AWS Batch job - job_id was not found')
 
-        try:
-            if self.waiters:
-                self.waiters.wait_for_job(self.job_id)
-            else:
-                self.hook.wait_for_job(self.job_id)
+        if self.waiters:
+            self.waiters.wait_for_job(self.job_id)
+        else:
+            self.hook.wait_for_job(self.job_id)
 
-            self.hook.check_job_success(self.job_id)
-            self.log.info("AWS Batch job (%s) succeeded", self.job_id)
-
-        except Exception as e:
-            self.log.error("AWS Batch job (%s) failed monitoring", self.job_id)
-            raise AirflowException(e)
+        self.hook.check_job_success(self.job_id)
+        self.log.info("AWS Batch job (%s) succeeded", self.job_id)
