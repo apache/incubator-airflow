@@ -19,11 +19,12 @@
 
 .. _howto/operator:KubernetesPodOperator:
 
-KubernetesPodOperator
-=====================
+KubernetesPodOperator - The Comprehensive Guide
+===============================================
 
 The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` allows
-you to create and run Pods on a Kubernetes cluster.
+you to create and run Pods on a Kubernetes cluster. The task wrapped in the KubernetesPodOperator is then executed in
+these pods.
 
 .. contents::
   :depth: 1
@@ -35,23 +36,50 @@ you to create and run Pods on a Kubernetes cluster.
   :ref:`GKEStartPodOperator <howto/operator:GKEStartPodOperator>` operator as it
   simplifies the Kubernetes authorization process.
 
-.. note::
-  The :doc:`Kubernetes executor <apache-airflow:executor/kubernetes>` is **not** required to use this operator.
-
 How does this operator work?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` uses the
 Kubernetes API to launch a pod in a Kubernetes cluster. By supplying an
 image URL and a command with optional arguments, the operator uses the Kube Python Client to generate a Kubernetes API
 request that dynamically launches those individual pods.
+Essentially, KubernetesPodOperator packages all the supplied parameters into a request object which is then shipped off
+to Kubernetes API Server so that the pod to execute your task is created. Whenever a task is triggered, a new worker pod
+is spun up to execute that task. And once the task is completed, by default the worker pod is deleted
+and the resources reclaimed.
 Users can specify a kubeconfig file using the ``config_file`` parameter, otherwise the operator will default
 to ``~/.kube/config``.
 
-The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` enables task-level
-resource configuration and is optimal for custom Python
-dependencies that are not available through the public PyPI repository. It also allows users to supply a template
-YAML file using the ``pod_template_file`` parameter.
-Ultimately, it allows Airflow to act a job orchestrator - no matter the language those jobs are written in.
+How does the KubernetesPodOperator differ from the KubernetesExecutor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+  The :doc:`Kubernetes executor <apache-airflow:executor/kubernetes>` is **not** required to use this operator.
+
+
+What problems does KubernetesPodOperator solve?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` enables task-level
+  resource configuration and is optimal for custom Python dependencies that are not available through the
+  public PyPI repository.
+
+* It allows users to supply a template YAML file using the ``pod_template_file`` parameter.
+
+* It allows isolation of deployments, configuration reuse, delegation and better management of secrets.
+
+* Ultimately, it allows Airflow to act a job orchestrator - no matter the language those jobs are written in.
+
+
+Difference between ``KubernetesPodOperator`` and Kubernetes object spec
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` can be considered
+a substitute for a Kubernetes object spec definition that is able
+to be run in the Airflow scheduler in the DAG context. If using the operator, there is no need to create the
+equivalent YAML/JSON object spec for the Pod you would like to run.
+The YAML file can still be provided with the ``pod_template_file`` or even the Pod Spec constructed in Python via
+the ``full_pod_spec`` parameter which requires a Kubernetes ``V1Pod``.
+
 
 How to use cluster ConfigMaps, Secrets, and Volumes with Pod?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,14 +101,21 @@ and type safety. While we have removed almost all Kubernetes convenience classes
     :start-after: [START howto_operator_k8s_cluster_resources]
     :end-before: [END howto_operator_k8s_cluster_resources]
 
-Difference between ``KubernetesPodOperator`` and Kubernetes object spec
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator` can be considered
-a substitute for a Kubernetes object spec definition that is able
-to be run in the Airflow scheduler in the DAG context. If using the operator, there is no need to create the
-equivalent YAML/JSON object spec for the Pod you would like to run.
-The YAML file can still be provided with the ``pod_template_file`` or even the Pod Spec constructed in Python via
-the ``full_pod_spec`` parameter which requires a Kubernetes ``V1Pod``.
+
+How to use KubernetesPodOperator with YAML file/JSON spec?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
+
+How to define env for KubernetesPodOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
+
+How to define limit/requests resources?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
 
 How to use private images (container registry)?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -119,6 +154,22 @@ See the following example on how this occurs:
     :language: python
     :start-after: [START howto_operator_k8s_write_xcom]
     :end-before: [END howto_operator_k8s_write_xcom]
+
+
+How to deal with common KubernetesPodOperator issues or gotchas
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
+
+Best practices for using KubernetesPodOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
+
+Using KubernetesPodOperator with GKEStartPodOperator (GKE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ * WIP
 
 Reference
 ^^^^^^^^^

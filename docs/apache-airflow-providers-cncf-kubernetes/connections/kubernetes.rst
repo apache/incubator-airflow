@@ -20,7 +20,9 @@
 Kubernetes cluster Connection
 =============================
 
-The Kubernetes cluster Connection type enables connection to a Kubernetes cluster by :class:`~airflow.providers.cncf.kubernetes.operators.spark_kubernetes.SparkKubernetesOperator` tasks. They are not used by ``KubernetesPodOperator`` tasks.
+The Kubernetes cluster Connection type enables connection to a Kubernetes cluster by
+:class:`~airflow.providers.cncf.kubernetes.operators.spark_kubernetes.SparkKubernetesOperator` tasks.
+They are not used by :class:`~airflow.providers.cncf.kubernetes.operators.kubernetes_pod.KubernetesPodOperator tasks.
 
 
 Authenticating to Kubernetes cluster
