@@ -111,8 +111,8 @@ Extra (optional)
           "ApplicationIntent": "ReadOnly",
           "TrustedConnection": "Yes",
           "connect_kwargs": {
-            "autocommit": "false",
-            "ansi": "true"
+            "autocommit": false,
+            "ansi": true
           }
         }
 

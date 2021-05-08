@@ -160,19 +160,8 @@ class OdbcHook(DbApiHook):
 
         Hook ``connect_kwargs`` precedes ``connect_kwargs`` from conn extra.
 
-        String values for 'true' and 'false' are converted to bool type.
-
         If ``attrs_before`` provided, keys and values are converted to int, as required by pyodbc.
         """
-
-        def clean_bool(val):  # pylint: disable=inconsistent-return-statements
-            if hasattr(val, 'lower'):
-                if val.lower() == 'true':
-                    return True
-                elif val.lower() == 'false':
-                    return False
-            else:
-                return val
 
         conn_connect_kwargs = self.connection_extra_lower.get('connect_kwargs', {})
         hook_connect_kwargs = self._connect_kwargs or {}
@@ -183,7 +172,7 @@ class OdbcHook(DbApiHook):
                 int(k): int(v) for k, v in merged_connect_kwargs['attrs_before'].items()
             }
 
-        return {k: clean_bool(v) for k, v in merged_connect_kwargs.items()}
+        return {k: v for k, v in merged_connect_kwargs.items()}
 
     def get_conn(self) -> pyodbc.Connection:
         """Returns a pyodbc connection object."""
