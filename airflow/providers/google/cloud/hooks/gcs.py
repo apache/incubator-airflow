@@ -265,8 +265,8 @@ class GCSHook(GoogleBaseHook):
 
     def download(
         self,
+        bucket_name: str,
         object_name: str,
-        bucket_name: Optional[str],
         filename: Optional[str] = None,
         chunk_size: Optional[int] = None,
         timeout: Optional[int] = DEFAULT_TIMEOUT,
@@ -280,10 +280,10 @@ class GCSHook(GoogleBaseHook):
         returns the location. For file sizes that exceed the available memory it is recommended
         to write to a file.
 
-        :param object_name: The object to fetch.
-        :type object_name: str
         :param bucket_name: The bucket to fetch from.
         :type bucket_name: str
+        :param object_name: The object to fetch.
+        :type object_name: str
         :param filename: If set, a local file path where the file should be written to.
         :type filename: str
         :param chunk_size: Blob chunk size.
