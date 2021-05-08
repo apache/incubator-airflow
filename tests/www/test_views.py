@@ -44,6 +44,7 @@ from airflow.executors.celery_executor import CeleryExecutor
 from airflow.jobs.base_job import BaseJob
 from airflow.models import DAG, DagRun, TaskInstance
 from airflow.operators.dummy import DummyOperator
+from airflow.plugins_manager import AirflowPlugin, EntryPointSource
 from airflow.security import permissions
 from airflow.ti_deps.dependencies_states import QUEUEABLE_STATES, RUNNABLE_STATES
 from airflow.utils import dates, timezone
@@ -226,6 +227,266 @@ class TestBase(unittest.TestCase):
             permissions=perms,
         )
         self.login(username=username, password=username)
+
+
+class TestConnectionModelView(TestBase):
+    def setUp(self):
+        super().setUp()
+
+        self.connection = {
+            'conn_id': 'test_conn',
+            'conn_type': 'http',
+            'description': 'description',
+            'host': 'localhost',
+            'port': 8080,
+            'username': 'root',
+            'password': 'admin',
+        }
+
+    def tearDown(self):
+        self.clear_table(Connection)
+        super().tearDown()
+
+    def test_create_connection(self):
+        init_views.init_connection_form()
+        resp = self.client.post('/connection/add', data=self.connection, follow_redirects=True)
+        self.check_content_in_response('Added Row', resp)
+
+    def test_prefill_form_null_extra(self):
+        mock_form = mock.Mock()
+        mock_form.data = {"conn_id": "test", "extra": None}
+
+        cmv = ConnectionModelView()
+        cmv.prefill_form(form=mock_form, pk=1)
+
+
+class TestVariableModelView(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.variable = {
+            'key': 'test_key',
+            'val': 'text_val',
+            'description': 'test_description',
+            'is_encrypted': True,
+        }
+
+    def tearDown(self):
+        self.clear_table(models.Variable)
+        super().tearDown()
+
+    def test_can_handle_error_on_decrypt(self):
+
+        # create valid variable
+        self.client.post('/variable/add', data=self.variable, follow_redirects=True)
+
+        # update the variable with a wrong value, given that is encrypted
+        Var = models.Variable  # pylint: disable=invalid-name
+        (
+            self.session.query(Var)
+            .filter(Var.key == self.variable['key'])
+            .update({'val': 'failed_value_not_encrypted'}, synchronize_session=False)
+        )
+        self.session.commit()
+
+        # retrieve Variables page, should not fail and contain the Invalid
+        # label for the variable
+        resp = self.client.get('/variable/list', follow_redirects=True)
+        self.check_content_in_response('<span class="label label-danger">Invalid</span>', resp)
+
+    def test_xss_prevention(self):
+        xss = "/variable/list/<img%20src=''%20onerror='alert(1);'>"
+
+        resp = self.client.get(
+            xss,
+            follow_redirects=True,
+        )
+        assert resp.status_code == 404
+        assert "<img src='' onerror='alert(1);'>" not in resp.data.decode("utf-8")
+
+    def test_import_variables_no_file(self):
+        resp = self.client.post('/variable/varimport', follow_redirects=True)
+        self.check_content_in_response('Missing file or syntax error.', resp)
+
+    def test_import_variables_failed(self):
+        content = '{"str_key": "str_value"}'
+
+        with mock.patch('airflow.models.Variable.set') as set_mock:
+            set_mock.side_effect = UnicodeEncodeError
+            assert self.session.query(models.Variable).count() == 0
+
+            bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
+
+            resp = self.client.post(
+                '/variable/varimport', data={'file': (bytes_content, 'test.json')}, follow_redirects=True
+            )
+            self.check_content_in_response('1 variable(s) failed to be updated.', resp)
+
+    def test_import_variables_success(self):
+        assert self.session.query(models.Variable).count() == 0
+
+        content = (
+            '{"str_key": "str_value", "int_key": 60, "list_key": [1, 2], "dict_key": {"k_a": 2, "k_b": 3}}'
+        )
+        bytes_content = io.BytesIO(bytes(content, encoding='utf-8'))
+
+        resp = self.client.post(
+            '/variable/varimport', data={'file': (bytes_content, 'test.json')}, follow_redirects=True
+        )
+        self.check_content_in_response('4 variable(s) successfully updated.', resp)
+
+    def test_description_retrieval(self):
+        # create valid variable
+        self.client.post('/variable/add', data=self.variable, follow_redirects=True)
+
+        row = self.session.query(models.Variable.key, models.Variable.description).first()
+        assert row.key == 'test_key' and row.description == 'test_description'
+
+
+class PluginOperator(BaseOperator):
+    pass
+
+
+class TestPluginView(TestBase):
+    def test_should_list_plugins_on_page_with_details(self):
+        resp = self.client.get('/plugin')
+        self.check_content_in_response("test_plugin", resp)
+        self.check_content_in_response("Airflow Plugins", resp)
+        self.check_content_in_response("source", resp)
+        self.check_content_in_response("<em>$PLUGINS_FOLDER/</em>test_plugin.py", resp)
+
+    def test_should_list_entrypoint_plugins_on_page_with_details(self):
+
+        mock_plugin = AirflowPlugin()
+        mock_plugin.name = "test_plugin"
+        mock_plugin.source = EntryPointSource(
+            mock.Mock(), mock.Mock(version='1.0.0', metadata={'name': 'test-entrypoint-testpluginview'})
+        )
+        with mock_plugin_manager(plugins=[mock_plugin]):
+            resp = self.client.get('/plugin')
+
+        self.check_content_in_response("test_plugin", resp)
+        self.check_content_in_response("Airflow Plugins", resp)
+        self.check_content_in_response("source", resp)
+        self.check_content_in_response("<em>test-entrypoint-testpluginview==1.0.0:</em> <Mock id=", resp)
+
+    def test_endpoint_should_not_be_unauthenticated(self):
+        self.logout()
+        resp = self.client.get('/plugin', follow_redirects=True)
+        self.check_content_not_in_response("test_plugin", resp)
+        self.check_content_in_response("Sign In - Airflow", resp)
+
+
+class TestProvidersView(TestBase):
+    def test_should_list_providers_on_page_with_details(self):
+        self.create_user_and_login(
+            username='should_list_providers_on_page_with_details_user',
+            role_name='should_list_providers_on_page_with_details_role',
+            perms=[
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE),
+                (permissions.ACTION_CAN_ACCESS_MENU, permissions.RESOURCE_ADMIN_MENU),
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_PROVIDER)
+            ],
+        )
+        resp = self.client.get('/providers', follow_redirects=True)
+        self.check_content_in_response("Providers", resp)
+
+    def test_endpoint_should_not_be_unauthenticated(self):
+        self.logout()
+        resp = self.client.get('/providers', follow_redirects=True)
+        self.check_content_in_response("Sign In - Airflow", resp)
+
+    def test_user_without_authorization_should_not_see_page(self):
+        self.create_user_and_login(
+            username='user_without_authorization_should_not_see_page_user',
+            role_name='user_without_authorization_should_not_see_page_role',
+            perms=[
+                (permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE),
+            ],
+        )
+        resp = self.client.get('/providers', follow_redirects=True)
+        self.check_content_not_in_response("Providers", resp)
+
+
+class TestPoolModelView(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.pool = {
+            'pool': 'test-pool',
+            'slots': 777,
+            'description': 'test-pool-description',
+        }
+
+    def tearDown(self):
+        self.clear_table(models.Pool)
+        super().tearDown()
+
+    def test_create_pool_with_same_name(self):
+        # create test pool
+        resp = self.client.post('/pool/add', data=self.pool, follow_redirects=True)
+        self.check_content_in_response('Added Row', resp)
+
+        # create pool with the same name
+        resp = self.client.post('/pool/add', data=self.pool, follow_redirects=True)
+        self.check_content_in_response('Already exists.', resp)
+
+    def test_create_pool_with_empty_name(self):
+        self.pool['pool'] = ''
+        resp = self.client.post('/pool/add', data=self.pool, follow_redirects=True)
+        self.check_content_in_response('This field is required.', resp)
+
+    def test_odd_name(self):
+        self.pool['pool'] = 'test-pool<script></script>'
+        self.session.add(models.Pool(**self.pool))
+        self.session.commit()
+        resp = self.client.get('/pool/list/')
+        self.check_content_in_response('test-pool&lt;script&gt;', resp)
+        self.check_content_not_in_response('test-pool<script>', resp)
+
+    def test_list(self):
+        self.pool['pool'] = 'test-pool'
+        self.session.add(models.Pool(**self.pool))
+        self.session.commit()
+        resp = self.client.get('/pool/list/')
+        # We should see this link
+        with self.app.test_request_context():
+            url = url_for('TaskInstanceModelView.list', _flt_3_pool='test-pool', _flt_3_state='running')
+            used_tag = Markup("<a href='{url}'>{slots}</a>").format(url=url, slots=0)
+
+            url = url_for('TaskInstanceModelView.list', _flt_3_pool='test-pool', _flt_3_state='queued')
+            queued_tag = Markup("<a href='{url}'>{slots}</a>").format(url=url, slots=0)
+        self.check_content_in_response(used_tag, resp)
+        self.check_content_in_response(queued_tag, resp)
+
+
+class TestMountPoint(unittest.TestCase):
+    @classmethod
+    @conf_vars({("webserver", "base_url"): "http://localhost/test"})
+    def setUpClass(cls):
+        application.app = None
+        application.appbuilder = None
+        app = application.create_app(testing=True)
+        app.config['WTF_CSRF_ENABLED'] = False
+        cls.client = Client(app, BaseResponse)
+
+    @classmethod
+    def tearDownClass(cls):
+        application.app = None
+        application.appbuilder = None
+
+    def test_mount(self):
+        # Test an endpoint that doesn't need auth!
+        resp = self.client.get('/test/health')
+        assert resp.status_code == 200
+        assert b"healthy" in resp.data
+
+    def test_not_found(self):
+        resp = self.client.get('/', follow_redirects=True)
+        assert resp.status_code == 404
+
+    def test_index(self):
+        resp = self.client.get('/test/')
+        assert resp.status_code == 302
+        assert resp.headers['Location'] == 'http://localhost/test/home'
 
 
 class TestAirflowBaseViews(TestBase):
