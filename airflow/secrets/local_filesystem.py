@@ -16,211 +16,19 @@
 # specific language governing permissions and limitations
 # under the License.
 """Objects relating to retrieving connections and variables from local file"""
-import json
 import logging
-import os
 import warnings
-from collections import defaultdict
-from inspect import signature
-from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import airflow.utils.yaml as yaml
-from airflow.exceptions import (
-    AirflowException,
-    AirflowFileParseException,
-    ConnectionNotUnique,
-    FileSyntaxError,
-)
+from airflow.exceptions import AirflowException, ConnectionNotUnique
 from airflow.secrets.base_secrets import BaseSecretsBackend
-from airflow.utils.file import COMMENT_PATTERN
 from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.utils.parse import parse_file
 
 log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from airflow.models.connection import Connection
-
-
-def get_connection_parameter_names() -> Set[str]:
-    """Returns :class:`airflow.models.connection.Connection` constructor parameters."""
-    from airflow.models.connection import Connection
-
-    return {k for k in signature(Connection.__init__).parameters.keys() if k != "self"}
-
-
-def _parse_env_file(file_path: str) -> Tuple[Dict[str, List[str]], List[FileSyntaxError]]:
-    """
-    Parse a file in the ``.env`` format.
-
-    .. code-block:: text
-
-        MY_CONN_ID=my-conn-type://my-login:my-pa%2Fssword@my-host:5432/my-schema?param1=val1&param2=val2
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    secrets: Dict[str, List[str]] = defaultdict(list)
-    errors: List[FileSyntaxError] = []
-    for line_no, line in enumerate(content.splitlines(), 1):
-        if not line:
-            # Ignore empty line
-            continue
-
-        if COMMENT_PATTERN.match(line):
-            # Ignore comments
-            continue
-
-        var_parts: List[str] = line.split("=", 2)
-        if len(var_parts) != 2:
-            errors.append(
-                FileSyntaxError(
-                    line_no=line_no,
-                    message='Invalid line format. The line should contain at least one equal sign ("=").',
-                )
-            )
-            continue
-
-        key, value = var_parts
-        if not key:
-            errors.append(
-                FileSyntaxError(
-                    line_no=line_no,
-                    message="Invalid line format. Key is empty.",
-                )
-            )
-        secrets[key].append(value)
-    return secrets, errors
-
-
-def _parse_yaml_file(file_path: str) -> Tuple[Dict[str, List[str]], List[FileSyntaxError]]:
-    """
-    Parse a file in the YAML format.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    if not content:
-        return {}, [FileSyntaxError(line_no=1, message="The file is empty.")]
-    try:
-        secrets = yaml.safe_load(content)
-
-    except yaml.MarkedYAMLError as e:
-        return {}, [FileSyntaxError(line_no=e.problem_mark.line, message=str(e))]
-    if not isinstance(secrets, dict):
-        return {}, [FileSyntaxError(line_no=1, message="The file should contain the object.")]
-
-    return secrets, []
-
-
-def _parse_json_file(file_path: str) -> Tuple[Dict[str, Any], List[FileSyntaxError]]:
-    """
-    Parse a file in the JSON format.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Tuple with mapping of key and list of values and list of syntax errors
-    """
-    with open(file_path) as f:
-        content = f.read()
-
-    if not content:
-        return {}, [FileSyntaxError(line_no=1, message="The file is empty.")]
-    try:
-        secrets = json.loads(content)
-    except JSONDecodeError as e:
-        return {}, [FileSyntaxError(line_no=int(e.lineno), message=e.msg)]
-    if not isinstance(secrets, dict):
-        return {}, [FileSyntaxError(line_no=1, message="The file should contain the object.")]
-
-    return secrets, []
-
-
-FILE_PARSERS = {
-    "env": _parse_env_file,
-    "json": _parse_json_file,
-    "yaml": _parse_yaml_file,
-}
-
-
-def _parse_secret_file(file_path: str) -> Dict[str, Any]:
-    """
-    Based on the file extension format, selects a parser, and parses the file.
-
-    :param file_path: The location of the file that will be processed.
-    :type file_path: str
-    :return: Map of secret key (e.g. connection ID) and value.
-    """
-    if not os.path.exists(file_path):
-        raise AirflowException(
-            f"File {file_path} was not found. Check the configuration of your Secrets backend."
-        )
-
-    log.debug("Parsing file: %s", file_path)
-
-    ext = file_path.rsplit(".", 2)[-1].lower()
-
-    if ext not in FILE_PARSERS:
-        raise AirflowException(
-            "Unsupported file format. The file must have the extension .env or .json or .yaml"
-        )
-
-    secrets, parse_errors = FILE_PARSERS[ext](file_path)
-
-    log.debug("Parsed file: len(parse_errors)=%d, len(secrets)=%d", len(parse_errors), len(secrets))
-
-    if parse_errors:
-        raise AirflowFileParseException(
-            "Failed to load the secret file.", file_path=file_path, parse_errors=parse_errors
-        )
-
-    return secrets
-
-
-def _create_connection(conn_id: str, value: Any):
-    """Creates a connection based on a URL or JSON object."""
-    from airflow.models.connection import Connection
-
-    if isinstance(value, str):
-        return Connection(conn_id=conn_id, uri=value)
-    if isinstance(value, dict):
-        connection_parameter_names = get_connection_parameter_names() | {"extra_dejson"}
-        current_keys = set(value.keys())
-        if not current_keys.issubset(connection_parameter_names):
-            illegal_keys = current_keys - connection_parameter_names
-            illegal_keys_list = ", ".join(illegal_keys)
-            raise AirflowException(
-                f"The object have illegal keys: {illegal_keys_list}. "
-                f"The dictionary can only contain the following keys: {connection_parameter_names}"
-            )
-        if "extra" in value and "extra_dejson" in value:
-            raise AirflowException(
-                "The extra and extra_dejson parameters are mutually exclusive. "
-                "Please provide only one parameter."
-            )
-        if "extra_dejson" in value:
-            value["extra"] = json.dumps(value["extra_dejson"])
-            del value["extra_dejson"]
-
-        if "conn_id" in current_keys and conn_id != value["conn_id"]:
-            raise AirflowException(
-                f"Mismatch conn_id. "
-                f"The dictionary key has the value: {value['conn_id']}. "
-                f"The item has the value: {conn_id}."
-            )
-        value["conn_id"] = conn_id
-        return Connection(**value)
-    raise AirflowException(
-        f"Unexpected value type: {type(value)}. The connection can only be defined using a string or object."
-    )
 
 
 def load_variables(file_path: str) -> Dict[str, str]:
@@ -235,7 +43,7 @@ def load_variables(file_path: str) -> Dict[str, str]:
     """
     log.debug("Loading variables from a text file")
 
-    secrets = _parse_secret_file(file_path)
+    secrets = parse_file(file_path)
     invalid_keys = [key for key, values in secrets.items() if isinstance(values, list) and len(values) != 1]
     if invalid_keys:
         raise AirflowException(f'The "{file_path}" file contains multiple values for keys: {invalid_keys}')
@@ -263,19 +71,32 @@ def load_connections_dict(file_path: str) -> Dict[str, Any]:
     :return: A dictionary where the key contains a connection ID and the value contains the connection.
     :rtype: Dict[str, airflow.models.connection.Connection]
     """
+    from airflow.models.connection import Connection
+
     log.debug("Loading connection")
 
-    secrets: Dict[str, Any] = _parse_secret_file(file_path)
+    secrets: Dict[str, Any] = parse_file(file_path)
     connection_by_conn_id = {}
     for key, secret_values in list(secrets.items()):
         if isinstance(secret_values, list):
-            if len(secret_values) > 1:
+            # secret_values is either length 0, 1 or 2+ -- only length 1 is valid
+            if not secret_values:
+                log.debug("No secret values for %s", key)
+                continue
+
+            if len(secret_values) >= 2:
                 raise ConnectionNotUnique(f"Found multiple values for {key} in {file_path}.")
 
-            for secret_value in secret_values:
-                connection_by_conn_id[key] = _create_connection(key, secret_value)
+            # secret_values must be of length one, so unpack it
+            elif secret_values:
+                secret_values = secret_values[0]
+
+        if isinstance(secret_values, dict):
+            connection_by_conn_id[key] = Connection.from_dict(key, secret_values)
+        elif isinstance(secret_values, str):
+            connection_by_conn_id[key] = Connection(uri=secret_values)
         else:
-            connection_by_conn_id[key] = _create_connection(key, secret_values)
+            raise AirflowException(f"Unexpected value type: {type(secret_values).__name__}.")
 
     num_conn = len(connection_by_conn_id)
     log.debug("Loaded %d connections", num_conn)

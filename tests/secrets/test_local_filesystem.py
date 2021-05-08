@@ -32,9 +32,9 @@ from airflow.secrets.local_filesystem import LocalFilesystemBackend
 
 @contextmanager
 def mock_local_file(content):
-    with mock.patch(
-        "airflow.secrets.local_filesystem.open", mock.mock_open(read_data=content)
-    ) as file_mock, mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=True):
+    with mock.patch("airflow.utils.parse.open", mock.mock_open(read_data=content)) as file_mock, mock.patch(
+        "airflow.utils.parse.os.path.exists", return_value=True
+    ):
         yield file_mock
 
 
@@ -52,7 +52,7 @@ class FileParsers(unittest.TestCase):
 
     @parameterized.expand(
         (
-            ("[]", "The file should contain the object."),
+            ("[]", "The file should contain an object."),
             ("{AAAAA}", "Expecting property name enclosed in double quotes"),
             ("", "The file is empty."),
         )
@@ -97,11 +97,11 @@ class TestLoadVariables(unittest.TestCase):
             variables = local_filesystem.load_variables("a.json")
             assert expected_variables == variables
 
-    @mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=False)
+    @mock.patch("airflow.utils.parse.os.path.exists", return_value=False)
     def test_missing_file(self, mock_exists):
         with pytest.raises(
             AirflowException,
-            match=re.escape("File a.json was not found. Check the configuration of your Secrets backend."),
+            match=re.escape("File a.json was not found."),
         ):
             local_filesystem.load_variables("a.json")
 
@@ -180,10 +180,10 @@ class TestLoadConnection(unittest.TestCase):
 
     @parameterized.expand(
         (
-            ({"CONN_ID": None}, "Unexpected value type: <class 'NoneType'>."),
-            ({"CONN_ID": 1}, "Unexpected value type: <class 'int'>."),
-            ({"CONN_ID": [2]}, "Unexpected value type: <class 'int'>."),
-            ({"CONN_ID": [None]}, "Unexpected value type: <class 'NoneType'>."),
+            ({"CONN_ID": None}, "Unexpected value type: NoneType."),
+            ({"CONN_ID": 1}, "Unexpected value type: int."),
+            ({"CONN_ID": [2]}, "Unexpected value type: int."),
+            ({"CONN_ID": [None]}, "Unexpected value type: NoneType."),
             ({"CONN_ID": {"AAA": "mysql://host_1"}}, "The object have illegal keys: AAA."),
             ({"CONN_ID": {"conn_id": "BBBB"}}, "Mismatch conn_id."),
             ({"CONN_ID": ["mysql://", "mysql://"]}, "Found multiple values for CONN_ID in a.json."),
@@ -194,11 +194,11 @@ class TestLoadConnection(unittest.TestCase):
             with pytest.raises(AirflowException, match=re.escape(expected_connection_uris)):
                 local_filesystem.load_connections_dict("a.json")
 
-    @mock.patch("airflow.secrets.local_filesystem.os.path.exists", return_value=False)
+    @mock.patch("airflow.utils.parse.os.path.exists", return_value=False)
     def test_missing_file(self, mock_exists):
         with pytest.raises(
             AirflowException,
-            match=re.escape("File a.json was not found. Check the configuration of your Secrets backend."),
+            match=re.escape("File a.json was not found."),
         ):
             local_filesystem.load_connections_dict("a.json")
 
