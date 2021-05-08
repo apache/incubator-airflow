@@ -32,11 +32,13 @@ class EmrModifyClusterOperator(BaseOperator):
     :type step_concurrency_level: int
     :param aws_conn_id: aws connection to uses
     :type aws_conn_id: str
+        (Adding `aws_conn_id` param to template_fields so that it can be overriden using jinja template from Dags
+         This feature can be useful if user wants to update/override the aws_conn_id for some kind of Dag Isolation etc)
     :param do_xcom_push: if True, cluster_id is pushed to XCom with key cluster_id.
     :type do_xcom_push: bool
     """
 
-    template_fields = ['cluster_id', 'step_concurrency_level']
+    template_fields = ['cluster_id', 'step_concurrency_level' , 'aws_conn_id']
     template_ext = ()
     ui_color = '#f9c915'
 

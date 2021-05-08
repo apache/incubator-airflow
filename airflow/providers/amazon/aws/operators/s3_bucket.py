@@ -37,12 +37,16 @@ class S3CreateBucketOperator(BaseOperator):
         running Airflow in a distributed manner and aws_conn_id is None or
         empty, then default boto3 configuration would be used (and must be
         maintained on each worker node).
+        
+        Adding `aws_conn_id` param to template_fields so that it can be overriden using jinja template from Dags
+        This feature can be useful if user wants to update/override the aws_conn_id for some kind of Dag Isolation etc
+        
     :type aws_conn_id: Optional[str]
     :param region_name: AWS region_name. If not specified fetched from connection.
     :type region_name: Optional[str]
     """
 
-    template_fields = ("bucket_name",)
+    template_fields = ("bucket_name", "aws_conn_id")
 
     def __init__(
         self,

@@ -31,6 +31,8 @@ class EmrCreateJobFlowOperator(BaseOperator):
 
     :param aws_conn_id: aws connection to uses
     :type aws_conn_id: str
+       (adding this param to template_fields so that it can be overriden using jinja template from Dags
+       This feature can be useful if user wants to update/override the aws_conn_id for some kind of Dag Isolation etc) 
     :param emr_conn_id: emr connection to use
     :type emr_conn_id: str
     :param job_flow_overrides: boto3 style arguments or reference to an arguments file
@@ -40,7 +42,7 @@ class EmrCreateJobFlowOperator(BaseOperator):
     :type region_name: Optional[str]
     """
 
-    template_fields = ['job_flow_overrides']
+    template_fields = ['job_flow_overrides' , 'aws_conn_id']
     template_ext = ('.json',)
     template_fields_renderers = {"job_flow_overrides": "json"}
     ui_color = '#f9c915'
