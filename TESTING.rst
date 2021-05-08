@@ -601,6 +601,17 @@ The deploy command performs those steps:
 5. Applies the volumes.yaml to get the volumes deployed to ``default`` namespace - this is where
    KubernetesExecutor starts its pods.
 
+You can also specify a different executor by providing the ``--executor`` optional argument:
+
+.. code-block:: bash
+
+    ./breeze kind-cluster deploy --executor CeleryExecutor
+
+Note that when you specify the ``--executor`` option, it becomes the default. Therefore, every other operations
+on ``./breeze kind-cluster`` will default to using this executor. To change that, use the ``--executor`` option on the
+subsequent commands too.
+
+
 Running tests with Kubernetes Cluster
 -------------------------------------
 
@@ -622,6 +633,12 @@ Running Kubernetes tests via breeze:
       ./breeze kind-cluster test
       ./breeze kind-cluster test -- TEST TEST [TEST ...]
 
+Optionally add ``--executor``:
+
+.. code-block:: bash
+
+      ./breeze kind-cluster test --executor CeleryExecutor
+      ./breeze kind-cluster test -- TEST TEST [TEST ...] --executor CeleryExecutor
 
 Entering shell with Kubernetes Cluster
 --------------------------------------
@@ -644,6 +661,12 @@ You can enter the shell via those scripts
 .. code-block:: bash
 
       ./breeze kind-cluster shell
+
+Optionally add ``--executor``:
+
+.. code-block:: bash
+
+      ./breeze kind-cluster shell --executor CeleryExecutor
 
 
 K9s CLI - debug Kubernetes in style!

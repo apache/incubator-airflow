@@ -22,10 +22,13 @@ import pytest
 from kubernetes_tests.test_base import EXECUTOR, TestBase
 
 
-@pytest.mark.skipif(EXECUTOR != 'KubernetesExecutor', reason="Only runs on KubernetesExecutor")
-class TestKubernetesExecutor(TestBase):
+# These tests are here because only KubernetesExecutor can run the tests in
+# test_kubernetes_executor.py
+# Also, the skipping is necessary as there's no gain in running these tests in KubernetesExecutor
+@pytest.mark.skipif(EXECUTOR == 'KubernetesExecutor', reason="Does not run on KubernetesExecutor")
+class TestCeleryAndLocalExecutor(TestBase):
     def test_integration_run_dag(self):
-        dag_id = 'example_kubernetes_executor_config'
+        dag_id = 'example_bash_operator'
         dag_run_id, execution_date = self.start_job_in_kubernetes(dag_id, self.host)
         print(f"Found the job with execution_date {execution_date}")
 
@@ -34,9 +37,9 @@ class TestKubernetesExecutor(TestBase):
             host=self.host,
             dag_run_id=dag_run_id,
             dag_id=dag_id,
-            task_id='start_task',
+            task_id='run_after_loop',
             expected_final_state='success',
-            timeout=300,
+            timeout=40,
         )
 
         self.ensure_dag_expected_state(
@@ -44,11 +47,11 @@ class TestKubernetesExecutor(TestBase):
             execution_date=execution_date,
             dag_id=dag_id,
             expected_final_state='success',
-            timeout=300,
+            timeout=60,
         )
 
     def test_integration_run_dag_with_scheduler_failure(self):
-        dag_id = 'example_kubernetes_executor_config'
+        dag_id = 'example_xcom'
 
         dag_run_id, execution_date = self.start_job_in_kubernetes(dag_id, self.host)
 
@@ -61,18 +64,18 @@ class TestKubernetesExecutor(TestBase):
             host=self.host,
             dag_run_id=dag_run_id,
             dag_id=dag_id,
-            task_id='start_task',
+            task_id='push',
             expected_final_state='success',
-            timeout=300,
+            timeout=40,  # This should fail fast if failing
         )
 
         self.monitor_task(
             host=self.host,
             dag_run_id=dag_run_id,
             dag_id=dag_id,
-            task_id='other_namespace_task',
+            task_id='puller',
             expected_final_state='success',
-            timeout=300,
+            timeout=40,
         )
 
         self.ensure_dag_expected_state(
@@ -80,7 +83,7 @@ class TestKubernetesExecutor(TestBase):
             execution_date=execution_date,
             dag_id=dag_id,
             expected_final_state='success',
-            timeout=300,
+            timeout=60,
         )
 
         assert self._num_pods_in_namespace('test-namespace') == 0, "failed to delete pods in other namespace"
