@@ -1264,6 +1264,41 @@ class TestSchedulerJob(unittest.TestCase):
         assert 0 == len(res)
         session.rollback()
 
+    def test_infinite_pool(self):
+        dag_id = 'SchedulerJobTest.test_infinite_pool'
+        task_id = 'dummy'
+        dag = DAG(dag_id=dag_id, start_date=DEFAULT_DATE, concurrency=16)
+        task = DummyOperator(dag=dag, task_id=task_id, pool="infinite_pool")
+        dag = SerializedDAG.from_dict(SerializedDAG.to_dict(dag))
+
+        self.scheduler_job = SchedulerJob(subdir=os.devnull)
+        session = settings.Session()
+
+        dag_model = DagModel(
+            dag_id=dag_id,
+            is_paused=False,
+            concurrency=dag.concurrency,
+            has_task_concurrency_limits=False,
+        )
+        session.add(dag_model)
+        dr = dag.create_dagrun(
+            run_type=DagRunType.SCHEDULED,
+            execution_date=DEFAULT_DATE,
+            state=State.RUNNING,
+        )
+
+        ti = TaskInstance(task, dr.execution_date)
+        ti.state = State.SCHEDULED
+        session.merge(ti)
+        infinite_pool = Pool(pool='infinite_pool', slots=-1, description='infinite pool')
+        session.add(infinite_pool)
+        session.commit()
+
+        res = self.scheduler_job._executable_task_instances_to_queued(max_tis=32, session=session)
+        session.flush()
+        assert 1 == len(res)
+        session.rollback()
+
     def test_find_executable_task_instances_none(self):
         dag_id = 'SchedulerJobTest.test_find_executable_task_instances_none'
         task_id_1 = 'dummy'

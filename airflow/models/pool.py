@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from sys import maxsize
 from typing import Dict, Iterable, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, Text, func
@@ -106,6 +107,8 @@ class Pool(Base):
 
         pool_rows: Iterable[Tuple[str, int]] = query.all()
         for (pool_name, total_slots) in pool_rows:
+            if total_slots == -1:
+                total_slots = maxsize
             pools[pool_name] = PoolStats(total=total_slots, running=0, queued=0, open=0)
 
         state_count_by_pool = (
