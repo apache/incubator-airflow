@@ -31,6 +31,10 @@ metadata:
 {{- with .Values.labels }}
 {{ toYaml . | indent 4 }}
 {{- end -}}
+{{- if .Values.airflowConfigAnnotations }}
+  annotations:
+{{- toYaml .Values.airflowConfigAnnotations | nindent 4 }}
+{{- end }}
 {{- $Global := . }}
 data:
   # These are system-specified config overrides.

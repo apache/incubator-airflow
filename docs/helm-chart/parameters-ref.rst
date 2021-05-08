@@ -75,6 +75,12 @@ The following tables lists the configurable parameters of the Airflow chart and 
    * - ``rbac.create``
      - Deploy pods with Kubernetes RBAC enabled
      - ``true``
+   * - ``airflowPodAnnotations``
+     - Extra annotations to apply to all Airflow pods.
+     - ``{}``
+   * - ``airflowConfigAnnotations``
+     - Extra annotations to apply to the main Airflow configmap.
+     - ``{}``
    * - ``executor``
      - Airflow executor (eg SequentialExecutor, LocalExecutor, CeleryExecutor, KubernetesExecutor)
      - ``1``
