@@ -62,7 +62,7 @@ ACTION_CAN_ACCESS_MENU = "menu_access"
 DEPRECATED_ACTION_CAN_DAG_READ = "can_dag_read"
 DEPRECATED_ACTION_CAN_DAG_EDIT = "can_dag_edit"
 
-DAG_PERMS = {ACTION_CAN_READ, ACTION_CAN_EDIT}
+DAG_ACTIONS = {ACTION_CAN_READ, ACTION_CAN_EDIT}
 
 
 def resource_name_for_dag(dag_id):

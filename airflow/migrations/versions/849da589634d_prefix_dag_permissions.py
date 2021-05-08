@@ -40,7 +40,7 @@ depends_on = None
 def prefix_individual_dag_permissions(session):  # noqa: D103
     dag_perms = ['can_dag_read', 'can_dag_edit']
     prefix = "DAG:"
-    permission_view_menus = (
+    perms = (
         session.query(PermissionView)
         .join(Permission)
         .filter(Permission.name.in_(dag_perms))
@@ -49,8 +49,8 @@ def prefix_individual_dag_permissions(session):  # noqa: D103
         .filter(ViewMenu.name.notlike(prefix + '%'))
         .all()
     )
-    view_menu_ids = {pvm.view_menu.id for pvm in permission_view_menus}
-    vm_query = session.query(ViewMenu).filter(ViewMenu.id.in_(view_menu_ids))
+    resource_ids = {permission.view_menu.id for permission in perms}
+    vm_query = session.query(ViewMenu).filter(ViewMenu.id.in_(resource_ids))
     vm_query.update({ViewMenu.name: prefix + ViewMenu.name}, synchronize_session=False)
     session.commit()
 
@@ -89,20 +89,20 @@ def get_action_query(session, action_name):  # noqa: D103
     return session.query(Permission).filter(Permission.name == action_name)
 
 
-def get_pv_with_action_query(session, action):  # noqa: D103
+def get_permission_with_action_query(session, action):  # noqa: D103
     return session.query(PermissionView).filter(PermissionView.permission == action)
 
 
-def get_pv_with_resource_query(session, resource):  # noqa: D103
+def get_permission_with_resource_query(session, resource):  # noqa: D103
     return session.query(PermissionView).filter(PermissionView.view_menu_id == resource.id)
 
 
-def update_pv_action(session, pv_query, action):  # noqa: D103
-    pv_query.update({PermissionView.permission_id: action.id}, synchronize_session=False)
+def update_permission_action(session, permission_query, action):  # noqa: D103
+    permission_query.update({PermissionView.permission_id: action.id}, synchronize_session=False)
     session.commit()
 
 
-def get_pv(session, resource, action):  # noqa: D103
+def get_permission(session, resource, action):  # noqa: D103
     return (
         session.query(PermissionView)
         .filter(PermissionView.view_menu == resource)
@@ -111,12 +111,12 @@ def get_pv(session, resource, action):  # noqa: D103
     )
 
 
-def update_pv_resource(session, pv_query, resource):  # noqa: D103
-    for pv in pv_query.all():  # noqa: D103
-        if not get_pv(session, resource, pv.permission):  # noqa: D103
-            pv.view_menu = resource
+def update_permission_resource(session, permission_query, resource):  # noqa: D103
+    for permission in permission_query.all():  # noqa: D103
+        if not get_permission(session, resource, permission.permission):  # noqa: D103
+            permission.view_menu = resource
         else:
-            session.delete(pv)
+            session.delete(permission)
 
     session.commit()
 
@@ -125,24 +125,24 @@ def migrate_to_new_dag_permissions(db):  # noqa: D103
     # Prefix individual dag perms with `DAG:`
     prefix_individual_dag_permissions(db.session)
 
-    # Update existing PVs to use `can_read` instead of `can_dag_read`
+    # Update existing permissions to use `can_read` instead of `can_dag_read`
     can_dag_read_action = get_action_query(db.session, 'can_dag_read').first()
-    old_can_dag_read_pvs = get_pv_with_action_query(db.session, can_dag_read_action)
+    old_can_dag_read_permissions = get_permission_with_action_query(db.session, can_dag_read_action)
     can_read_action = get_or_create_action(db.session, 'can_read')
-    update_pv_action(db.session, old_can_dag_read_pvs, can_read_action)
+    update_permission_action(db.session, old_can_dag_read_permissions, can_read_action)
 
-    # Update existing PVs to use `can_edit` instead of `can_dag_edit`
+    # Update existing permissions to use `can_edit` instead of `can_dag_edit`
     can_dag_edit_action = get_action_query(db.session, 'can_dag_edit').first()
-    old_can_dag_edit_pvs = get_pv_with_action_query(db.session, can_dag_edit_action)
+    old_can_dag_edit_permissions = get_permission_with_action_query(db.session, can_dag_edit_action)
     can_edit_action = get_or_create_action(db.session, 'can_edit')
-    update_pv_action(db.session, old_can_dag_edit_pvs, can_edit_action)
+    update_permission_action(db.session, old_can_dag_edit_permissions, can_edit_action)
 
-    # Update existing PVs for `all_dags` resource to use `DAGs` resource.
+    # Update existing permissions for `all_dags` resource to use `DAGs` resource.
     all_dags_resource = get_resource_query(db.session, 'all_dags').first()
     if all_dags_resource:
-        old_all_dags_pv = get_pv_with_resource_query(db.session, all_dags_resource)
+        old_all_dags_permission = get_permission_with_resource_query(db.session, all_dags_resource)
         dag_resource = get_or_create_dag_resource(db.session)
-        update_pv_resource(db.session, old_all_dags_pv, dag_resource)
+        update_permission_resource(db.session, old_all_dags_permission, dag_resource)
 
         # Delete the `all_dags` resource
         db.session.delete(all_dags_resource)
