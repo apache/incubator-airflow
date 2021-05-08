@@ -674,6 +674,9 @@ transfers:
   - source-integration-name: Google BigQuery
     target-integration-name: MySQL
     python-module: airflow.providers.google.cloud.transfers.bigquery_to_mysql
+  - source-integration-name: Google BigQuery
+    target-integration-name: Microsoft SQL Server (MSSQL)
+    python-module: airflow.providers.google.cloud.transfers.bigquery_to_mssql
   - source-integration-name: Google Cloud Storage (GCS)
     target-integration-name: Google BigQuery
     python-module: airflow.providers.google.cloud.transfers.gcs_to_bigquery
