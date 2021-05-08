@@ -55,10 +55,10 @@ Follow the guidelines when writing unit tests:
 **NOTE:** We plan to convert all unit tests to standard "asserts" semi-automatically, but this will be done later
 in Airflow 2.0 development phase. That will include setUp/tearDown/context managers and decorators.
 
-Running Unit Tests from IDE
----------------------------
+Running Unit Tests from PyCharm IDE
+-----------------------------------
 
-To run unit tests from the IDE, create the `local virtualenv <LOCAL_VIRTUALENV.rst>`_,
+To run unit tests from PyCharm IDE, create the `local virtualenv <LOCAL_VIRTUALENV.rst>`_,
 select it as the default project's environment, then configure your test runner:
 
 .. image:: images/configure_test_runner.png

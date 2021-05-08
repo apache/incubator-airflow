@@ -161,8 +161,8 @@ Pyenv and setting up virtual-env
 
 
 
-Setup Airflow with Breeze and PyCharm
-#####################################
+Setup Airflow with Breeze
+#########################
 
 
 .. note::
@@ -205,23 +205,27 @@ Forking and cloning Project
 
 
 
-3. Open PyCharm and click ``Get from Version Control``
+3. Open your IDE or source code editor and select the option to clone the repository
 
    .. raw:: html
 
       <div align="center" style="padding-bottom:10px">
         <img src="images/quick_start/pycharm_clone.png"
              alt="Cloning github fork to Pycharm">
+        <img src="images/quick_start/vscode_clone.png"
+             alt="Cloning github fork to Visual Studio Code">
       </div>
 
 
-4. Paste the copied clone link in URL and click on clone.
+4. Paste the copied clone link in the URL field and submit.
 
    .. raw:: html
 
       <div align="center" style="padding-bottom:10px">
         <img src="images/quick_start/click_on_clone.png"
              alt="Cloning github fork to Pycharm">
+        <img src="images/quick_start/vscode_click_on_clone.png"
+             alt="Cloning github fork to Visual Studio Code">
       </div>
 
 
@@ -232,7 +236,7 @@ Setting up Breeze
 .. code-block:: bash
 
   $ pyenv activate airflow-env
-  $ cd ~/PycharmProjects/airflow/
+  $ cd ~/Projects/airflow/
 
 2. Initializing breeze autocomplete
 
@@ -283,7 +287,7 @@ Setting up Breeze
 
 .. code-block:: bash
 
-  export PATH=${PATH}:"/home/${USER}/PycharmProjects/airflow"
+  export PATH=${PATH}:"/home/${USER}/Projects/airflow"
   source ~/.bashrc
 
 Using Breeze
@@ -379,8 +383,9 @@ Using Breeze
       </div>
 
 3. Setup mysql database in
-MySQL Workbench with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
-   blank(leave empty), default schema ``airflow``.
+   PyCharm Database tool with Host ``127.0.0.1``, port ``23306``, user ``root`` and password
+   blank(leave empty), default schema ``airflow``. If you are using Visual Studio Code,
+   you can use any database management extension or standalone tool such as MySQL Workbench.
 
    .. raw:: html
 
@@ -488,7 +493,9 @@ Setting up Debug
 - Now set ``sql_alchemy_conn = mysql+pymysql://root:@127.0.0.1:23306/airflow?charset=utf8mb4`` in file
   ``~/airflow/airflow.cfg`` on local machine.
 
-2. Debugging an example DAG in PyCharm
+1. Debugging an example DAG
+
+A. Using PyCharm
 
 - Add Interpreter to PyCharm pointing interpreter path to ``~/.pyenv/versions/airflow-env/bin/python``, which is virtual
   environment ``airflow-env`` created with pyenv earlier. For adding an Interpreter go to ``File -> Setting -> Project:
@@ -536,6 +543,48 @@ Setting up Debug
                alt="Add environment variable pycharm">
         </div>
 
+- Now Debug an example dag and view the entries in tables such as ``dag_run, xcom`` etc in mysql workbench.
+
+B. Using Visual Studio Code
+
+- In Visual Studio Code open airflow project, directory ``\files\dags`` of local machine is by default mounted to docker
+  machine when breeze airflow is started. So any DAG file present in this directory will be picked automatically by
+  scheduler running in docker machine and same can be seen on ``http://127.0.0.1:28080``.
+
+- Copy any example DAG present in airflow project's ``\airflow\example_dags`` directory to ``\files\dags\``.
+
+- Add main block at the end of your DAG file to make it runnable. It will run a back_fill job:
+
+  .. code-block:: python
+
+    if __name__ == '__main__':
+      from airflow.utils.state import State
+      dag.clear(dag_run_state=State.NONE)
+      dag.run()
+
+- Add ``"AIRFLOW__CORE__EXECUTOR": "DebugExecutor"`` to the ``"env"`` field of Debug configuration.
+
+  - Using Run view click on create a launch.json file
+
+    .. raw:: html
+
+        <div align="center" style="padding-bottom:10px">
+          <img src="images/quick_start/vscode_add_configuration_1.png"
+               alt="Add Debug Configuration to Visual Studio Code">
+          <img src="images/quick_start/vscode_add_configuration_2.png"
+               alt="Add Debug Configuration to Visual Studio Code">
+          <img src="images/quick_start/vscode_add_configuration_3.png"
+               alt="Add Debug Configuration to Visual Studio Code">
+        </div>
+
+  - Change ``"program"`` to point to an example dag and add ``"env"`` and ``"python"`` fields to new Python configuration
+
+    .. raw:: html
+
+        <div align="center" style="padding-bottom:10px">
+          <img src="images/quick_start/vscode_add_env_variable.png"
+               alt="Add environment variable to Visual Studio Code Debug configuration">
+        </div>
 
 - Now Debug an example dag and view the entries in tables such as ``dag_run, xcom`` etc in mysql workbench.
 
@@ -548,12 +597,14 @@ Starting development
 Creating a branch
 -----------------
 
-1. Click on branch symbol in the bottom right corner of Pycharm
+1. Click on branch symbol in the status bar
 
    .. raw:: html
 
       <div align="center" style="padding-bottom:10px">
         <img src="images/quick_start/creating_branch_1.png"
+             alt="Creating a new branch">
+        <img src="images/quick_start/vscode_creating_branch_1.png"
              alt="Creating a new branch">
       </div>
 
@@ -563,6 +614,8 @@ Creating a branch
 
       <div align="center" style="padding-bottom:10px">
         <img src="images/quick_start/creating_branch_2.png"
+             alt="Giving name to a branch">
+        <img src="images/quick_start/vscode_creating_branch_2.png"
              alt="Giving name to a branch">
       </div>
 
@@ -749,10 +802,10 @@ To avoid burden on CI infrastructure and to save time, Pre-commit hooks can be r
 
 .. code-block:: bash
 
-  $ cd ~/PycharmProjects/airflow
+  $ cd ~/Projects/airflow
 
 
-4. Running pre-commit hooks
+1. Running pre-commit hooks
 
 .. code-block:: bash
 
@@ -829,15 +882,15 @@ To avoid burden on CI infrastructure and to save time, Pre-commit hooks can be r
 
 .. code-block:: bash
 
-  $ cd ~/PycharmProjects/airflow
+  $ cd ~/Projects/airflow
   $ pre-commit install
   $ git commit -m "Added xyz"
 
-9. To disable Pre-commit
+1. To disable Pre-commit
 
 .. code-block:: bash
 
-  $ cd ~/PycharmProjects/airflow
+  $ cd ~/Projects/airflow
   $ pre-commit uninstall
 
 
