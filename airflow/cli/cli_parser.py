@@ -734,6 +734,13 @@ ARG_INCLUDE_DAGS = Arg(
     ("--include-dags",), help="If passed, DAG specific permissions will also be synced.", action="store_true"
 )
 
+# triggerer
+ARG_PARTITION = Arg(
+    ("--partition",),
+    type=str,
+    help="The partition specification for this instance, in the form 'partition_num/total_partitions'",
+)
+
 ALTERNATIVE_CONN_SPECS_ARGS = [
     ARG_CONN_TYPE,
     ARG_CONN_DESCRIPTION,
@@ -1526,6 +1533,19 @@ airflow_commands: List[CLICommand] = [
             '\n'
             '    Example:\n'
             '        pkill -f -USR2 "airflow scheduler"'
+        ),
+    ),
+    ActionCommand(
+        name='triggerer',
+        help="Start a triggerer instance",
+        func=lazy_load_command('airflow.cli.commands.triggerer_command.triggerer'),
+        args=(
+            ARG_PID,
+            ARG_DAEMON,
+            ARG_STDOUT,
+            ARG_STDERR,
+            ARG_LOG_FILE,
+            ARG_PARTITION,
         ),
     ),
     ActionCommand(

@@ -28,6 +28,7 @@ from airflow.models import (
     TaskFail,
     TaskInstance,
     TaskReschedule,
+    Trigger,
     Variable,
     XCom,
     errors,
@@ -40,6 +41,7 @@ from airflow.utils.session import create_session
 
 def clear_db_runs():
     with create_session() as session:
+        session.query(Trigger).delete()
         session.query(DagRun).delete()
         session.query(TaskInstance).delete()
 

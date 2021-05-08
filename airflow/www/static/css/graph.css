@@ -132,6 +132,10 @@ g.node.sensing rect {
   stroke: lightseagreen;
 }
 
+g.node.deferred rect {
+  stroke: lightseagreen;
+}
+
 g.node.queued rect {
   stroke: grey;
 }

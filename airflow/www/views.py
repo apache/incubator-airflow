@@ -3754,6 +3754,8 @@ class TaskInstanceModelView(AirflowModelView):
         'end_date',
     ]
 
+    add_exclude_columns = ["next_method", "next_kwargs", "trigger_id"]
+
     edit_form = TaskInstanceEditForm
 
     base_order = ('job_id', 'asc')

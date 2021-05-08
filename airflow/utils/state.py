@@ -44,6 +44,7 @@ class State:
     UPSTREAM_FAILED = "upstream_failed"
     SKIPPED = "skipped"
     SENSING = "sensing"
+    DEFERRED = "deferred"
 
     task_states = (
         SUCCESS,
@@ -57,6 +58,7 @@ class State:
         NONE,
         SCHEDULED,
         SENSING,
+        DEFERRED,
         REMOVED,
     )
 
@@ -80,6 +82,7 @@ class State:
         SCHEDULED: 'tan',
         NONE: 'lightblue',
         SENSING: 'lightseagreen',
+        DEFERRED: 'lightseagreen',
     }
     state_color.update(STATE_COLORS)  # type: ignore
 
@@ -125,6 +128,7 @@ class State:
             QUEUED,
             RUNNING,
             SENSING,
+            DEFERRED,
             SHUTDOWN,
             UP_FOR_RETRY,
             UP_FOR_RESCHEDULE,

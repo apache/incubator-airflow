@@ -87,6 +87,10 @@ rect.sensing {
   fill: lightseagreen;
 }
 
+rect.deferred {
+  fill: lightseagreen;
+}
+
 .tooltip.in {
   opacity: 1;
   filter: alpha(opacity=100);

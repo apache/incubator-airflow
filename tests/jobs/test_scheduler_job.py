@@ -4162,6 +4162,53 @@ class TestSchedulerJob(unittest.TestCase):
         ti1 = manual_run.get_task_instance(task1.task_id, session)
         assert ti1.state is None
 
+    def test_timeout_triggers(self):
+        """
+        Tests that tasks in the deferred state, but whose trigger timeout
+        has expired, are correctly failed.
+
+        """
+
+        # Create the test DAG and task
+        with DAG(
+            dag_id='test_timeout_triggers',
+            start_date=DEFAULT_DATE,
+            schedule_interval='@once',
+            max_active_runs=1,
+        ) as dag:
+            task1 = DummyOperator(task_id='dummy1')
+
+        # Load it into the DagBag
+        session = settings.Session()
+        dagbag = DagBag(
+            dag_folder=os.devnull,
+            include_examples=False,
+            read_dags_from_db=True,
+        )
+        dagbag.bag_dag(dag=dag, root_dag=dag)
+        dagbag.sync_to_db(session=session)
+
+        # Create a Task Instance for the task that is allegedly deferred
+        # but past its timeout, and one that is still good.
+        # We don't actually need a linked trigger here; the code doesn't check.
+        ti1 = TaskInstance(task1, DEFAULT_DATE, State.DEFERRED)
+        ti2 = TaskInstance(task1, DEFAULT_DATE + datetime.timedelta(seconds=1), State.DEFERRED)
+        ti1.trigger_timeout = timezone.utcnow() - datetime.timedelta(seconds=60)
+        ti2.trigger_timeout = timezone.utcnow() + datetime.timedelta(seconds=60)
+        session.add(ti1)
+        session.add(ti2)
+        session.flush()
+
+        # Boot up the scheduler and make it check timeouts
+        self.scheduler_job = SchedulerJob(subdir=os.devnull)
+        self.scheduler_job.check_trigger_timeouts(session=session)
+
+        # Make sure that TI1 is now failed, and 2 wasn't touched
+        ti1.refresh_from_db()
+        ti2.refresh_from_db()
+        assert ti1.state == State.FAILED
+        assert ti2.state == State.DEFERRED
+
 
 @pytest.mark.xfail(reason="Work out where this goes")
 def test_task_with_upstream_skip_process_task_instances():

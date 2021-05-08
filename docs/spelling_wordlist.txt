@@ -75,6 +75,7 @@ Configs
 ContainerPort
 Cron
 Ctrl
+DAGs
 Daemonize
 DagFileProcessorManager
 DagRun
@@ -667,7 +668,10 @@ declaratively
 decomissioning
 decrypt
 decrypted
+deduplicate
+deduplication
 deepcopy
+deferrable
 deidentify
 del
 delim
@@ -1368,6 +1372,8 @@ tooltips
 traceback
 tracebacks
 travis
+triggerer
+triggerers
 trino
 trojan
 tsv

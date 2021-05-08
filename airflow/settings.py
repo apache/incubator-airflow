@@ -93,6 +93,7 @@ STATE_COLORS = {
     "upstream_failed": "orange",
     "skipped": "pink",
     "scheduled": "tan",
+    "deferred": "lightseagreen",
 }
 
 

@@ -65,6 +65,7 @@ const stateFocusMap = {
   up_for_reschedule: false,
   up_for_retry: false,
   queued: false,
+  deferred: false,
   no_status: false,
 };
 const taskTip = d3.tip()
