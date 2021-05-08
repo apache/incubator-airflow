@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Optional
 import requests
 
 from airflow.configuration import AirflowConfigException, conf
+from airflow.executors import executor_constants
 from airflow.utils.helpers import parse_template_string
 
 if TYPE_CHECKING:
@@ -94,7 +95,7 @@ class FileTaskHandler(logging.Handler):
     def _read_grouped_logs(self):
         return False
 
-    def _read(self, ti, try_number, metadata=None):  # pylint: disable=unused-argument
+    def _read(self, ti: "TaskInstance", try_number, metadata=None):  # pylint: disable=unused-argument
         """
         Template method that contains custom logic of reading
         logs given the try_number.
@@ -102,7 +103,7 @@ class FileTaskHandler(logging.Handler):
         :param ti: task instance record
         :param try_number: current try_number to read log from
         :param metadata: log metadata,
-                         can be used for steaming log reading and auto-tailing.
+                         can be used for streaming log reading and auto-tailing.
         :return: log message as a string and metadata.
         """
         # Task instance here might be different from task instance when
@@ -111,76 +112,16 @@ class FileTaskHandler(logging.Handler):
         log_relative_path = self._render_filename(ti, try_number)
         location = os.path.join(self.local_base, log_relative_path)
 
-        log = ""
-
+        executor = conf.get('core', 'executor')
         if os.path.exists(location):
-            try:
-                with open(location) as file:
-                    log += f"*** Reading local file: {location}\n"
-                    log += "".join(file.readlines())
-            except Exception as e:  # pylint: disable=broad-except
-                log = f"*** Failed to load local log file: {location}\n"
-                log += f"*** {str(e)}\n"
-        elif conf.get('core', 'executor') == 'KubernetesExecutor':  # pylint: disable=too-many-nested-blocks
-            try:
-                from airflow.kubernetes.kube_client import get_kube_client
-
-                kube_client = get_kube_client()
-
-                if len(ti.hostname) >= 63:
-                    # Kubernetes takes the pod name and truncates it for the hostname. This truncated hostname
-                    # is returned for the fqdn to comply with the 63 character limit imposed by DNS standards
-                    # on any label of a FQDN.
-                    pod_list = kube_client.list_namespaced_pod(conf.get('kubernetes', 'namespace'))
-                    matches = [
-                        pod.metadata.name
-                        for pod in pod_list.items
-                        if pod.metadata.name.startswith(ti.hostname)
-                    ]
-                    if len(matches) == 1:
-                        if len(matches[0]) > len(ti.hostname):
-                            ti.hostname = matches[0]
-
-                log += '*** Trying to get logs (last 100 lines) from worker pod {} ***\n\n'.format(
-                    ti.hostname
-                )
-
-                res = kube_client.read_namespaced_pod_log(
-                    name=ti.hostname,
-                    namespace=conf.get('kubernetes', 'namespace'),
-                    container='base',
-                    follow=False,
-                    tail_lines=100,
-                    _preload_content=False,
-                )
-
-                for line in res:
-                    log += line.decode()
-
-            except Exception as f:  # pylint: disable=broad-except
-                log += f'*** Unable to fetch logs from worker pod {ti.hostname} ***\n{str(f)}\n\n'
+            log = read_local_log(location)
+        elif executor == executor_constants.KUBERNETES_EXECUTOR or (
+            executor == executor_constants.CELERY_KUBERNETES_EXECUTOR
+            and ti.queue == conf.get('celery_kubernetes_executor', 'kubernetes_queue')
+        ):
+            log = read_kubernetes_pod_log(ti)
         else:
-            url = os.path.join("http://{ti.hostname}:{worker_log_server_port}/log", log_relative_path).format(
-                ti=ti, worker_log_server_port=conf.get('celery', 'WORKER_LOG_SERVER_PORT')
-            )
-            log += f"*** Log file does not exist: {location}\n"
-            log += f"*** Fetching from: {url}\n"
-            try:
-                timeout = None  # No timeout
-                try:
-                    timeout = conf.getint('webserver', 'log_fetch_timeout_sec')
-                except (AirflowConfigException, ValueError):
-                    pass
-
-                response = requests.get(url, timeout=timeout)
-                response.encoding = "utf-8"
-
-                # Check if the resource was properly fetched
-                response.raise_for_status()
-
-                log += '\n' + response.text
-            except Exception as e:  # pylint: disable=broad-except
-                log += f"*** Failed to fetch log file from worker. {str(e)}\n"
+            log = read_celery_worker_log(ti, location, log_relative_path)
 
         return log, {'end_of_log': True}
 
@@ -261,3 +202,85 @@ class FileTaskHandler(logging.Handler):
                 logging.warning("OSError while change ownership of the log file")
 
         return full_path
+
+
+def read_local_log(location: str):
+    """Reading task logs from local machine"""
+    log = ""
+    try:
+        with open(location) as file:
+            log += f"*** Reading local file: {location}\n"
+            log += "".join(file.readlines())
+    except Exception as e:  # pylint: disable=broad-except
+        log += f"*** Failed to load local log file: {location} ***\n{e}\n\n"
+    return log
+
+
+def read_celery_worker_log(ti: "TaskInstance", location: str, log_relative_path: str):
+    """Reading task logs from a celery worker"""
+    log = ""
+
+    worker_log_server_port = conf.get('celery', 'WORKER_LOG_SERVER_PORT')
+    url = os.path.join(f"http://{ti.hostname}:{worker_log_server_port}/log", log_relative_path)
+
+    log += f"*** Log file does not exist: {location}\n"
+    log += f"*** Fetching from: {url}\n"
+    try:
+        timeout = None  # No timeout
+        try:
+            timeout = conf.getint('webserver', 'log_fetch_timeout_sec')
+        except (AirflowConfigException, ValueError):
+            pass
+
+        response = requests.get(url, timeout=timeout)
+        response.encoding = "utf-8"
+
+        # Check if the resource was properly fetched
+        response.raise_for_status()
+
+        log += '\n' + response.text
+    except Exception as e:  # pylint: disable=broad-except
+        log += f"*** Failed to fetch log file from worker ***\n{e}\n\n"
+    return log
+
+
+def read_kubernetes_pod_log(ti: "TaskInstance", log_lines: str = 100):
+    """Reading task logs from a kubernetes worker pod
+
+    :param ti: :param ti: task instance object
+    :param log_lines: number of lines to tail from the pod
+    """
+    log = ""
+    try:
+        from airflow.kubernetes.kube_client import get_kube_client
+
+        kube_client = get_kube_client()
+
+        if len(ti.hostname) >= 63:
+            # Kubernetes takes the pod name and truncates it for the hostname. This truncated hostname
+            # is returned for the fqdn to comply with the 63 character limit imposed by DNS standards
+            # on any label of a FQDN.
+            pod_list = kube_client.list_namespaced_pod(conf.get('kubernetes', 'namespace'))
+            matches = [
+                pod.metadata.name for pod in pod_list.items if pod.metadata.name.startswith(ti.hostname)
+            ]
+            if len(matches) == 1 and (len(matches[0]) > len(ti.hostname)):
+                ti.hostname = matches[0]
+
+        log += f'*** Trying to get logs (last {log_lines} lines) from worker pod {ti.hostname} ***\n\n'
+
+        res = kube_client.read_namespaced_pod_log(
+            name=ti.hostname,
+            namespace=conf.get('kubernetes', 'namespace'),
+            container='base',
+            follow=False,
+            tail_lines=log_lines,
+            _preload_content=False,
+        )
+
+        for line in res:
+            log += line.decode()
+
+    except Exception as e:  # pylint: disable=broad-except
+        log += f'*** Unable to fetch logs from worker pod {ti.hostname} ***\n{e}\n\n'
+    return log
