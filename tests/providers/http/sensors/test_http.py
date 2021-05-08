@@ -150,7 +150,7 @@ class TestHttpSensor(unittest.TestCase):
         response = requests.Response()
         response.status_code = 404
         response.reason = 'Not Found'
-        response._content = b'This endpoint doesnt exist'
+        response._content = b"This endpoint doesn't exist"
         mock_session_send.return_value = response
 
         task = HttpSensor(
