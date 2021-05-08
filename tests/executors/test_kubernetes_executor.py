@@ -760,3 +760,19 @@ class TestKubernetesJobWatcher(unittest.TestCase):
 
         self._run()
         self.watcher.watcher_queue.put.assert_not_called()
+
+    @mock.patch.object(KubernetesJobWatcher, '_parse_too_old_failure')
+    def test_process_error_event(self, mock_too_old_failure):
+        message = "too old resource version: 27272 (43334)"
+        mock_too_old_failure.return_value = '43334'
+        self.pod.status.phase = 'Pending'
+        self.pod.metadata.resource_version = '43334'
+        raw_object = {"code": 410, "message": message}
+        self.events.append({"type": "ERROR", "object": self.pod, "raw_object": raw_object})
+        self._run()
+        mock_too_old_failure.assert_called_once_with(message)
+
+    def test_parse_too_old_failure(self):
+        message = "too old resource version: 27272 (43334)"
+        latest_version = self.watcher._parse_too_old_failure(message)
+        assert latest_version == '43334'

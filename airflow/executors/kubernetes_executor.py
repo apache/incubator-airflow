@@ -25,6 +25,7 @@ KubernetesExecutor
 import functools
 import json
 import multiprocessing
+import re
 import time
 from datetime import timedelta
 from queue import Empty, Queue  # pylint: disable=unused-import
@@ -172,11 +173,17 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
         self.log.error('Encountered Error response from k8s list namespaced pod stream => %s', event)
         raw_object = event['raw_object']
         if raw_object['code'] == 410:
-            self.log.info(
-                'Kubernetes resource version is too old, must reset to 0 => %s', (raw_object['message'],)
+            message = raw_object['message']
+            latest_resource_version = self._parse_too_old_failure(message)
+            if latest_resource_version is None:
+                # Return resource version 0
+                return '0'
+            self.log.warning(
+                "Updated to new resource version: %s due to 'too old' error: %s",
+                latest_resource_version,
+                raw_object,
             )
-            # Return resource version 0
-            return '0'
+            return latest_resource_version
         raise AirflowException(
             'Kubernetes failure for %s with code %s and message: %s'
             % (raw_object['reason'], raw_object['code'], raw_object['message'])
@@ -216,6 +223,25 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 annotations,
                 resource_version,
             )
+
+    def _parse_too_old_failure(self, message):
+        """
+        Parse stream watcher 410 'too old resource version' error
+        to get the latest resource version from the message
+
+        See https://github.com/kubernetes-client/python/issues/609
+        """
+        regex = r"too old resource version: .* \((.*)\)"
+        result = re.search(regex, message)
+        if result is None:
+            return None
+        match = result.group(1)
+        if match is None:
+            return None
+        try:
+            return match
+        except (ValueError, TypeError):
+            return None
 
 
 class AirflowKubernetesScheduler(LoggingMixin):
