@@ -53,7 +53,7 @@ class TestSqliteHookConn(unittest.TestCase):
 class TestSqliteHook(unittest.TestCase):
     def setUp(self):
 
-        self.cur = mock.MagicMock()
+        self.cur = mock.MagicMock(rowcount=0)
         self.conn = mock.MagicMock()
         self.conn.cursor.return_value = self.cur
         conn = self.conn

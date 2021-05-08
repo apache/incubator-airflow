@@ -152,7 +152,7 @@ class DbApiHook(BaseHook):
                     cur.execute(sql)
                 return cur.fetchone()
 
-    def run(self, sql, autocommit=False, parameters=None):
+    def run(self, sql, autocommit=False, parameters=None, handler=None):
         """
         Runs a command or a list of commands. Pass a list of sql
         statements to the sql parameter to get them to execute
@@ -166,8 +166,13 @@ class DbApiHook(BaseHook):
         :type autocommit: bool
         :param parameters: The parameters to render the SQL query with.
         :type parameters: dict or iterable
+        :param handler: The result handler which is called after each statement.
+        :type handler: Callable which gets a cursor object.
+        :return: query results if handler was provided.
         """
-        if isinstance(sql, str):
+
+        scalar = isinstance(sql, str)
+        if scalar:
             sql = [sql]
 
         with closing(self.get_conn()) as conn:
@@ -175,20 +180,40 @@ class DbApiHook(BaseHook):
                 self.set_autocommit(conn, autocommit)
 
             with closing(conn.cursor()) as cur:
+                results = []
                 for sql_statement in sql:
-
-                    self.log.info("Running statement: %s, parameters: %s", sql_statement, parameters)
-                    if parameters:
-                        cur.execute(sql_statement, parameters)
-                    else:
-                        cur.execute(sql_statement)
-                    if hasattr(cur, 'rowcount'):
-                        self.log.info("Rows affected: %s", cur.rowcount)
+                    self._run_command(cur, sql_statement, parameters)
+                    if handler is not None:
+                        result = handler(cur)
+                        results.append(result)
 
             # If autocommit was set to False for db that supports autocommit,
             # or if db does not supports autocommit, we do a manual commit.
             if not self.get_autocommit(conn):
                 conn.commit()
+
+        if handler is None:
+            return
+
+        if scalar:
+            return results[0]
+
+        return results
+
+    def _run_command(self, cur, sql_statement, parameters):
+        """
+        Runs a statement using an already open cursor.
+        """
+
+        self.log.info("Running statement: %s, parameters: %s", sql_statement, parameters)
+        if parameters:
+            cur.execute(sql_statement, parameters)
+        else:
+            cur.execute(sql_statement)
+
+        # According to PEP 249, this is -1 when query result is not applicable.
+        if cur.rowcount >= 0:
+            self.log.info("Rows affected: %s", cur.rowcount)
 
     def set_autocommit(self, conn, autocommit):
         """Sets the autocommit flag on the connection"""

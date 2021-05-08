@@ -15,6 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from inspect import signature
 from typing import Iterable, Mapping, Optional, Union
 
 from airflow.models import BaseOperator
@@ -23,7 +24,12 @@ from airflow.providers.oracle.hooks.oracle import OracleHook
 
 class OracleOperator(BaseOperator):
     """
-    Executes sql code in a specific Oracle database
+    Executes sql code in a specific Oracle database.
+
+    If BaseOperator.do_xcom_push is True, the bindvars will also be pushed
+    to an Xcom when the query completes. If a list of statements is provided,
+    the Xcom will be a list as well. Note that the bindvars reflect the type of
+    parameters argument given (dict or iterable).
 
     :param sql: the sql code to be executed. Can receive a str representing a sql statement,
         a list of str (sql statements), or reference to a template file.
@@ -62,4 +68,30 @@ class OracleOperator(BaseOperator):
     def execute(self, context) -> None:
         self.log.info('Executing: %s', self.sql)
         hook = OracleHook(oracle_conn_id=self.oracle_conn_id)
-        hook.run(self.sql, autocommit=self.autocommit, parameters=self.parameters)
+
+        def handler(cur):
+            bindvars = cur.bindvars
+
+            if isinstance(bindvars, list):
+                bindvars = [v.getvalue() for v in bindvars]
+            elif isinstance(bindvars, dict):
+                bindvars = {n: v.getvalue() for (n, v) in bindvars.items()}
+            else:
+                raise TypeError(bindvars)
+
+            return {
+                "bindvars": bindvars,
+                "rows": cur.fetchall(),
+            }
+
+        kwargs = {
+            "autocommit": self.autocommit,
+            "parameters": self.parameters,
+        }
+
+        # For backwards compatibility, if the hook implementation does not
+        # support the "handler" keyword argument, we omit it.
+        if "handler" in signature(hook.run).parameters:
+            kwargs["handler"] = handler
+
+        return hook.run(self.sql, **kwargs)

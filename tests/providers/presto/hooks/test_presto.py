@@ -147,7 +147,7 @@ class TestPrestoHook(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
-        self.cur = mock.MagicMock()
+        self.cur = mock.MagicMock(rowcount=0)
         self.conn = mock.MagicMock()
         self.conn.cursor.return_value = self.cur
         conn = self.conn

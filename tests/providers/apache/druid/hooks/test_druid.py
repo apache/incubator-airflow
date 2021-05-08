@@ -192,7 +192,7 @@ class TestDruidHook(unittest.TestCase):
 class TestDruidDbApiHook(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.cur = MagicMock()
+        self.cur = MagicMock(rowcount=0)
         self.conn = conn = MagicMock()
         self.conn.host = 'host'
         self.conn.port = '1000'
