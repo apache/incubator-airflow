@@ -223,6 +223,11 @@ class TestGoogleProviderProjectStructure(unittest.TestCase):
         'airflow.providers.google.cloud.sensors.gcs.GCSUploadSessionCompleteSensor',
     }
 
+    MISSING_SYSTEM_TEST_FILES = {
+        'tests/providers/google/ads/operators/test_ads_system.py',
+        'tests/providers/google/cloud/operators/test_stackdriver_system.py'
+    }
+
     def test_example_dags(self):
         operators_modules = itertools.chain(
             *[self.find_resource_files(resource_type=d) for d in ["operators", "sensors", "transfers"]]
@@ -331,6 +336,37 @@ class TestGoogleProviderProjectStructure(unittest.TestCase):
         # Exclude __init__.py and pycache
         resource_files = (f for f in resource_files if not f.endswith("__init__.py"))
         return resource_files
+
+    def test_providers_modules_should_have_tests(self):
+        """
+        Assert every module in /airflow/providers/google/*/operators/ has a
+        corresponding test_*_system.py file in tests/providers/google/*/operators/.
+        """
+        # TODO: Should we extend this test to cover other directories?
+        expected_test_files = self.find_resource_files(resource_type='operators')
+        # Change airflow/ to tests/
+        expected_test_files = (
+            f'tests/{f.partition("/")[2]}' for f in expected_test_files
+        )
+        # Add test_ prefix to filename
+        expected_test_files = (
+            f'{f.rpartition("/")[0]}/test_{f.rpartition("/")[2]}' for f in expected_test_files
+        )
+        # Add _system.py suffix to filename
+        expected_test_files = (
+            f'{f.rpartition(".")[0]}_system.py' for f in expected_test_files
+        )
+        current_test_files = self.find_resource_files(
+            top_level_directory='tests',
+            resource_type='operators',
+            service='*_system',
+        )
+
+        expected_test_files = set(expected_test_files)
+        current_test_files = set(current_test_files)
+
+        missing_tests_files = expected_test_files - expected_test_files.intersection(current_test_files)
+        self.assertEqual(self.MISSING_SYSTEM_TEST_FILES, missing_tests_files)
 
 
 class TestOperatorsHooks(unittest.TestCase):
