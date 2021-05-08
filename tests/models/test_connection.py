@@ -33,7 +33,9 @@ from airflow.models import Connection, crypto
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 from tests.test_utils.config import conf_vars
 
-ConnectionParts = namedtuple("ConnectionParts", ["conn_type", "login", "password", "host", "port", "schema"])
+ConnectionParts = namedtuple(
+    "ConnectionParts", ["conn_type", "login", "password", "host", "port", "schema", "extra"]
+)
 
 
 class UriTestCaseConfig:
@@ -429,31 +431,61 @@ class TestConnection(unittest.TestCase):
             (
                 "http://:password@host:80/database",
                 ConnectionParts(
-                    conn_type="http", login='', password="password", host="host", port=80, schema="database"
+                    conn_type="http",
+                    login='',
+                    password="password",
+                    host="host",
+                    port=80,
+                    schema="database",
+                    extra="",
                 ),
             ),
             (
                 "http://user:@host:80/database",
                 ConnectionParts(
-                    conn_type="http", login="user", password=None, host="host", port=80, schema="database"
+                    conn_type="http",
+                    login="user",
+                    password=None,
+                    host="host",
+                    port=80,
+                    schema="database",
+                    extra="",
                 ),
             ),
             (
                 "http://user:password@/database",
                 ConnectionParts(
-                    conn_type="http", login="user", password="password", host="", port=None, schema="database"
+                    conn_type="http",
+                    login="user",
+                    password="password",
+                    host="",
+                    port=None,
+                    schema="database",
+                    extra="",
                 ),
             ),
             (
                 "http://user:password@host:80/",
                 ConnectionParts(
-                    conn_type="http", login="user", password="password", host="host", port=80, schema=""
+                    conn_type="http",
+                    login="user",
+                    password="password",
+                    host="host",
+                    port=80,
+                    schema="",
+                    extra="",
                 ),
             ),
             (
                 "http://user:password@/",
                 ConnectionParts(
-                    conn_type="http", login="user", password="password", host="", port=None, schema=""
+                    conn_type="http",
+                    login="user",
+                    password="password",
+                    host="",
+                    port=None,
+                    schema="",
+                    extra="",
                 ),
             ),
             (
@@ -465,6 +497,7 @@ class TestConnection(unittest.TestCase):
                     host="/tmp/z6rqdzqh/example:west1:testdb",
                     port=None,
                     schema="testdb",
+                    extra="",
                 ),
             ),
             (
@@ -476,6 +509,7 @@ class TestConnection(unittest.TestCase):
                     host="/tmp/z6rqdzqh/example:europe-west1:testdb",
                     port=None,
                     schema="testdb",
+                    extra="",
                 ),
             ),
             (
@@ -487,6 +521,21 @@ class TestConnection(unittest.TestCase):
                     host="/tmp/z6rqdzqh/example:europe-west1:testdb",
                     port=None,
                     schema="",
+                    extra="",
+                ),
+            ),
+            (
+                "mongodb://mongodb0.example.com:27017,"
+                "mongodb1.example.com:27017,mongodb2.example.com:27017"
+                "/?replicaSet=myRepl",
+                ConnectionParts(
+                    conn_type="mongodb",
+                    login=None,
+                    password=None,
+                    host="mongodb0.example.com:27017,mongodb1.example.com:27017,mongodb2.example.com:27017",
+                    port=None,
+                    schema="",
+                    extra="replicaSet=myRepl",
                 ),
             ),
         ]

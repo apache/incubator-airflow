@@ -46,7 +46,7 @@ def parse_netloc_to_hostname(*args, **kwargs):
 # See: https://issues.apache.org/jira/browse/AIRFLOW-3615
 def _parse_netloc_to_hostname(uri_parts):
     """Parse a URI string to get correct Hostname."""
-    hostname = unquote(uri_parts.hostname or '')
+    hostname = unquote(uri_parts.hostname or '') if "," not in uri_parts.netloc else unquote(uri_parts.netloc)
     if '/' in hostname:
         hostname = uri_parts.netloc
         if "@" in hostname:
@@ -170,7 +170,7 @@ class Connection(Base, LoggingMixin):  # pylint: disable=too-many-instance-attri
         self.schema = unquote(quoted_schema) if quoted_schema else quoted_schema
         self.login = unquote(uri_parts.username) if uri_parts.username else uri_parts.username
         self.password = unquote(uri_parts.password) if uri_parts.password else uri_parts.password
-        self.port = uri_parts.port
+        self.port = uri_parts.port if "," not in self.host else None
         if uri_parts.query:
             query = dict(parse_qsl(uri_parts.query, keep_blank_values=True))
             if self.EXTRA_KEY in query:
