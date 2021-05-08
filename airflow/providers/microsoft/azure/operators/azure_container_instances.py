@@ -316,19 +316,20 @@ class AzureContainerInstancesOperator(BaseOperator):
                         c_state.exit_code,
                         c_state.detail_status,
                     )
-
-                    messages = [event.message for event in instance_view.events]
-                    last_message_logged = self._log_last(messages, last_message_logged)
                 else:
                     state = cg_state.provisioning_state
                     exit_code = 0
                     detail_status = "Provisioning"
 
+                if instance_view is not None and instance_view.events is not None:
+                    messages = [event.message for event in instance_view.events]
+                    last_message_logged = self._log_last(messages, last_message_logged)
+
                 if state != last_state:
                     self.log.info("Container group state changed to %s", state)
                     last_state = state
 
-                if state in ["Running", "Terminated"]:
+                if state in ["Running", "Terminated", "Succeeded"]:
                     try:
                         logs = self._ci_hook.get_logs(resource_group, name)
                         last_line_logged = self._log_last(logs, last_line_logged)
@@ -337,8 +338,8 @@ class AzureContainerInstancesOperator(BaseOperator):
                             "Exception while getting logs from container instance, retrying..."
                         )
 
-                if state == "Terminated":
-                    self.log.error("Container exited with detail_status %s", detail_status)
+                if state in ["Terminated"]:
+                    self.log.info("Container exited with detail_status %s", detail_status)
                     return exit_code
 
                 if state == "Failed":
@@ -360,7 +361,7 @@ class AzureContainerInstancesOperator(BaseOperator):
             except Exception:  # pylint: disable=broad-except
                 self.log.exception("Exception while getting container groups")
 
-        sleep(1)
+            sleep(1)
 
     def _log_last(self, logs: Optional[list], last_line_logged: Any) -> Optional[Any]:
         if logs:
