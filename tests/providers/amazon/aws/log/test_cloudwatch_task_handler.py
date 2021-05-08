@@ -112,6 +112,21 @@ class TestCloudwatchTaskHandler(unittest.TestCase):
                 handler.handle(message)
             mock_emit.assert_has_calls([call(message) for message in messages])
 
+    def test_event_to_str(self):
+        handler = self.cloudwatch_task_handler
+        events = [
+            {'timestamp': 1617400267123, 'message': 'First'},
+            {'timestamp': 1617400367456, 'message': 'Second'},
+            {'timestamp': 1617400467789, 'message': 'Third'},
+        ]
+        assert [handler._event_to_str(event) for event in events] == (
+            [
+                '[2021-04-02 21:51:07,123] First',
+                '[2021-04-02 21:52:47,456] Second',
+                '[2021-04-02 21:54:27,789] Third',
+            ]
+        )
+
     def test_read(self):
         # Confirmed via AWS Support call:
         # CloudWatch events must be ordered chronologically otherwise
@@ -122,17 +137,22 @@ class TestCloudwatchTaskHandler(unittest.TestCase):
             self.remote_log_group,
             self.remote_log_stream,
             [
-                {'timestamp': 10000, 'message': 'First'},
-                {'timestamp': 20000, 'message': 'Second'},
-                {'timestamp': 30000, 'message': 'Third'},
+                {'timestamp': 1617400267123, 'message': 'First'},
+                {'timestamp': 1617400367456, 'message': 'Second'},
+                {'timestamp': 1617400467789, 'message': 'Third'},
             ],
         )
 
-        expected = (
-            '*** Reading remote log from Cloudwatch log_group: {} log_stream: {}.\nFirst\nSecond\nThird\n'
+        msg_template = '*** Reading remote log from Cloudwatch log_group: {} log_stream: {}.\n{}\n'
+        events = '\n'.join(
+            [
+                '[2021-04-02 21:51:07,123] First',
+                '[2021-04-02 21:52:47,456] Second',
+                '[2021-04-02 21:54:27,789] Third',
+            ]
         )
         assert self.cloudwatch_task_handler.read(self.ti) == (
-            [[('', expected.format(self.remote_log_group, self.remote_log_stream))]],
+            [[('', msg_template.format(self.remote_log_group, self.remote_log_stream, events))]],
             [{'end_of_log': True}],
         )
 
