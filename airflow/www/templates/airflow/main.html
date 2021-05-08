@@ -29,11 +29,7 @@
 
 {% block head_css %}
   {{ super() }}
-
-  {% if not appbuilder.app_theme %}
-    {# airflowDefaultTheme.css file contains the styles from local bootstrap-theme.css #}
-    <link rel="stylesheet" type="text/css" href="{{ url_for_asset('airflowDefaultTheme.css') }}">
-  {% endif %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for_asset('airflowBootstrapTheme.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for_asset('materialIcons.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for_asset('main.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for_asset('loadingDots.css') }}">
