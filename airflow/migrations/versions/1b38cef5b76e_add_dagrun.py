@@ -28,6 +28,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
+from airflow.models.base import COLLATION_ARGS
+
 revision = '1b38cef5b76e'
 down_revision = '502898887f84'
 branch_labels = None
@@ -38,10 +40,10 @@ def upgrade():  # noqa: D103
     op.create_table(
         'dag_run',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('dag_id', sa.String(length=250), nullable=True),
+        sa.Column('dag_id', sa.String(length=250, **COLLATION_ARGS), nullable=True),
         sa.Column('execution_date', sa.DateTime(), nullable=True),
         sa.Column('state', sa.String(length=50), nullable=True),
-        sa.Column('run_id', sa.String(length=250), nullable=True),
+        sa.Column('run_id', sa.String(length=250, **COLLATION_ARGS), nullable=True),
         sa.Column('external_trigger', sa.Boolean(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('dag_id', 'execution_date'),

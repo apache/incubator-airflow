@@ -28,6 +28,7 @@ from alembic import op
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
+from airflow.models.base import COLLATION_ARGS
 revision = 'd38e04c12aa2'
 down_revision = '6e96a59344a4'
 branch_labels = None
@@ -49,7 +50,7 @@ def upgrade():
 
     op.create_table(
         'serialized_dag',  # pylint: disable=no-member
-        sa.Column('dag_id', sa.String(length=250), nullable=False),
+        sa.Column('dag_id', sa.String(length=250, **COLLATION_ARGS), nullable=False),
         sa.Column('fileloc', sa.String(length=2000), nullable=False),
         sa.Column('fileloc_hash', sa.Integer(), nullable=False),
         sa.Column('data', json_type(), nullable=False),

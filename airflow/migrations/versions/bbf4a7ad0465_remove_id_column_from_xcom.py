@@ -45,8 +45,8 @@ def upgrade():
         if "id" in xcom_columns:
             bop.drop_column('id')
             bop.drop_index('idx_xcom_dag_task_date')
-            bop.create_primary_key('pk_xcom', ['dag_id', 'task_id', 'key', 'execution_date'])
-
+            #bop.create_primary_key('pk_xcom', ['dag_id', 'task_id', 'key', 'execution_date'])
+            bop.create_primary_key('pk_xcom', ['dag_id', 'task_id', 'key'])
 
 def downgrade():
     """Unapply Remove id column from xcom"""

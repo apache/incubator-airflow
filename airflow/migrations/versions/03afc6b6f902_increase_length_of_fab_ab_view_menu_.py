@@ -29,6 +29,8 @@ from alembic import op
 from sqlalchemy.engine.reflection import Inspector
 
 # revision identifiers, used by Alembic.
+from airflow.models.base import COLLATION_ARGS
+
 revision = '03afc6b6f902'
 down_revision = '92c57b58940d'
 branch_labels = None
@@ -59,7 +61,7 @@ def upgrade():
             op.execute("PRAGMA foreign_keys=on")
         else:
             op.alter_column(
-                table_name='ab_view_menu', column_name='name', type_=sa.String(length=250), nullable=False
+                table_name='ab_view_menu', column_name='name', type_=sa.String(length=250, **COLLATION_ARGS), nullable=False
             )
 
 

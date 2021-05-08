@@ -30,6 +30,8 @@ from sqlalchemy.dialects import mysql
 from sqlalchemy.engine.reflection import Inspector
 
 # revision identifiers, used by Alembic.
+from airflow.models.base import COLLATION_ARGS
+
 revision = 'e38be357a868'
 down_revision = '8d48763f6d53'
 branch_labels = None
@@ -66,8 +68,8 @@ def upgrade():  # noqa: D103
     op.create_table(
         'sensor_instance',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('task_id', sa.String(length=250), nullable=False),
-        sa.Column('dag_id', sa.String(length=250), nullable=False),
+        sa.Column('task_id', sa.String(length=250, **COLLATION_ARGS), nullable=False),
+        sa.Column('dag_id', sa.String(length=250, **COLLATION_ARGS), nullable=False),
         sa.Column('execution_date', timestamp(), nullable=False),
         sa.Column('state', sa.String(length=20), nullable=True),
         sa.Column('try_number', sa.Integer(), nullable=True),
