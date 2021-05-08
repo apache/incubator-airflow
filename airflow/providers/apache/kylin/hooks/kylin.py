@@ -26,6 +26,8 @@ from airflow.hooks.base import BaseHook
 
 class KylinHook(BaseHook):
     """
+    Interact with Kylin to run CubeSource commands and get job status.
+    
     :param kylin_conn_id: The connection id as configured in Airflow administration.
     :type kylin_conn_id: str
     :param project: project name
