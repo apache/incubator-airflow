@@ -45,7 +45,7 @@ def upgrade():
         try:
             conn.execute("SELECT JSON_VALID(1)").fetchone()
         except (sa.exc.OperationalError, sa.exc.ProgrammingError):
-            json_type = sa.Text
+            json_type = sa.LargeBinary
 
     op.create_table(
         'serialized_dag',  # pylint: disable=no-member
