@@ -32,7 +32,12 @@ from parameterized import param, parameterized
 from sqlalchemy.orm.session import Session
 
 from airflow import models, settings
-from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
+from airflow.exceptions import (
+    AirflowException,
+    AirflowFailException,
+    AirflowSensorTimeout,
+    AirflowSkipException,
+)
 from airflow.jobs.scheduler_job import SchedulerJob
 from airflow.models import (
     DAG,
@@ -2136,3 +2141,34 @@ class TestRunRawTaskQueriesCount(unittest.TestCase):
         # Verify that ti.operator field renders correctly "with" Serialization
         ser_ti = TI(task=deserialized_op, execution_date=datetime.datetime.now())
         assert ser_ti.operator == "DummyOperator"
+
+
+@pytest.mark.parametrize("mode", ["poke", "reschedule"])
+@pytest.mark.parametrize("retries", [0, 1])
+def test_sensor_timeout(mode, retries):
+    """
+    Test that AirflowSensorTimeout does not cause sensor to retry.
+    """
+
+    def timeout():
+        raise AirflowSensorTimeout
+
+    dag = models.DAG(dag_id=f'test_sensor_timeout_{mode}_{retries}')
+    mock_on_failure = mock.MagicMock()
+    task = PythonSensor(
+        task_id='test_raise_sensor_timeout',
+        dag=dag,
+        python_callable=timeout,
+        owner='airflow',
+        start_date=timezone.datetime(2016, 2, 1, 0, 0, 0),
+        on_failure_callback=mock_on_failure,
+        retries=retries,
+        mode=mode,
+    )
+    ti = TI(task=task, execution_date=timezone.utcnow())
+
+    with pytest.raises(AirflowSensorTimeout):
+        ti.run()
+
+    assert mock_on_failure.called
+    assert ti.state == State.FAILED
