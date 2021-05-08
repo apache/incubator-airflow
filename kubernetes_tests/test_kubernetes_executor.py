@@ -283,7 +283,7 @@ class TestKubernetesExecutor(unittest.TestCase):
         dag_id = 'example_kubernetes_executor_config'
         pod_name = 'examplekubernetesexecutorconfigstarttask'
         dag_run_id, execution_date = self.start_job_in_kubernetes(dag_id, host)
-        time.sleep(0.8)
+        time.sleep(0.2)
         self._delete_pod(pod_name, task_pod=True)
         self.monitor_task(
             host=host,
