@@ -452,7 +452,7 @@ tableau = [
     'tableauserverclient',
 ]
 telegram = [
-    'python-telegram-bot==13.0',
+    'python-telegram-bot~=13.0',
 ]
 trino = ['trino']
 vertica = [
