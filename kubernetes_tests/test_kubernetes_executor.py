@@ -27,6 +27,8 @@ import requests.exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from airflow.utils.state import State
+
 CLUSTER_FORWARDED_PORT = os.environ.get('CLUSTER_FORWARDED_PORT') or "8080"
 KUBERNETES_HOST_PORT = (os.environ.get('CLUSTER_HOST') or "localhost") + ":" + CLUSTER_FORWARDED_PORT
 
@@ -63,13 +65,22 @@ class TestKubernetesExecutor(unittest.TestCase):
         return len(names)
 
     @staticmethod
-    def _delete_airflow_pod(name=''):
-        suffix = '-' + name if name else ''
+    def _delete_pod(name, task_pod=False):
+        print("Looking for pod to delete")
+        suffix = '-' + name
         air_pod = check_output(['kubectl', 'get', 'pods']).decode()
         air_pod = air_pod.split('\n')
-        names = [re.compile(r'\s+').split(x)[0] for x in air_pod if 'airflow' + suffix in x]
-        if names:
-            check_call(['kubectl', 'delete', 'pod', names[0]])
+        if not task_pod:
+            names = [re.compile(r'\s+').split(x)[0] for x in air_pod if 'airflow' + suffix in x]
+            if names:
+                check_call(['kubectl', 'delete', 'pod', names[0]])
+        else:
+            print([re.compile(r'\s+').split(x)[0] for x in air_pod])
+            names = [re.compile(r'\s+').split(x)[0] for x in air_pod if name in x]
+
+            if names:
+                print("Deleting pod: ", names[0])
+                check_call(['kubectl', 'delete', 'pod', names[0]])
 
     def _get_session_with_retries(self):
         session = requests.Session()
@@ -117,8 +128,8 @@ class TestKubernetesExecutor(unittest.TestCase):
                 print(f"Received [monitor_task]#2: {result_json}")
                 state = result_json['state']
                 print(f"Attempt {tries}: Current state of operator is {state}")
-
-                if state == expected_final_state:
+                # Speed up test by checking if the state is in finished state
+                if state in State.finished:
                     break
                 self._describe_resources(namespace="airflow")
                 self._describe_resources(namespace="default")
@@ -234,7 +245,7 @@ class TestKubernetesExecutor(unittest.TestCase):
 
         dag_run_id, execution_date = self.start_job_in_kubernetes(dag_id, host)
 
-        self._delete_airflow_pod("scheduler")
+        self._delete_pod("scheduler")
 
         time.sleep(10)  # give time for pod to restart
 
@@ -265,4 +276,36 @@ class TestKubernetesExecutor(unittest.TestCase):
             timeout=300,
         )
 
+        assert self._num_pods_in_namespace('test-namespace') == 0, "failed to delete pods in other namespace"
+
+    def test_integration_run_dag_with_task_pod_kill(self):
+        host = KUBERNETES_HOST_PORT
+        dag_id = 'example_kubernetes_executor_config'
+        pod_name = 'examplekubernetesexecutorconfigstarttask'
+        dag_run_id, execution_date = self.start_job_in_kubernetes(dag_id, host)
+        time.sleep(0.2)
+        self._delete_pod(pod_name, task_pod=True)
+        self.monitor_task(
+            host=host,
+            dag_run_id=dag_run_id,
+            dag_id=dag_id,
+            task_id='start_task',
+            expected_final_state='failed',
+            timeout=300,
+        )
+        self.monitor_task(
+            host=host,
+            dag_run_id=dag_run_id,
+            dag_id=dag_id,
+            task_id='other_namespace_task',
+            expected_final_state='upstream_failed',
+            timeout=300,
+        )
+        self.ensure_dag_expected_state(
+            host=host,
+            execution_date=execution_date,
+            dag_id=dag_id,
+            expected_final_state='failed',
+            timeout=300,
+        )
         assert self._num_pods_in_namespace('test-namespace') == 0, "failed to delete pods in other namespace"
