@@ -37,6 +37,8 @@ class SQSSensor(BaseSensorOperator):
     :type max_messages: int
     :param wait_time_seconds: The time in seconds to wait for receiving messages (default: 1 second)
     :type wait_time_seconds: int
+    :param message_attribute_names: The message attribute names to filter receiving messages (default: All Messages)
+    :type wait_time_seconds: list
     """
 
     template_fields = ('sqs_queue', 'max_messages')
@@ -48,6 +50,7 @@ class SQSSensor(BaseSensorOperator):
         aws_conn_id: str = 'aws_default',
         max_messages: int = 5,
         wait_time_seconds: int = 1,
+        message_attribute_names: list = ['.*']
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -55,6 +58,7 @@ class SQSSensor(BaseSensorOperator):
         self.aws_conn_id = aws_conn_id
         self.max_messages = max_messages
         self.wait_time_seconds = wait_time_seconds
+        elf.message_attribute_names = message_attribute_names
         self.hook: Optional[SQSHook] = None
 
     def poke(self, context):
@@ -73,6 +77,7 @@ class SQSSensor(BaseSensorOperator):
             QueueUrl=self.sqs_queue,
             MaxNumberOfMessages=self.max_messages,
             WaitTimeSeconds=self.wait_time_seconds,
+            MessageAttributeNames=self.message_attribute_names,
         )
 
         self.log.info("received message %s", str(messages))
