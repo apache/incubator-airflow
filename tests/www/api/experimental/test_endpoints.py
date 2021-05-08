@@ -55,7 +55,7 @@ class TestBase:
     def assert_deprecated(self, resp):
         assert 'true' == resp.headers['Deprecation']
         assert re.search(
-            r'\<.+/upgrading-to-2.html#migration-guide-from-experimental-api-to-stable-api-v1\>; '
+            r'<.+/upgrading-to-2.html#migration-guide-from-experimental-api-to-stable-api-v1>; '
             'rel="deprecation"; type="text/html"',
             resp.headers['Link'],
         )
