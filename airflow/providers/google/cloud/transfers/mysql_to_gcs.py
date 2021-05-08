@@ -18,8 +18,7 @@
 """MySQL to GCS operator."""
 
 import base64
-import calendar
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Dict
 
@@ -100,10 +99,12 @@ class MySQLToGCSOperator(BaseSQLToGCSOperator):
         Takes a value from MySQLdb, and converts it to a value that's safe for
         JSON/Google Cloud Storage/BigQuery.
 
-        * Datetimes are converted to UTC seconds.
+        * Datetimes are converted to `str(value)` (`datetime.isoformat(' ')`)
+          strings.
+        * Times are converted to `str((datetime.min + value).time())` strings.
         * Decimals are converted to floats.
-        * Dates are converted to ISO formatted string if given schema_type is
-          DATE, or UTC seconds otherwise.
+        * Dates are converted to ISO formatted strings if given schema_type is
+          DATE, or `datetime.isoformat(' ')` strings otherwise.
         * Binary type fields are converted to integer if given schema_type is
           INTEGER, or encoded with base64 otherwise. Imported BYTES data must
           be base64-encoded according to BigQuery documentation:
@@ -117,16 +118,16 @@ class MySQLToGCSOperator(BaseSQLToGCSOperator):
         if value is None:
             return value
         if isinstance(value, datetime):
-            value = calendar.timegm(value.timetuple())
+            value = str(value)
         elif isinstance(value, timedelta):
-            value = value.total_seconds()
+            value = str((datetime.min + value).time())
         elif isinstance(value, Decimal):
             value = float(value)
         elif isinstance(value, date):
             if schema_type == "DATE":
                 value = value.isoformat()
             else:
-                value = calendar.timegm(value.timetuple())
+                value = str(datetime.combine(value, time.min))
         elif isinstance(value, bytes):
             if schema_type == "INTEGER":
                 value = int.from_bytes(value, "big")
