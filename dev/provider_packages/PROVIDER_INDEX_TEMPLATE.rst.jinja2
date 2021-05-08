@@ -73,6 +73,17 @@ You can install such cross-provider dependencies when installing from PyPI. For 
 
 {{ CROSS_PROVIDERS_DEPENDENCIES_TABLE_RST | safe }}
 
+Downloading official packages
+-----------------------------
+
+You can download officially released packages and verify their checksums and signatures from the
+`Official Apache Download site <https://downloads.apache.org/airflow/providers/>`_
+
+* `The {{ PACKAGE_PIP_NAME }} {{ RELEASE }}{{ VERSION_SUFFIX }} sdist package <https://downloads.apache.org/airflow/providers/{{ PACKAGE_PIP_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}.tar.gz>`_ (`asc <https://downloads.apache.org/airflow/providers/{{ PACKAGE_PIP_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}.tar.gz.asc>`__, `sha512 <https://downloads.apache.org/airflow/providers/{{ PACKAGE_PIP_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}.tar.gz.sha512>`__)
+* `The {{ PACKAGE_PIP_NAME }} {{ RELEASE }}{{ VERSION_SUFFIX }} wheel package <https://downloads.apache.org/airflow/providers/{{ PACKAGE_WHEEL_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}-py3-none-any.whl>`_ (`asc <https://downloads.apache.org/airflow/providers/{{ PACKAGE_WHEEL_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}-py3-none-any.whl.asc>`__, `sha512 <https://downloads.apache.org/airflow/providers/{{ PACKAGE_WHEEL_NAME }}-{{ RELEASE }}{{ VERSION_SUFFIX }}-py3-none-any.whl.sha512>`__)
+
+
+
 {%- endif %}
 
 {{ CHANGELOG | safe }}
