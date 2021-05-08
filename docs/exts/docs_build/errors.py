@@ -87,6 +87,7 @@ def parse_sphinx_warnings(warning_text: str, docs_dir: str) -> List[DocBuildErro
     Parses warnings from Sphinx.
 
     :param warning_text: warning to parse
+    :param docs_dir: documentation directory
     :return: list of DocBuildErrors.
     """
     sphinx_build_errors = []

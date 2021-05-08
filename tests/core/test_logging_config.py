@@ -131,6 +131,8 @@ def settings_context(content, directory=None, name='LOGGING_CONFIG'):
 
     :param content:
           The content of the settings file
+    :param directory: the directory
+    :param name: str
     """
     initial_logging_config = os.environ.get("AIRFLOW__LOGGING__LOGGING_CONFIG_CLASS", "")
     try:

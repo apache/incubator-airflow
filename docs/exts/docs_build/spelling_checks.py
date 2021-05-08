@@ -85,6 +85,7 @@ def parse_spelling_warnings(warning_text: str, docs_dir: str) -> List[SpellingEr
     Parses warnings from Sphinx.
 
     :param warning_text: warning to parse
+    :param docs_dir: documentation directory
     :return: list of SpellingError.
     """
     sphinx_spelling_errors = []

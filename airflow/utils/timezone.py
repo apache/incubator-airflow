@@ -169,5 +169,6 @@ def parse(string: str, timezone=None) -> DateTime:
     Parse a time string and return an aware datetime
 
     :param string: time string
+    :param timezone: the timezone
     """
     return pendulum.parse(string, tz=timezone or TIMEZONE, strict=False)  # type: ignore

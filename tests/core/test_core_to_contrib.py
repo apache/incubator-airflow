@@ -55,7 +55,8 @@ class TestMovingCoreToContrib(TestCase):
     @staticmethod
     def get_class_from_path(path_to_class, parent=False):
         """
-        :param parent indicates if "path_to_class" arg is super class
+        :param path_to_class: the path to the class
+        :param parent: indicates if "path_to_class" arg is super class
         """
 
         path, _, class_name = path_to_class.rpartition(".")

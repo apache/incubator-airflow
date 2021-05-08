@@ -87,7 +87,7 @@ class AirbyteHook(HttpHook):
         Submits a job to a Airbyte server.
 
         :param connection_id: Required. The ConnectionId of the Airbyte Connection.
-        :type connectiond_id: str
+        :type connection_id: str
         """
         return self.run(
             endpoint=f"api/{self.api_version}/connections/sync",
