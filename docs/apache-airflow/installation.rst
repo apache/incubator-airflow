@@ -263,22 +263,46 @@ If you don't want to install any extra providers, initially you can use the comm
     pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
 
 
-Python versions support
-'''''''''''''''''''''''
+Support for Python and Kubernetes versions
+''''''''''''''''''''''''''''''''''''''''''
 
-As of Airflow 2.0 we agreed to certain rules we follow for Python support. They are based on the official
-release schedule of Python, nicely summarized in the
-`Python Developer's Guide <https://devguide.python.org/#status-of-python-branches>`_
+As of Airflow 2.0 we agreed to certain rules we follow for Python and Kubernetes support.
+They are based on the official release schedule of Python and Kubernetes, nicely summarized in the
+`Python Developer's Guide <https://devguide.python.org/#status-of-python-branches>`_ and
+`Kubernetes version skew policy <https://kubernetes.io/docs/setup/release/version-skew-policy>`_.
 
-1. We end support for Python versions when they reach EOL (For Python 3.6 it means that we will stop supporting it
-   on 23.12.2021).
+1. We drop support for Python and Kubernetes versions when they reach EOL. We drop support for those
+   EOL versions in master right after EOL date, and it is effectively removed when we release the
+   first new MINOR (Or MAJOR if there is no new MINOR version) of Airflow
+   For example for Python 3.6 it means that we drop support in master right after 23.12.2021, and the first
+   MAJOR or MINOR version of Airflow released after will not have it.
 
-2. The "oldest" supported version of Python is the default one. "Default" is only meaningful in terms of
-   "smoke tests" in CI PRs which are run using this default version.
+2. The "oldest" supported version of Python/Kubernetes is the default one. "Default" is only meaningful
+   in terms of "smoke tests" in CI PRs which are run using this default version and default reference
+   image available in DockerHub. Currently ``apache/airflow:latest`` and ``apache/airflow:2.0.2`` images
+   are both Python 3.6 images, however the first MINOR/MAJOR release of Airflow release after 23.12.2021 will
+   become Python 3.7 images.
 
-3. We support a new version of Python after it is officially released, as soon as we manage to make
-   it works in our CI pipeline (which might not be immediate) and release a new version of Airflow
-   (non-Patch version) based on this CI set-up.
+3. We support a new version of Python/Kubernetes in master after they are officially released, as soon as we
+   make them work in our CI pipeline (which might not be immediate due to dependencies catching up with
+   new versions of Python mostly) we release a new images/support in Airflow based on the working CI setup.
+
+Installing Airflow From Released Sources and packages
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+You can also install Airflow using the official sources and packages. Those sources and packages
+released are the "official" sources of installation that you can use if you want to verify the
+origin of the packages and want to verify checksums and signatures of the packages.
+
+The packages are available at the
+`Official Apache Software Foundations Downloads page <https://downloads.apache.org/airflow/>`_
+
+The |version| downloads are available at:
+
+* `Apache Airflow |version| sdist package <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz.sha512>`__)
+* `Apache Airflow |version| wheel package <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl.sha512>`__)
+* `Apache Airflow |version| sources <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz.sha512>`__)
+
 
 Set up a database
 '''''''''''''''''
