@@ -25,25 +25,17 @@ The Oracle connection type provides connection to a Oracle database.
 
 Configuring the Connection
 --------------------------
-Dsn (required)
-    The Data Source Name. The host address for the Oracle server.
 
-Host(optional)
-    Connect descriptor string for the data source name.
+Host (optional)
+    The host to connect to.
 
-Sid (optional)
-    The Oracle System ID. The uniquely identify a particular database on a system.
+Schema (optional)
+    Specify the schema name to be used in the database.
 
-Service_name (optional)
-    The db_unique_name of the database.
-
-Port (optional)
-    The port for the Oracle server, Default ``1521``.
-
-Login (required)
+Login (optional)
     Specify the user name to connect.
 
-Password (required)
+Password (optional)
     Specify the password to connect.
 
 Extra (optional)
@@ -64,8 +56,10 @@ Extra (optional)
       which are defined at the module level, Default mode is connecting.
     * ``purity`` - one of ``new``, ``self``, ``default``. Specify the session acquired from the pool.
       configuration parameter.
+    * ``dsn``. Specify a Data Source Name (and ignore Host).
+    * ``sid`` or ``service_name``. Use to form DSN instead of Schema.
 
-    Connect using Dsn and Sid, Dsn and Service_name, or only Host `(OracleHook.getconn Documentation) <https://airflow.apache.org/docs/apache-airflow-providers-oracle/stable/_modules/airflow/providers/oracle/hooks/oracle.html#OracleHook.get_conn>`_.
+    Connect using `dsn`, Host and `sid`, Host and `service_name`, or only Host `(OracleHook.getconn Documentation) <https://airflow.apache.org/docs/apache-airflow-providers-oracle/stable/_modules/airflow/providers/oracle/hooks/oracle.html#OracleHook.get_conn>`_.
 
     For example:
 
@@ -77,15 +71,15 @@ Extra (optional)
 
     .. code-block:: python
 
-        Dsn = "dbhost.example.com"
-        Service_name = "orclpdb1"
+        Host = "dbhost.example.com"
+        Schema = "orclpdb1"
 
     or
 
     .. code-block:: python
 
-        Dsn = "dbhost.example.com"
-        Sid = "orcl"
+        Host = "dbhost.example.com"
+        Schema = "orcl"
 
 
     More details on all Oracle connect parameters supported can be found in `cx_Oracle documentation

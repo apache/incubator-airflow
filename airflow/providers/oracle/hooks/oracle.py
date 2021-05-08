@@ -51,12 +51,23 @@ class OracleHook(DbApiHook):
         (from the Oracle names server or tnsnames.ora file)
         or is a string like the one returned from makedsn().
 
-        :param dsn: the host address for the Oracle server
+        :param dsn: the data source name for the Oracle server
         :param service_name: the db_unique_name of the database
               that you are connecting to (CONNECT_DATA part of TNS)
+        :param sid: Oracle System ID that identifies a particular
+              database on a system
 
         You can set these parameters in the extra fields of your connection
-        as in ``{ "dsn":"some.host.address" , "service_name":"some.service.name" }``
+        as in
+
+        .. code-block:: python
+           {
+               "dsn": (
+                   "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)"
+                   "(HOST=host)(PORT=1521))(CONNECT_DATA=(SID=sid)))"
+               )
+           }
+
         see more param detail in
         `cx_Oracle.connect <https://cx-oracle.readthedocs.io/en/latest/module.html#cx_Oracle.connect>`_
 
@@ -66,18 +77,24 @@ class OracleHook(DbApiHook):
             self.oracle_conn_id  # type: ignore[attr-defined]  # pylint: disable=no-member
         )
         conn_config = {'user': conn.login, 'password': conn.password}
-        dsn = conn.extra_dejson.get('dsn')
         sid = conn.extra_dejson.get('sid')
         mod = conn.extra_dejson.get('module')
 
         service_name = conn.extra_dejson.get('service_name')
         port = conn.port if conn.port else 1521
-        if dsn and sid and not service_name:
-            conn_config['dsn'] = cx_Oracle.makedsn(dsn, port, sid)
-        elif dsn and service_name and not sid:
-            conn_config['dsn'] = cx_Oracle.makedsn(dsn, port, service_name=service_name)
+        if conn.host and sid and not service_name:
+            conn_config['dsn'] = cx_Oracle.makedsn(conn.host, port, sid)
+        elif conn.host and service_name and not sid:
+            conn_config['dsn'] = cx_Oracle.makedsn(conn.host, port, service_name=service_name)
         else:
-            conn_config['dsn'] = conn.host
+            dsn = conn.extra_dejson.get('dsn')
+            if dsn is None:
+                dsn = conn.host
+                if conn.port is not None:
+                    dsn += ":" + str(conn.port)
+                if service_name or conn.schema:
+                    dsn += "/" + (service_name or conn.schema)
+            conn_config['dsn'] = dsn
 
         if 'encoding' in conn.extra_dejson:
             conn_config['encoding'] = conn.extra_dejson.get('encoding')
