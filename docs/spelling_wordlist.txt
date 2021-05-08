@@ -17,6 +17,7 @@ Ansible
 AppBuilder
 Arg
 Args
+Asana
 Async
 Atlassian
 Auth
@@ -148,7 +149,6 @@ Flink
 FluentD
 Fokko
 Formaturas
-Fspark
 Fundera
 GCS
 GH
@@ -467,6 +467,7 @@ args
 arn
 arraysize
 artwr
+asana
 asc
 ascii
 asciiart

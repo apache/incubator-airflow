@@ -198,8 +198,9 @@ amazon = [
     'watchtower~=0.7.3',
 ]
 apache_beam = [
-    'apache-beam>=2.20.0',
+    'apache-beam[gcp]',
 ]
+asana = ['asana>=0.10', 'cached-property>=1.5.2']
 async_packages = [
     'eventlet>= 0.9.7',
     'gevent>=0.13',
@@ -537,6 +538,7 @@ PROVIDERS_REQUIREMENTS: Dict[str, List[str]] = {
     'apache.pinot': pinot,
     'apache.spark': spark,
     'apache.sqoop': [],
+    'asana': asana,
     'celery': celery,
     'cloudant': cloudant,
     'cncf.kubernetes': kubernetes,
