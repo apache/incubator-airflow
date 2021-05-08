@@ -44,11 +44,11 @@ class TestEC2Operator(unittest.TestCase):
     def test_stop_instance(self):
         # create instance
         ec2_hook = EC2Hook()
-        instances = ec2_hook.conn.create_instances(
+        instances = ec2_hook.conn.run_instances(
             MaxCount=1,
             MinCount=1,
         )
-        instance_id = instances[0].instance_id
+        instance_id = instances['Instances'][0]['InstanceId']
 
         # stop instance
         stop_test = EC2StopInstanceOperator(

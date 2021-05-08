@@ -60,8 +60,7 @@ class EC2StartInstanceOperator(BaseOperator):
     def execute(self, context):
         ec2_hook = EC2Hook(aws_conn_id=self.aws_conn_id, region_name=self.region_name)
         self.log.info("Starting EC2 instance %s", self.instance_id)
-        instance = ec2_hook.get_instance(instance_id=self.instance_id)
-        instance.start()
+        ec2_hook.start_instances(instance_ids=[self.instance_id])
         ec2_hook.wait_for_state(
             instance_id=self.instance_id,
             target_state="running",
