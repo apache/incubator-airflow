@@ -52,7 +52,7 @@ class FileParsers(unittest.TestCase):
 
     @parameterized.expand(
         (
-            ("[]", "The file should contain the object."),
+            ("[]", "The file should contain an object."),
             ("{AAAAA}", "Expecting property name enclosed in double quotes"),
             ("", "The file is empty."),
         )
@@ -180,10 +180,10 @@ class TestLoadConnection(unittest.TestCase):
 
     @parameterized.expand(
         (
-            ({"CONN_ID": None}, "Unexpected value type: <class 'NoneType'>."),
-            ({"CONN_ID": 1}, "Unexpected value type: <class 'int'>."),
-            ({"CONN_ID": [2]}, "Unexpected value type: <class 'int'>."),
-            ({"CONN_ID": [None]}, "Unexpected value type: <class 'NoneType'>."),
+            ({"CONN_ID": None}, "Unexpected value type: NoneType."),
+            ({"CONN_ID": 1}, "Unexpected value type: int."),
+            ({"CONN_ID": [2]}, "Unexpected value type: int."),
+            ({"CONN_ID": [None]}, "Unexpected value type: NoneType."),
             ({"CONN_ID": {"AAA": "mysql://host_1"}}, "The object have illegal keys: AAA."),
             ({"CONN_ID": {"conn_id": "BBBB"}}, "Mismatch conn_id."),
             ({"CONN_ID": ["mysql://", "mysql://"]}, "Found multiple values for CONN_ID in a.json."),
