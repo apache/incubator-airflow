@@ -79,12 +79,23 @@ class SFTPHook(SSHHook):
             conn = self.get_connection(self.ssh_conn_id)
             if conn.extra is not None:
                 extra_options = conn.extra_dejson
-                if 'private_key_pass' in extra_options:
-                    self.private_key_pass = extra_options.get('private_key_pass')
 
                 # For backward compatibility
                 # TODO: remove in Airflow 2.1
                 import warnings
+
+                if 'private_key_pass' in extra_options:
+                    warnings.warn(
+                        'Extra option `private_key_pass` is deprecated.'
+                        'Please use `private_key_passphrase` instead.'
+                        '`private_key_passphrase` will precede if both options are specified.'
+                        'The old option `private_key_pass` will be removed in Airflow 2.1',
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                self.private_key_pass = extra_options.get(
+                    'private_key_passphrase', extra_options.get('private_key_pass')
+                )
 
                 if 'ignore_hostkey_verification' in extra_options:
                     warnings.warn(

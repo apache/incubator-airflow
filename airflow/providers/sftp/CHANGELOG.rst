@@ -31,6 +31,12 @@ Features
 1.1.1
 .....
 
+Features
+~~~~~~~~
+
+* ``SFTPHook private_key_pass extra param is deprecated and renamed to private_key_passphrase, for consistency with
+  arguments' naming in SSHHook``
+
 Bug fixes
 ~~~~~~~~~
 
