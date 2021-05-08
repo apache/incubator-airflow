@@ -79,15 +79,15 @@ class SecretsManagerBackend(BaseSecretsBackend, LoggingMixin):
     ):
         super().__init__()
         if connections_prefix is not None:
-            self.connections_prefix = connections_prefix.rstrip("/")
+            self.connections_prefix = connections_prefix.rstrip(sep)
         else:
             self.connections_prefix = connections_prefix
         if variables_prefix is not None:
-            self.variables_prefix = variables_prefix.rstrip('/')
+            self.variables_prefix = variables_prefix.rstrip(sep)
         else:
             self.variables_prefix = variables_prefix
         if config_prefix is not None:
-            self.config_prefix = config_prefix.rstrip('/')
+            self.config_prefix = config_prefix.rstrip(sep)
         else:
             self.config_prefix = config_prefix
         self.profile_name = profile_name
@@ -102,17 +102,66 @@ class SecretsManagerBackend(BaseSecretsBackend, LoggingMixin):
         )
         return session.client(service_name="secretsmanager", **self.kwargs)
 
-    def get_conn_uri(self, conn_id: str) -> Optional[str]:
+    def _get_extra(self, secret, conn_string):
+        if 'extra' in secret:
+            extra_dict = ast.literal_eval(secret['extra'])
+            counter = 0
+            for key, value in extra_dict.items():
+                if counter == 0:
+                    conn_string += f'?{key}={value}'
+                else:
+                    conn_string += f'&{key}={value}'
+
+                counter += 1
+
+        return conn_string
+
+    def get_conn_uri(self, conn_id: str):
         """
         Get Connection Value
 
         :param conn_id: connection id
         :type conn_id: str
         """
-        if self.connections_prefix is None:
-            return None
+        if self.connections_prefix and self.sep:
+            conn_id = self.build_path(self.connections_prefix, conn_id, self.sep)
 
-        return self._get_secret(self.connections_prefix, conn_id)
+        try:
+            secret_string = self._get_secret(conn_id)
+            secret = ast.literal_eval(secret_string)  # json.loads gives error
+        except ValueError:  # 'malformed node or string: ' error, for empty conns
+            connection = None
+            secret = None
+
+        # These lines will check if we have with some denomination stored an username, password and host
+        if secret:
+            possible_words_for_conn_fields = {
+                'user': ['user', 'username', 'login', 'user_name'],
+                'password': ['password', 'pass', 'key'],
+                'host': ['host', 'remote_host', 'server'],
+                'port': ['port'],
+                'schema': ['database', 'schema'],
+                'conn_type': ['conn_type', 'conn_id', 'connection_type', 'engine']
+            }
+
+            conn_d = {}
+            for conn_field, possible_words in possible_words_for_conn_fields.items():
+                try:
+                    conn_d[conn_field] = [v for k, v in secret.items() if k in possible_words][0]
+                except IndexError:
+                    conn_d[conn_field] = ''
+
+            conn_type = conn_d['conn_type']
+            user = conn_d['user']
+            password = conn_d['password']
+            host = conn_d['host']
+            port = conn_d['port']
+            schema = conn_d['schema']
+            conn_string = f'{conn_type}://{user}:{password}@{host}:{port}/{schema}'
+
+            connection = self._get_extra(secret, conn_string)
+
+        return connection
 
     def get_variable(self, key: str) -> Optional[str]:
         """
