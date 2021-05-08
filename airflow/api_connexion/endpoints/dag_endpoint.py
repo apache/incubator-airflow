@@ -89,5 +89,5 @@ def patch_dag(session, dag_id, update_mask=None):
         patch_body_[update_mask] = patch_body[update_mask]
         patch_body = patch_body_
     setattr(dag, 'is_paused', patch_body['is_paused'])
-    session.commit()
+    session.flush()
     return dag_schema.dump(dag)

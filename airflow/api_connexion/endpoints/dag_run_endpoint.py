@@ -253,7 +253,7 @@ def post_dag_run(dag_id, session):
     if not dagrun_instance:
         dag_run = DagRun(dag_id=dag_id, run_type=DagRunType.MANUAL, **post_body)
         session.add(dag_run)
-        session.commit()
+        session.flush()
         return dagrun_schema.dump(dag_run)
 
     if dagrun_instance.execution_date == post_body["execution_date"]:

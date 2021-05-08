@@ -518,7 +518,7 @@ class DagFileProcessor(LoggingMixin):
                     sla.email_sent = email_sent
                     sla.notification_sent = True
                     session.merge(sla)
-            session.commit()
+            session.flush()
 
     @staticmethod
     def update_import_errors(session: Session, dagbag: DagBag) -> None:
@@ -572,7 +572,7 @@ class DagFileProcessor(LoggingMixin):
                     request.full_filepath,
                 )
 
-        session.commit()
+        session.flush()
 
     @provide_session
     def _execute_dag_callbacks(self, dagbag: DagBag, request: DagCallbackRequest, session: Session):
