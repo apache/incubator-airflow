@@ -2125,7 +2125,7 @@ class TestRunRawTaskQueriesCount(unittest.TestCase):
             )
         # an extra query is fired in RenderedTaskInstanceFields.delete_old_records
         # for other DBs
-        expected_query_count_based_on_db = 11 if session.bind.dialect.name == "mssql" else 10
+        expected_query_count_based_on_db = 13 if session.bind.dialect.name == "mssql" else 12
 
         with assert_queries_count(expected_query_count_based_on_db):
             ti._run_raw_task()

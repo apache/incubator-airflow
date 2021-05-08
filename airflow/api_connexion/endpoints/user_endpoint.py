@@ -41,7 +41,7 @@ def get_user(username):
 
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_USER)])
 @format_parameters({'limit': check_limit})
-def get_users(limit, order_by='id', offset=None):
+def get_users(limit, order_by='id', offset=0):
     """Get users"""
     appbuilder = current_app.appbuilder
     session = appbuilder.get_session
@@ -49,7 +49,7 @@ def get_users(limit, order_by='id', offset=None):
     to_replace = {"user_id": "id"}
     allowed_filter_attrs = [
         "user_id",
-        'id',
+        "id",
         "first_name",
         "last_name",
         "user_name",

@@ -347,11 +347,10 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
         """Determines whether a user has DAG read access."""
         if not user:
             user = g.user
-        prefixed_dag_id = self.prefixed_dag_id(dag_id)
-        return (
+        dag_resource_name = permissions.resource_name_for_dag(dag_id)
+        return bool(
             self._has_view_access(user, permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG)
-            or self._has_view_access(user, permissions.ACTION_CAN_READ, prefixed_dag_id)
-            or False
+            or self._has_view_access(user, permissions.ACTION_CAN_READ, dag_resource_name)
         )
 
     def can_edit_dag(self, dag_id, user=None) -> bool:
@@ -360,10 +359,9 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
             user = g.user
         dag_resource_name = permissions.resource_name_for_dag(dag_id)
 
-        return (
+        return bool(
             self._has_view_access(user, permissions.ACTION_CAN_EDIT, permissions.RESOURCE_DAG)
-            or self._has_view_access(user, permissions.ACTION_CAN_EDIT, prefixed_dag_id)
-            or False
+            or self._has_view_access(user, permissions.ACTION_CAN_EDIT, dag_resource_name)
         )
 
     def prefixed_dag_id(self, dag_id):
@@ -402,7 +400,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):  # pylint: disable=
         if user.is_anonymous:
             user.roles = self.get_user_roles(user)
 
-        has_access = self._has_view_access(user, permission, resource) or False
+        has_access = bool(self._has_view_access(user, permission, resource))
         # FAB built-in view access method. Won't work for AllDag access.
 
         if self.is_dag_resource(resource):

@@ -47,7 +47,7 @@ def get_import_error(import_error_id, session):
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_IMPORT_ERROR)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_import_errors(session, limit, offset=None, order_by='import_error_id'):
+def get_import_errors(session, limit, offset=0, order_by='import_error_id'):
     """Get all import errors"""
     to_replace = {"import_error_id": 'id'}
     allowed_filter_attrs = ['import_error_id', "timestamp", "filename"]
