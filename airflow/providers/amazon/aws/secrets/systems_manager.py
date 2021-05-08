@@ -16,7 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 """Objects relating to sourcing connections from AWS SSM Parameter Store"""
-from typing import Optional
+import json
+from typing import TYPE_CHECKING, Optional
 
 import boto3
 
@@ -27,6 +28,9 @@ except ImportError:
 
 from airflow.secrets import BaseSecretsBackend
 from airflow.utils.log.logging_mixin import LoggingMixin
+
+if TYPE_CHECKING:
+    from airflow.models.connection import Connection
 
 
 class SystemsManagerParameterStoreBackend(BaseSecretsBackend, LoggingMixin):
@@ -141,4 +145,25 @@ class SystemsManagerParameterStoreBackend(BaseSecretsBackend, LoggingMixin):
             return value
         except self.client.exceptions.ParameterNotFound:
             self.log.debug("Parameter %s not found.", ssm_path)
+            return None
+
+
+class SystemsManagerParameterStoreJsonBackend(SystemsManagerParameterStoreBackend):
+    """
+    Same as :class:`~.SystemsManagerParameterStoreBackend` but stores connection as json instead of Airflow's
+    connection URI format.
+    """
+
+    def get_connection(self, conn_id: str) -> Optional['Connection']:
+        """Retrieves connection from SSM when serialized as json."""
+        from airflow.models.connection import Connection
+
+        val = self._get_secret(path_prefix=self.connections_prefix, secret_id=conn_id)
+        if val:
+            kwargs = json.loads(val)
+            extra = kwargs.pop('extra', None)
+            if extra:
+                kwargs['extra'] = extra if isinstance(extra, str) else json.dumps(extra)
+            return Connection(conn_id=conn_id, **kwargs)
+        else:
             return None
