@@ -227,6 +227,7 @@ sensors:
     python-modules:
       - airflow.providers.amazon.aws.sensors.s3_key
       - airflow.providers.amazon.aws.sensors.s3_keys_unchanged
+      - airflow.providers.amazon.aws.sensors.s3_multiple_key
       - airflow.providers.amazon.aws.sensors.s3_prefix
   - integration-name: Amazon SageMaker
     python-modules:

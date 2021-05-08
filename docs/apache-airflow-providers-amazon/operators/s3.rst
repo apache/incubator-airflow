@@ -35,6 +35,7 @@ Airflow to Amazon Simple Storage Service (S3) integration provides several opera
 
  - :class:`~airflow.providers.amazon.aws.sensors.s3_key.S3KeySensor`
  - :class:`~airflow.providers.amazon.aws.sensors.s3_key.S3KeySizeSensor`
+ - :class:`~airflow.providers.amazon.aws.sensors.s3_multiple_key.S3MultipleKeySensor`
  - :class:`~airflow.providers.amazon.aws.sensors.s3_keys_unchanged.S3KeysUnchangedSensor`
  - :class:`~airflow.providers.amazon.aws.sensors.s3_prefix.S3PrefixSensor`
  - :class:`~airflow.providers.amazon.aws.operators.s3_bucket.S3CreateBucketOperator`
