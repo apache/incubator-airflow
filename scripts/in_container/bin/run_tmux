@@ -51,9 +51,11 @@ tmux split-window -h
 tmux select-pane -t 2
 tmux send-keys 'airflow webserver' C-m
 
-tmux select-pane -t 0
-tmux split-window -h
-tmux send-keys 'cd /opt/airflow/airflow/www/; yarn dev' C-m
+if [[ -z "${USE_AIRFLOW_VERSION=}" ]]; then
+    tmux select-pane -t 0
+    tmux split-window -h
+    tmux send-keys 'cd /opt/airflow/airflow/www/; yarn install --frozen-lockfile; yarn dev' C-m
+fi
 
 # Attach Session, on the Main window
 tmux select-pane -t 0

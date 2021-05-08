@@ -25,7 +25,7 @@ from copy import deepcopy
 from distutils import log
 from os.path import dirname, relpath
 from textwrap import wrap
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from setuptools import Command, Distribution, find_namespace_packages, setup
 from setuptools.command.develop import develop as develop_orig
@@ -39,7 +39,7 @@ INSTALL_PROVIDERS_FROM_SOURCES = 'INSTALL_PROVIDERS_FROM_SOURCES'
 
 logger = logging.getLogger(__name__)
 
-version = '2.0.2'
+version = '2.0.3'
 
 my_dir = dirname(__file__)
 
@@ -198,7 +198,7 @@ amazon = [
     'watchtower~=0.7.3',
 ]
 apache_beam = [
-    'apache-beam[gcp]',
+    'apache-beam>=2.20.0',
 ]
 async_packages = [
     'eventlet>= 0.9.7',
@@ -239,7 +239,7 @@ cloudant = [
 ]
 dask = [
     'cloudpickle>=1.4.1, <1.5.0',
-    'dask<2021.3.1;python_version>"3.7"',  # dask stopped supporting python 3.6 in 2021.3.1 version
+    'dask<2021.3.1;python_version<"3.7"',  # dask stopped supporting python 3.6 in 2021.3.1 version
     'dask>=2.9.0;python_version>="3.7"',
     'distributed>=2.11.1, <2.20',
 ]
@@ -384,8 +384,8 @@ pagerduty = [
     'pdpyras>=4.1.2,<5',
 ]
 papermill = [
-    'nteract-scrapbook[all]>=0.3.1',
     'papermill[all]>=1.2.1',
+    'scrapbook[all]',
 ]
 password = [
     'bcrypt>=2.0.0',
@@ -502,7 +502,7 @@ devel = [
     'paramiko',
     'pipdeptree',
     'pre-commit',
-    'pylint>=2.7.0',
+    'pylint~=2.7.4',
     'pysftp',
     'pytest~=6.0',
     'pytest-cov',
@@ -669,17 +669,10 @@ EXTRAS_DEPRECATED_ALIASES: Dict[str, str] = {
     'winrm': 'microsoft.winrm',
 }
 
-
-def find_requirements_for_alias(alias_to_look_for: Tuple[str, str]) -> List[str]:
-    """Finds requirements for an alias"""
-    deprecated_extra = alias_to_look_for[0]
-    new_extra = alias_to_look_for[1]
-    if new_extra == '':  # Handle case for crypto
-        return []
-    try:
-        return EXTRAS_REQUIREMENTS[new_extra]
-    except KeyError:  # noqa
-        raise Exception(f"The extra {new_extra} is missing for alias {deprecated_extra}")
+EXTRAS_DEPRECATED_ALIASES_NOT_PROVIDERS: List[str] = [
+    "crypto",
+    "webhdfs",
+]
 
 
 def add_extras_for_all_deprecated_aliases() -> None:
@@ -694,6 +687,20 @@ def add_extras_for_all_deprecated_aliases() -> None:
         if requirements is None:
             raise Exception(f"The extra {extra} is missing for deprecated alias {alias}")
         EXTRAS_REQUIREMENTS[alias] = requirements
+
+
+def add_all_deprecated_provider_packages() -> None:
+    """
+    For deprecated aliases that are providers, we will swap the providers requirements to instead
+    be the provider itself.
+
+    e.g. {"kubernetes": ["kubernetes>=3.0.0, <12.0.0", ...]} becomes
+    {"kubernetes": ["apache-airflow-provider-cncf-kubernetes"]}
+    """
+    for alias, provider in EXTRAS_DEPRECATED_ALIASES.items():
+        if alias in EXTRAS_DEPRECATED_ALIASES_NOT_PROVIDERS:
+            continue
+        replace_extra_requirement_with_provider_packages(alias, [provider])
 
 
 add_extras_for_all_deprecated_aliases()
@@ -749,20 +756,6 @@ PACKAGES_EXCLUDED_FOR_ALL.extend(
     ]
 )
 
-# Those packages are excluded because they break tests and they are not needed to run our test suite.
-# This can be removed as soon as we get non-conflicting
-# requirements for the apache-beam as well.
-#
-# Currently Apache Beam has very narrow and old dependencies for 'mock' package which
-# are required only for our tests.
-# once https://github.com/apache/beam/pull/14328 is solved and new version of apache-beam is released
-# we will be able to remove this exclusion and get rid of `install_remaining_dependencies`
-# function in `scripts/in_container`.
-#
-PACKAGES_EXCLUDED_FOR_CI = [
-    'apache-beam',
-]
-
 
 def is_package_excluded(package: str, exclusion_list: List[str]):
     """
@@ -781,13 +774,7 @@ devel_all = [
     if not is_package_excluded(package=package, exclusion_list=PACKAGES_EXCLUDED_FOR_ALL)
 ]
 
-devel_ci = [
-    package
-    for package in devel_all
-    if not is_package_excluded(
-        package=package, exclusion_list=PACKAGES_EXCLUDED_FOR_CI + PACKAGES_EXCLUDED_FOR_ALL
-    )
-]
+devel_ci = devel_all
 
 
 # Those are extras that we have to add for development purposes
@@ -939,6 +926,7 @@ def add_all_provider_packages() -> None:
     add_provider_packages_to_extra_requirements(
         "devel_hadoop", ["apache.hdfs", "apache.hive", "presto", "trino"]
     )
+    add_all_deprecated_provider_packages()
 
 
 class Develop(develop_orig):

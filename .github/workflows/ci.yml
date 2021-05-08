@@ -119,8 +119,9 @@ jobs:
             "jhtimmins",
             "dstandish",
             "xinbinhuang",
-            "yuqian"
-          ]'), github.actor)
+            "yuqian",
+            "eladkal"
+          ]'), github.event.pull_request.user.login)
         ) && github.repository == 'apache/airflow'
       ) && 'self-hosted' || 'ubuntu-20.04' }}
     env:
@@ -532,12 +533,12 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - name: "Install and test provider packages and airflow via wheel files"
         run: ./scripts/ci/provider_packages/ci_install_and_test_provider_packages.sh
         env:
-          INSTALL_AIRFLOW_VERSION: "wheel"
+          USE_AIRFLOW_VERSION: "wheel"
           PACKAGE_FORMAT: "wheel"
       - name: "Install and test provider packages and airflow on Airflow 2.0 files"
         run: ./scripts/ci/provider_packages/ci_install_and_test_provider_packages.sh
         env:
-          INSTALL_AIRFLOW_VERSION: "2.0.0"
+          USE_AIRFLOW_VERSION: "2.0.0"
           PACKAGE_FORMAT: "wheel"
 
   prepare-test-provider-packages-sdist:
@@ -578,7 +579,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - name: "Install and test provider packages and airflow via sdist files"
         run: ./scripts/ci/provider_packages/ci_install_and_test_provider_packages.sh
         env:
-          INSTALL_AIRFLOW_VERSION: "sdist"
+          USE_AIRFLOW_VERSION: "sdist"
           PACKAGE_FORMAT: "sdist"
 
   tests-helm:

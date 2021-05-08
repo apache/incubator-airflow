@@ -32,7 +32,7 @@ ARG STRESS_VERSION=1.0.4
 # hadolint ignore=DL3018,DL3003
 RUN apk --no-cache add bash g++ make curl && \
     curl -o "/tmp/stress-${STRESS_VERSION}.tgz" \
-        "https://fossies.org/linux/privat/stress-${STRESS_VERSION}.tar.gz" && \
+        "https://src.fedoraproject.org/repo/pkgs/stress/stress-${STRESS_VERSION}.tar.gz/a607afa695a511765b40993a64c6e2f4/stress-${STRESS_VERSION}.tar.gz" && \
     cd "/tmp" && \
     tar xvf "stress-${STRESS_VERSION}.tgz" && \
     rm "/tmp/stress-${STRESS_VERSION}.tgz" && \
@@ -44,8 +44,8 @@ RUN apk --no-cache add bash g++ make curl && \
 
 LABEL org.apache.airflow.component="stress"
 LABEL org.apache.airflow.stress.version="${STRESS_VERSION}"
-LABEL org.apache.airflow.airflow_stress.version="${AIRFLOW_STRESS_VERSION}"
-LABEL org.apache.airflow.commit_sha="${COMMIT_SHA}"
+LABEL org.apache.airflow.airflow-stress.version="${AIRFLOW_STRESS_VERSION}"
+LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
 LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 CMD ["/usr/local/bin/stress"]

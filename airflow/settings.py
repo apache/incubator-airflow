@@ -241,7 +241,7 @@ def prepare_engine_args(disable_connection_pool=False):
     if disable_connection_pool or not pool_connections:
         engine_args['poolclass'] = NullPool
         log.debug("settings.prepare_engine_args(): Using NullPool")
-    elif 'sqlite' not in SQL_ALCHEMY_CONN:
+    elif not SQL_ALCHEMY_CONN.startswith('sqlite'):
         # Pool size engine args not supported by sqlite.
         # If no config value is defined for the pool size, select a reasonable value.
         # 0 means no limit, which could lead to exceeding the Database connection limit.

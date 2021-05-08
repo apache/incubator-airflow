@@ -93,7 +93,7 @@ function create_virtualenv() {
     pip install pytest freezegun pytest-cov \
       --constraint "https://raw.githubusercontent.com/${CONSTRAINTS_GITHUB_REPOSITORY}/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${HOST_PYTHON_VERSION}.txt"
 
-    pip install -e ".[kubernetes]" \
+    pip install -e ".[cncf.kubernetes,postgres]" \
       --constraint "https://raw.githubusercontent.com/${CONSTRAINTS_GITHUB_REPOSITORY}/${DEFAULT_CONSTRAINTS_BRANCH}/constraints-${HOST_PYTHON_VERSION}.txt"
 }
 
@@ -103,7 +103,9 @@ function run_tests() {
 
 cd "${AIRFLOW_SOURCES}" || exit 1
 
+set +u
 parse_tests_to_run "${@}"
+set -u
 
 create_virtualenv
 

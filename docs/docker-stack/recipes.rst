@@ -40,7 +40,7 @@ Then build a new image.
 .. code-block:: bash
 
   docker build . \
-    --build-arg BASE_AIRFLOW_IMAGE="apache/airflow:2.0.1" \
+    --build-arg BASE_AIRFLOW_IMAGE="apache/airflow:2.0.3" \
     -t my-airflow-image
 
 
@@ -66,5 +66,5 @@ Then build a new image.
 .. code-block:: bash
 
   docker build . \
-    --build-arg BASE_AIRFLOW_IMAGE="apache/airflow:2.0.1" \
+    --build-arg BASE_AIRFLOW_IMAGE="apache/airflow:2.0.3" \
     -t my-airflow-image

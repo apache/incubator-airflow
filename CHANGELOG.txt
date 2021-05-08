@@ -1,3 +1,20 @@
+Airflow 2.0.3, 2021-05-10
+-------------------------
+
+Improvements
+""""""""""""
+
+* ``Use Pip 21.* to install airflow officially (#15513)``
+* ``Remove the limit on Gunicorn dependency (#15611)``
+* ``Rename nteract-scrapbook to scrapbook (#15290)``
+
+Fixes
+"""""
+
+* ``Fix critical CeleryKubernetesExecutor bug (#13247)``
+* ``Fixes wrong limit for dask for python>3.7 (should be <3.7) (#15545)``
+* ``Fix deprecated provider aliases (#15465)``
+
 Airflow 2.0.2, 2021-04-19
 -------------------------
 

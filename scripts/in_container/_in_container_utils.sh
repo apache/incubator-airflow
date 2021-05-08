@@ -268,12 +268,6 @@ function install_airflow_from_sdist() {
     pip install "${airflow_package}${extras}"
 }
 
-function install_remaining_dependencies() {
-    group_start "Installs all remaining dependencies that are not installed by '${AIRFLOW_EXTRAS}' "
-    pip install apache-beam[gcp]
-    group_end
-}
-
 function uninstall_airflow() {
     pip uninstall -y apache-airflow || true
     find /root/airflow/ -type f -print0 | xargs -0 rm -f --
@@ -318,6 +312,7 @@ function install_local_airflow_with_eager_upgrade() {
 
 
 function install_all_providers_from_pypi_with_eager_upgrade() {
+    NO_PROVIDERS_EXTRAS=$(python -c 'import setup; print(",".join(setup.CORE_EXTRAS_REQUIREMENTS))')
     ALL_PROVIDERS_PACKAGES=$(python -c 'import setup; print(setup.get_all_provider_packages())')
     local packages_to_install=()
     local provider_package
@@ -340,7 +335,7 @@ function install_all_providers_from_pypi_with_eager_upgrade() {
     # Installing it with Airflow makes sure that the version of package that matches current
     # Airflow requirements will be used.
     # shellcheck disable=SC2086
-    pip install -e . "${packages_to_install[@]}" ${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS} \
+    pip install -e ".[${NO_PROVIDERS_EXTRAS}]" "${packages_to_install[@]}" ${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS} \
         --upgrade --upgrade-strategy eager
 
 }

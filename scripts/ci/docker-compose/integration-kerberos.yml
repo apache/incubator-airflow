@@ -18,7 +18,7 @@
 version: "2.2"
 services:
   kdc-server-example-com:
-    image: apache/airflow:krb5-kdc-server-2020.10.08
+    image: apache/airflow:krb5-kdc-server-2021.04.28
     hostname: krb5-kdc-server-example-com
     domainname: example.com
     networks:

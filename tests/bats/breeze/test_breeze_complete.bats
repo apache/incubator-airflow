@@ -25,7 +25,7 @@
   source "${AIRFLOW_SOURCES}/breeze-complete"
 
   breeze_complete::get_known_values_breeze "-p"
-  assert_equal "${_breeze_known_values}" "2.7 3.5 3.6 3.7 3.8"
+  assert_equal "${_breeze_known_values}" "3.6 3.7 3.8"
 }
 
 @test "Test get_known_values long" {
@@ -34,7 +34,7 @@
   source "${AIRFLOW_SOURCES}/breeze-complete"
 
   breeze_complete::get_known_values_breeze "--python"
-  assert_equal "${_breeze_known_values}" "2.7 3.5 3.6 3.7 3.8"
+  assert_equal "${_breeze_known_values}" "3.6 3.7 3.8"
 }
 
 @test "Test wrong get_known_values" {
@@ -125,7 +125,7 @@
   COMP_WORDS=("--python" "")
   breeze_complete::_comp_breeze
 
-  assert_equal "${COMPREPLY[*]}" "2.7 3.5 3.6 3.7 3.8"
+  assert_equal "${COMPREPLY[*]}" "3.6 3.7 3.8"
 }
 
 @test "Test autocomplete --python with prefix" {
@@ -136,7 +136,7 @@
   COMP_WORDS=("--python" "3")
   breeze_complete::_comp_breeze
 
-  assert_equal "${COMPREPLY[*]}" "3.5 3.6 3.7 3.8"
+  assert_equal "${COMPREPLY[*]}" "3.6 3.7 3.8"
 }
 
 @test "Test autocomplete build-" {
@@ -150,12 +150,12 @@
   assert_equal "${COMPREPLY[*]}" "build-docs build-image"
 }
 
-@test "Test allowed python versions are same as ALL" {
+@test "Test allowed python versions are same as CURRENT" {
   load ../bats_utils
   #shellcheck source=breeze-complete
   source "${AIRFLOW_SOURCES}/breeze-complete"
 
-  assert_equal "${_breeze_allowed_python_major_minor_versions}" "${ALL_PYTHON_MAJOR_MINOR_VERSIONS[*]}"
+  assert_equal "${_breeze_allowed_python_major_minor_versions}" "${CURRENT_PYTHON_MAJOR_MINOR_VERSIONS[*]}"
 }
 
 @test "Test allowed Kubernetes versions same as CURRENT" {

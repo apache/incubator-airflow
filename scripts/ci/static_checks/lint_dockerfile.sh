@@ -19,7 +19,7 @@
 . "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
 
 function run_docker_lint() {
-    IMAGE_NAME="hadolint/hadolint:v1.22.1-8-gf0ef28b-alpine"
+    IMAGE_NAME="hadolint/hadolint:2.3.0-alpine"
     if [[ "${#@}" == "0" ]]; then
         echo
         echo "Running docker lint for all Dockerfiles"

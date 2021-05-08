@@ -104,6 +104,10 @@ version = PACKAGE_VERSION
 # The full version, including alpha/beta/rc tags.
 release = PACKAGE_VERSION
 
+rst_epilog = f"""
+.. |version| replace:: {version}
+"""
+
 # -- General configuration -----------------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
@@ -124,6 +128,7 @@ extensions = [
     "sphinxcontrib.spelling",
     'sphinx_airflow_theme',
     'redirects',
+    'substitution_extensions',
 ]
 if PACKAGE_NAME == 'apache-airflow':
     extensions.extend(
@@ -132,6 +137,7 @@ if PACKAGE_NAME == 'apache-airflow':
             'sphinx.ext.graphviz',
             'sphinxcontrib.httpdomain',
             'sphinxcontrib.httpdomain',
+            'extra_files_with_substitutions',
             # First, generate redoc
             'sphinxcontrib.redoc',
             # Second, update redoc script
@@ -242,8 +248,10 @@ else:
     html_js_files = []
 if PACKAGE_NAME == 'apache-airflow':
     html_extra_path = [
-        f"{ROOT_DIR}/docs/apache-airflow/start/docker-compose.yaml",
         f"{ROOT_DIR}/docs/apache-airflow/start/airflow.sh",
+    ]
+    html_extra_with_substituions = [
+        f"{ROOT_DIR}/docs/apache-airflow/start/docker-compose.yaml",
     ]
 
 # -- Theme configuration -------------------------------------------------------

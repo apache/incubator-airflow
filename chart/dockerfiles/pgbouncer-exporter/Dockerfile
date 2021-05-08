@@ -22,10 +22,10 @@ ARG GO_VERSION
 ARG COMMIT_SHA
 
 LABEL org.apache.airflow.component="pgbouncer-exporter"
-LABEL org.apache.airflow.pgbouncer_exporter.version="${PGBOUNCER_EXPORTER_VERSION}"
+LABEL org.apache.airflow.pgbouncer-exporter.version="${PGBOUNCER_EXPORTER_VERSION}"
 LABEL org.apache.airflow.go.version="${GO_VERSION}"
-LABEL org.apache.airflow.airflow_pgbouncer_exporter.version="${AIRFLOW_PGBOUNCER_EXPORTER_VERSION}"
-LABEL org.apache.airflow.commit_sha="${COMMIT_SHA}"
+LABEL org.apache.airflow.airflow-pgbouncer-exporter.version="${AIRFLOW_PGBOUNCER_EXPORTER_VERSION}"
+LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
 LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # We want to make sure this one includes latest security fixes.

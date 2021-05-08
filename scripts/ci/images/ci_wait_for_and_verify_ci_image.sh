@@ -39,7 +39,7 @@ function pull_ci_image() {
 push_pull_remove_images::check_if_github_registry_wait_for_image_enabled
 
 start_end::group_start "Configure Docker Registry"
-build_image::configure_docker_registry
+build_images::configure_docker_registry
 start_end::group_end
 
 export AIRFLOW_CI_IMAGE_NAME="${BRANCH_NAME}-python${PYTHON_MAJOR_MINOR_VERSION}-ci"

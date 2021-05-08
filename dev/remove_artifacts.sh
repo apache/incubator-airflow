@@ -40,7 +40,6 @@ if [[ -z ${GITHUB_TOKEN} ]]; then
     echo 2>&1
     exit 2
 fi
-GITHUB_TOKEN=${GITHUB_TOKEN}
 readonly GITHUB_TOKEN
 
 function github_api_call() {

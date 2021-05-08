@@ -21,7 +21,7 @@ CI Environment
 ==============
 
 Continuous Integration is important component of making Apache Airflow robust and stable. We are running
-a lot of tests for every pull request, for master and v1-10-test branches and regularly as CRON jobs.
+a lot of tests for every pull request, for master and v2-0-test branches and regularly as CRON jobs.
 
 Our execution environment for CI is `GitHub Actions <https://github.com/features/actions>`_. GitHub Actions
 (GA) are very well integrated with GitHub code and Workflow and it has evolved fast in 2019/202 to become
@@ -253,16 +253,6 @@ You can use those variables when you try to reproduce the build locally.
 +-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
 | ``HOST_HOME``                           |             |             |            | Home directory on the host.                     |
 +-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
-|                                                           Image variables                                                          |
-+-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
-| ``INSTALL_AIRFLOW_VERSION``             |             |             |            | Installs Airflow version from PyPI when         |
-|                                         |             |             |            | building image. Can be "none" to skip airflow   |
-|                                         |             |             |            | installation so that it can be installed from   |
-|                                         |             |             |            | locally prepared packages.                      |
-+-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
-| ``INSTALL_AIRFLOW_REFERENCE``           |             |             |            | Installs Airflow version from GitHub            |
-|                                         |             |             |            | branch or tag.                                  |
-+-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
 |                                                      Version suffix variables                                                      |
 +-----------------------------------------+-------------+-------------+------------+-------------------------------------------------+
 | ``VERSION_SUFFIX_FOR_PYPI``             |             |             |            | Version suffix used during provider             |
@@ -317,7 +307,7 @@ You can use those variables when you try to reproduce the build locally.
 |                                         |             |             |            | tested set of dependency constraints            |
 |                                         |             |             |            | stored in separated "orphan" branches           |
 |                                         |             |             |            | of the airflow repository                       |
-|                                         |             |             |            | ("constraints-master, "constraints-1-10")       |
+|                                         |             |             |            | ("constraints-master, "constraints-2-0")        |
 |                                         |             |             |            | but when this flag is set to anything but false |
 |                                         |             |             |            | (for example commit SHA), they are not used     |
 |                                         |             |             |            | used and "eager" upgrade strategy is used       |
@@ -495,7 +485,7 @@ Container Registry. In case of GitHub Packages, authentication uses GITHUB_TOKEN
 is needed for both pushing the images (WRITE) and pulling them (READ) - which means that GitHub token
 is used in "master" build (WRITE) and in fork builds (READ). For container registry, our images are
 Publicly Visible and we do not need any authentication to pull them so the CONTAINER_REGISTRY_TOKEN is
-only set in the "master" builds only ("Build Images" workflow and "Scheduled quarantine" one).
+only set in the "master" builds only ("Build Images" workflow).
 
 Dockerhub Variables
 ===================
@@ -614,6 +604,23 @@ describes the workflows that execute for each run.
 Those runs and their corresponding ``Build Images`` runs are only executed in main ``apache/airflow``
 repository, they are not executed in forks - we want to be nice to the contributors and not use their
 free build minutes on GitHub Actions.
+
+Sometimes (bugs in DockerHub or prolonged periods when the scheduled builds are failing)
+the automated build for nightly master is not executed for a long time. Such builds can be manually
+prepared and pushed by a maintainer who has the rights to push images to DockerHub (committers need
+to file JIRA ticket to Apache Infra in order to get an access).
+
+.. code-block:: bash
+
+  export BRANCH=master
+  export DOCKER_REPO=docker.io/apache/airflow
+  for python_version in "3.6" "3.7" "3.8"
+  (
+    export DOCKER_TAG=${BRANCH}-python${python_version}
+    ./scripts/ci/images/ci_build_dockerhub.sh
+  )
+
+
 
 Workflows
 =========
@@ -746,27 +753,6 @@ Comments:
      is explained.
  (6) Nightly tag is pushed to the repository only in CRON job and only if all tests pass. This
      causes the DockerHub images are built automatically and made available to developers.
-
-Scheduled quarantined builds
-----------------------------
-
-This workflow runs only quarantined tests. Those tests do not fail the build even if some tests fail (only if
-the whole pytest execution fails). Instead this workflow updates one of the issues where we keep status
-of quarantined tests. Once the test succeeds in NUM_RUNS subsequent runs, it is marked as stable and
-can be removed from quarantine. You can read more about quarantine in `<TESTING.rst>`_
-
-The issues are only updated if the test is run as direct push or scheduled run and only in the
-``apache/airflow`` repository - so that the issues are not updated in forks.
-
-The issues that gets updated are different for different branches:
-
-* master: `Quarantine tests master <https://github.com/apache/airflow/issues/10118>`_
-* v1-10-stable: `Quarantine tests v1-10-stable <https://github.com/apache/airflow/issues/10127>`_
-* v1-10-test: `Quarantine tests v1-10-test <https://github.com/apache/airflow/issues/10128>`_
-
-Those runs and their corresponding ``Build Images`` runs are only executed in main ``apache/airflow``
-repository, they are not executed in forks - we want to be nice to the contributors and not use their
-free build minutes on GitHub Actions.
 
 Force sync master from apache/airflow
 -------------------------------------

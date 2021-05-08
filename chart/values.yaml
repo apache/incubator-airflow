@@ -133,7 +133,7 @@ images:
     pullPolicy: IfNotPresent
   statsd:
     repository: apache/airflow
-    tag: airflow-statsd-exporter-2020.09.05-v0.17.0
+    tag: airflow-statsd-exporter-2021.04.28-v0.17.0
     pullPolicy: IfNotPresent
   redis:
     repository: redis
@@ -141,11 +141,11 @@ images:
     pullPolicy: IfNotPresent
   pgbouncer:
     repository: apache/airflow
-    tag: airflow-pgbouncer-2020.09.05-1.14.0
+    tag: airflow-pgbouncer-2021.04.28-1.14.0
     pullPolicy: IfNotPresent
   pgbouncerExporter:
     repository: apache/airflow
-    tag: airflow-pgbouncer-exporter-2020.09.25-0.5.0
+    tag: airflow-pgbouncer-exporter-2021.04.28-0.5.0
     pullPolicy: IfNotPresent
   gitSync:
     repository: k8s.gcr.io/git-sync

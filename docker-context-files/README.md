@@ -26,7 +26,7 @@ the [docker-context-files](.) folder to the image context - in case of productio
 the build segment, co content of the folder is available in the `/docker-context-file` folder inside
 the build image. You can store constraint files and wheel
 packages there that you want to install as PYPI packages and refer to those packages using
-`--constraint-location` flag for constraints or by using `--install-from-local-files-when-building` flag.
+`--constraint-location` flag for constraints or by using `--install-from-docker-context-files` flag.
 
 By default, the content of this folder is .gitignored so that any binaries and files you put here are only
 used for local builds and not committed to the repository.

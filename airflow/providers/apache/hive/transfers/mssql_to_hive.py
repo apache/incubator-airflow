@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+# pylint: disable=no-member
 """This module contains operator to move data from MSSQL to Hive."""
 
 from collections import OrderedDict

@@ -22,7 +22,6 @@
 # on CI to potentially rebuild (and refresh layers that
 # are not cached) Docker images that are used to run CI jobs
 export FORCE_ANSWER_TO_QUESTIONS="yes"
-export VERBOSE_COMMANDS="true"
 export VERBOSE="true"
 
 : "${DOCKER_REPO:?"ERROR: Please specify DOCKER_REPO variable following the pattern HOST/DOCKERHUB_USER/DOCKERHUB_REPO"}"
@@ -53,7 +52,12 @@ if [[ ! "${DOCKER_TAG}" =~ ^[0-9].* ]]; then
     echo
     echo "Building airflow from branch or non-release tag: ${DOCKER_TAG}"
     echo
-    # Only build and push CI image for the nightly-master, v1-10-test and v2-0-test branches
+    # All the packages: Airflow and providers will have a "dev" version suffix in the imaage that
+    # is built from non-release tag. If this is not set, then building images from locally build
+    # packages fails, because the packages with non-dev version are skipped (as they are alredy released)
+    export VERSION_SUFFIX_FOR_PYPI="dev"
+    export VERSION_SUFFIX_FOR_SVN="dev"
+    # Only build and push CI image for the nightly-master, v2-0-test branches
     # for tagged releases we build everything from PyPI, so we do not need CI images
     # For development images, we have to build all packages from current sources because we want to produce
     # `Latest and greatest` image from those branches. We need to build and push CI image as well as PROD
@@ -81,6 +85,7 @@ if [[ ! "${DOCKER_TAG}" =~ ^[0-9].* ]]; then
         rm -rf "${AIRFLOW_SOURCES}/docker-context-files/*"
         build_images::prepare_ci_build
         build_images::rebuild_ci_image_if_needed
+        verify_image::verify_prod_image "${AIRFLOW_PROD_IMAGE}"
         push_pull_remove_images::push_ci_images
     )
     (
@@ -98,6 +103,7 @@ if [[ ! "${DOCKER_TAG}" =~ ^[0-9].* ]]; then
         rm -rf "${AIRFLOW_SOURCES}/docker-context-files/*"
         build_images::prepare_prod_build
         build_images::build_prod_images_from_locally_built_airflow_packages
+        verify_image::verify_prod_image "${AIRFLOW_PROD_IMAGE}"
         push_pull_remove_images::push_prod_images
     )
 else
@@ -126,5 +132,14 @@ else
     rm -rf "${AIRFLOW_SOURCES}/docker-context-files/*"
     build_images::prepare_prod_build
     build_images::build_prod_images
+    verify_image::verify_prod_image "${AIRFLOW_PROD_IMAGE}"
     push_pull_remove_images::push_prod_images
+    if [[ ${PYTHON_MAJOR_MINOR_VERSION} == "${DEFAULT_PYTHON_MAJOR_MINOR_VERSION}" ]]; then
+        # In case of default Python version we also push ":version" and ":latest" tag
+        docker tag "apache/airflow:${INSTALL_AIRFLOW_VERSION}-python${PYTHON_MAJOR_MINOR_VERSION}" \
+            "apache/airflow:${INSTALL_AIRFLOW_VERSION}"
+        docker tag "apache/airflow:${INSTALL_AIRFLOW_VERSION}" "apache/airflow:latest"
+        docker push "apache/airflow:${INSTALL_AIRFLOW_VERSION}"
+        docker push "apache/airflow:latest"
+    fi
 fi

@@ -30,8 +30,8 @@ EXPOSE 7778
 
 LABEL org.apache.airflow.component="trino"
 LABEL org.apache.airflow.trino.core.version="${TRINO_VERSION}"
-LABEL org.apache.airflow.airflow_trino.version="${AIRFLOW_TRINO_VERSION}"
-LABEL org.apache.airflow.commit_sha="${COMMIT_SHA}"
+LABEL org.apache.airflow.airflow-trino.version="${AIRFLOW_TRINO_VERSION}"
+LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
 LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # Restore user

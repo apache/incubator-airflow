@@ -36,23 +36,7 @@ function build_images::add_build_args_for_remote_install() {
             "--build-arg" "AIRFLOW_CONSTRAINTS_REFERENCE=${AIRFLOW_CONSTRAINTS_REFERENCE}"
         )
     else
-        if [[ ${AIRFLOW_VERSION} =~ [^0-9]*1[^0-9]*10[^0-9]([0-9]*) ]]; then
-            # All types of references/versions match this regexp for 1.10 series
-            # for example v1_10_test, 1.10.10, 1.10.9 etc. ${BASH_REMATCH[1]} matches last
-            # minor digit of version and it's length is 0 for v1_10_test, 1 for 1.10.9 and 2 for 1.10.10+
-            AIRFLOW_MINOR_VERSION_NUMBER=${BASH_REMATCH[1]}
-            if [[ ${#AIRFLOW_MINOR_VERSION_NUMBER} == "0" ]]; then
-                # For v1_10_* branches use constraints-1-10 branch
-                EXTRA_DOCKER_PROD_BUILD_FLAGS+=(
-                    "--build-arg" "AIRFLOW_CONSTRAINTS_REFERENCE=constraints-1-10"
-                )
-            else
-                EXTRA_DOCKER_PROD_BUILD_FLAGS+=(
-                    # For specified minor version of 1.10 or v1 branch use specific reference constraints
-                    "--build-arg" "AIRFLOW_CONSTRAINTS_REFERENCE=constraints-${AIRFLOW_VERSION}"
-                )
-            fi
-        elif  [[ ${AIRFLOW_VERSION} =~ v?2.* ]]; then
+        if  [[ ${AIRFLOW_VERSION} =~ v?2.* ]]; then
             EXTRA_DOCKER_PROD_BUILD_FLAGS+=(
                 # For specified minor version of 2.0 or v2 branch use specific reference constraints
                 "--build-arg" "AIRFLOW_CONSTRAINTS_REFERENCE=constraints-${AIRFLOW_VERSION}"
@@ -70,14 +54,10 @@ function build_images::add_build_args_for_remote_install() {
         )
     fi
     # Depending on the version built, we choose the right branch for preloading the packages from
-    # If we run build for v1-10-test builds we should choose v1-10-test, for v2-0-test we choose v2-0-test
+    # For v2-0-test we choose v2-0-test
     # all other builds when you choose a specific version (1.0 or 2.0 series) should choose stable branch
     # to preload. For all other builds we use the default branch defined in _initialization.sh
-    if [[ ${AIRFLOW_VERSION} == 'v1-10-test' ]]; then
-        AIRFLOW_BRANCH_FOR_PYPI_PRELOADING="v1-10-test"
-    elif [[ ${AIRFLOW_VERSION} =~ v?1.* ]]; then
-        AIRFLOW_BRANCH_FOR_PYPI_PRELOADING="v1-10-stable"
-    elif [[ ${AIRFLOW_VERSION} == 'v2-0-test' ]]; then
+    if [[ ${AIRFLOW_VERSION} == 'v2-0-test' ]]; then
         AIRFLOW_BRANCH_FOR_PYPI_PRELOADING="v2-0-test"
     elif [[ ${AIRFLOW_VERSION} =~ v?2.* ]]; then
         AIRFLOW_BRANCH_FOR_PYPI_PRELOADING="v2-0-stable"
@@ -222,26 +202,26 @@ function build_images::confirm_image_rebuild() {
     fi
 }
 
-function build_images::confirm_non-empty-docker-context-files() {
+function build_images::check_for_docker_context_files() {
     local num_docker_context_files
-    num_docker_context_files=$(find "${AIRFLOW_SOURCES}/docker-context-files/" -type f |\
-        grep -c v "README.md" )
+    local docker_context_files_dir="${AIRFLOW_SOURCES}/docker-context-files/"
+    num_docker_context_files=$(find "${docker_context_files_dir}" -type f | grep -c -v "README.md" || true)
     if [[ ${num_docker_context_files} == "0" ]]; then
-        if [[ ${INSTALL_FROM_DOCKER_CONTEXT_FILES} == "false" ]]; then
-            >&2 echo
-            >&2 echo "ERROR! You want to install packages from docker-context-files"
-            >&2 echo "       but there are no packages to install in this folder."
-            >&2 echo
+        if [[ ${INSTALL_FROM_DOCKER_CONTEXT_FILES} != "false" ]]; then
+            echo
+            echo "${COLOR_YELLOW}ERROR! You want to install packages from docker-context-files${COLOR_RESET}"
+            echo "${COLOR_YELLOW}       but there are no packages to install in this folder.${COLOR_RESET}"
+            echo
             exit 1
         fi
     else
         if [[ ${INSTALL_FROM_DOCKER_CONTEXT_FILES} == "false" ]]; then
-            >&2 echo
-            >&2 echo "ERROR! There are some extra files in docker-context-files except README.md"
-            >&2 echo "       And you did not choose --install-from-docker-context-files flag"
-            >&2 echo "       This might result in unnecessary cache invalidation and long build times"
-            >&2 echo "       Exiting now - please remove those files (except README.md) and retry"
-            >&2 echo
+            echo
+            echo "${COLOR_YELLOW}ERROR! There are some extra files in docker-context-files except README.md${COLOR_RESET}"
+            echo "${COLOR_YELLOW}       And you did not choose --install-from-docker-context-files flag${COLOR_RESET}"
+            echo "${COLOR_YELLOW}       This might result in unnecessary cache invalidation and long build times${COLOR_RESET}"
+            echo "${COLOR_YELLOW}       Exiting now - please restart the command with --cleanup-docker-context-files switch${COLOR_RESET}"
+            echo
             exit 2
         fi
     fi
@@ -459,7 +439,7 @@ function build_images::get_docker_image_names() {
 # either GITHUB_TOKEN or CONTAINER_REGISTRY_TOKEN depending on the registry.
 # In case Personal Access token is not set, skip logging in
 # Also enable experimental features of docker (we need `docker manifest` command)
-function build_image::configure_docker_registry() {
+function build_images::configure_docker_registry() {
     if [[ ${USE_GITHUB_REGISTRY} == "true" ]]; then
         local token=""
         if [[ "${GITHUB_REGISTRY}" == "ghcr.io" ]]; then
@@ -515,7 +495,7 @@ function build_images::prepare_ci_build() {
     export AIRFLOW_IMAGE="${AIRFLOW_CI_IMAGE}"
     readonly AIRFLOW_IMAGE
 
-    build_image::configure_docker_registry
+    build_images::configure_docker_registry
     sanity_checks::go_to_airflow_sources
     permissions::fix_group_permissions
 }
@@ -743,7 +723,6 @@ Docker building ${AIRFLOW_CI_IMAGE}.
         --build-arg AIRFLOW_BRANCH="${BRANCH_NAME}" \
         --build-arg AIRFLOW_EXTRAS="${AIRFLOW_EXTRAS}" \
         --build-arg AIRFLOW_PRE_CACHED_PIP_PACKAGES="${AIRFLOW_PRE_CACHED_PIP_PACKAGES}" \
-        --build-arg INSTALL_PROVIDERS_FROM_SOURCES="${INSTALL_PROVIDERS_FROM_SOURCES}" \
         --build-arg ADDITIONAL_AIRFLOW_EXTRAS="${ADDITIONAL_AIRFLOW_EXTRAS}" \
         --build-arg ADDITIONAL_PYTHON_DEPS="${ADDITIONAL_PYTHON_DEPS}" \
         --build-arg ADDITIONAL_DEV_APT_COMMAND="${ADDITIONAL_DEV_APT_COMMAND}" \
@@ -752,8 +731,6 @@ Docker building ${AIRFLOW_CI_IMAGE}.
         --build-arg ADDITIONAL_RUNTIME_APT_COMMAND="${ADDITIONAL_RUNTIME_APT_COMMAND}" \
         --build-arg ADDITIONAL_RUNTIME_APT_DEPS="${ADDITIONAL_RUNTIME_APT_DEPS}" \
         --build-arg ADDITIONAL_RUNTIME_APT_ENV="${ADDITIONAL_RUNTIME_APT_ENV}" \
-        --build-arg INSTALL_FROM_PYPI="${INSTALL_FROM_PYPI}" \
-        --build-arg INSTALL_FROM_DOCKER_CONTEXT_FILES="${INSTALL_FROM_DOCKER_CONTEXT_FILES}" \
         --build-arg UPGRADE_TO_NEWER_DEPENDENCIES="${UPGRADE_TO_NEWER_DEPENDENCIES}" \
         --build-arg CONTINUE_ON_PIP_CHECK_FAILURE="${CONTINUE_ON_PIP_CHECK_FAILURE}" \
         --build-arg CONSTRAINTS_GITHUB_REPOSITORY="${CONSTRAINTS_GITHUB_REPOSITORY}" \
@@ -838,7 +815,7 @@ function build_images::prepare_prod_build() {
     export AIRFLOW_IMAGE="${AIRFLOW_PROD_IMAGE}"
     readonly AIRFLOW_IMAGE
 
-    build_image::configure_docker_registry
+    build_images::configure_docker_registry
     AIRFLOW_BRANCH_FOR_PYPI_PRELOADING="${BRANCH_NAME}"
     sanity_checks::go_to_airflow_sources
 }
@@ -1036,7 +1013,7 @@ function build_images::determine_docker_cache_strategy() {
 }
 
 
-function build_image::assert_variable() {
+function build_images::assert_variable() {
     local variable_name="${1}"
     local expected_value="${2}"
     local variable_value=${!variable_name}
@@ -1048,19 +1025,27 @@ function build_image::assert_variable() {
     fi
 }
 
+function build_images::cleanup_dist() {
+    mkdir -pv "${AIRFLOW_SOURCES}/dist"
+    rm -f "${AIRFLOW_SOURCES}/dist/"*.{whl,tar.gz}
+}
+
+
+function build_images::cleanup_docker_context_files() {
+    mkdir -pv "${AIRFLOW_SOURCES}/docker-context-files"
+    rm -f "${AIRFLOW_SOURCES}/docker-context-files/"*.{whl,tar.gz}
+}
+
 function build_images::build_prod_images_from_locally_built_airflow_packages() {
     # We do not install from PyPI
-    build_image::assert_variable INSTALL_FROM_PYPI "false"
+    build_images::assert_variable INSTALL_FROM_PYPI "false"
     # But then we reinstall airflow and providers from prepared packages in the docker context files
-    build_image::assert_variable INSTALL_FROM_DOCKER_CONTEXT_FILES "true"
+    build_images::assert_variable INSTALL_FROM_DOCKER_CONTEXT_FILES "true"
     # But we install everything from scratch to make a "clean" installation in case any dependencies got removed
-    build_image::assert_variable AIRFLOW_PRE_CACHED_PIP_PACKAGES "false"
+    build_images::assert_variable AIRFLOW_PRE_CACHED_PIP_PACKAGES "false"
 
-    # Cleanup dist and docker-context-files folders
-    mkdir -pv "${AIRFLOW_SOURCES}/dist"
-    mkdir -pv "${AIRFLOW_SOURCES}/docker-context-files"
-    rm -f "${AIRFLOW_SOURCES}/dist/"*.{whl,tar.gz}
-    rm -f "${AIRFLOW_SOURCES}/docker-context-files/"*.{whl,tar.gz}
+    build_images::cleanup_dist
+    build_images::cleanup_docker_context_files
 
     # Build necessary provider packages
     runs::run_prepare_provider_packages "${INSTALLED_PROVIDERS[@]}"

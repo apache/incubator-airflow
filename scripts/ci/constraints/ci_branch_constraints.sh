@@ -22,8 +22,6 @@ if [[ ${GITHUB_REF} == 'refs/heads/main' ]]; then
   echo "::set-output name=branch::constraints-main"
 elif [[ ${GITHUB_REF} == 'refs/heads/master' ]]; then
   echo "::set-output name=branch::constraints-master"
-elif [[ ${GITHUB_REF} == 'refs/heads/v1-10-test' ]]; then
-  echo "::set-output name=branch::constraints-1-10"
 elif [[ ${GITHUB_REF} == 'refs/heads/v2-0-test' ]]; then
   echo "::set-output name=branch::constraints-2-0"
 else

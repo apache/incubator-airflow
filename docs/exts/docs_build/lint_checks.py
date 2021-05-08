@@ -22,14 +22,6 @@ from glob import glob
 from itertools import chain
 from typing import Iterable, List, Optional, Set
 
-import yaml
-
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader  # type: ignore[misc]
-
-import airflow
 from docs.exts.docs_build.docs_builder import ALL_PROVIDER_YAMLS  # pylint: disable=no-name-in-module
 from docs.exts.docs_build.errors import DocBuildError  # pylint: disable=no-name-in-module
 
@@ -325,54 +317,6 @@ def check_pypi_repository_in_provider_tocs() -> List[DocBuildError]:
     return build_errors
 
 
-def check_docker_image_tag_in_quick_start_guide() -> List[DocBuildError]:
-    """Check that a good docker image is used in the quick start guide for Docker."""
-    build_errors = []
-
-    compose_file_path = f"{DOCS_DIR}/apache-airflow/start/docker-compose.yaml"
-    expected_tag = 'master-python3.8' if "dev" in airflow.__version__ else airflow.__version__
-    # master tag is little outdated.
-    expected_image = f'apache/airflow:{expected_tag}'
-    with open(compose_file_path) as yaml_file:
-        content = yaml.load(yaml_file, SafeLoader)
-        current_image_expression = content['x-airflow-common']['image']
-        if expected_image not in current_image_expression:
-            build_errors.append(
-                DocBuildError(
-                    file_path=compose_file_path,
-                    line_no=None,
-                    message=(
-                        f"Invalid image in docker - compose.yaml\n"
-                        f"Current image expression: {current_image_expression}\n"
-                        f"Expected image: {expected_image}\n"
-                        f"Please check the value of x-airflow-common.image key"
-                    ),
-                )
-            )
-    build_error = assert_file_contains(
-        file_path=f"{DOCS_DIR}/apache-airflow/start/docker.rst",
-        pattern=re.escape(f'{expected_image}   "/usr/bin/dumb-init'),
-    )
-    if build_error:
-        build_errors.append(build_error)
-
-    return build_errors
-
-
-def check_airflow_versions_in_quick_start_guide() -> List[DocBuildError]:
-    """Check that a airflow version is presented in example in the quick start guide for Docker."""
-    build_errors = []
-
-    build_error = assert_file_contains(
-        file_path=f"{DOCS_DIR}/apache-airflow/start/docker.rst",
-        pattern=re.escape(f"airflow-init_1       | {airflow.__version__}"),
-    )
-    if build_error:
-        build_errors.append(build_error)
-
-    return build_errors
-
-
 def run_all_check() -> List[DocBuildError]:
     """Run all checks from this module"""
     general_errors = []
@@ -381,7 +325,5 @@ def run_all_check() -> List[DocBuildError]:
     general_errors.extend(check_exampleinclude_for_example_dags())
     general_errors.extend(check_example_dags_in_provider_tocs())
     general_errors.extend(check_pypi_repository_in_provider_tocs())
-    general_errors.extend(check_docker_image_tag_in_quick_start_guide())
-    general_errors.extend(check_airflow_versions_in_quick_start_guide())
 
     return general_errors

@@ -23,7 +23,7 @@
 # by the BATS tests automatically during pre-commit and CI
 # Those cannot be made read-only as the breeze-complete must be re-sourceable
 
-_breeze_allowed_python_major_minor_versions="2.7 3.5 3.6 3.7 3.8"
+_breeze_allowed_python_major_minor_versions="3.6 3.7 3.8"
 _breeze_allowed_backends="sqlite mysql postgres"
 _breeze_allowed_integrations="cassandra kerberos mongo openldap pinot rabbitmq redis statsd trino all"
 _breeze_allowed_generate_constraints_modes="source-providers pypi-providers no-providers"
@@ -57,17 +57,18 @@ _breeze_allowed_installation_methods=". apache-airflow"
 }
 
 _breeze_allowed_install_airflow_versions=$(cat <<-EOF
+2.0.3
+2.0.2
 2.0.1
 2.0.0
-1.10.15
-1.10.14
-1.10.12
-1.10.11
-1.10.10
-1.10.9
-none
 wheel
 sdist
+EOF
+)
+
+_breeze_allowed_USE_AIRFLOW_VERSION=$(cat <<-EOF
+${_breeze_allowed_install_airflow_versions}
+none
 EOF
 )
 
@@ -177,7 +178,9 @@ additional-extras: additional-python-deps: disable-pypi-when-building skip-insta
 dev-apt-deps: additional-dev-apt-deps: dev-apt-command: additional-dev-apt-command: additional-dev-apt-env:
 runtime-apt-deps: additional-runtime-apt-deps: runtime-apt-command: additional-runtime-apt-command: additional-runtime-apt-env:
 load-default-connections load-example-dags
-install-packages-from-dist no-rbac-ui package-format: upgrade-to-newer-dependencies installation-method: continue-on-pip-check-failure
+use-packages-from-dist no-rbac-ui package-format: upgrade-to-newer-dependencies installation-method: continue-on-pip-check-failure
+use-airflow-version:
+cleanup-docker-context-files
 test-type: preserve-volumes dry-run-docker
 "
 
@@ -259,8 +262,11 @@ function breeze_complete::get_known_values_breeze() {
     static-check)
         _breeze_known_values=${_breeze_allowed_static_checks}
         ;;
-    -A | --install-airflow-version)
+    -a | --install-airflow-version)
         _breeze_known_values=${_breeze_allowed_install_airflow_versions}
+        ;;
+    --use-airflow-version)
+        _breeze_known_values=${_breeze_allowed_USE_AIRFLOW_VERSION}
         ;;
     docker-compose)
         # shellcheck disable=SC2034

@@ -36,18 +36,7 @@ function common::get_airflow_version_specification() {
 function common::get_constraints_location() {
     # auto-detect Airflow-constraint reference and location
     if [[ -z "${AIRFLOW_CONSTRAINTS_REFERENCE}" ]]; then
-        if [[ ${AIRFLOW_VERSION} =~ [^0-9]*1[^0-9]*10[^0-9]([0-9]*) ]]; then
-            # All types of references/versions match this regexp for 1.10 series
-            # for example v1_10_test, 1.10.10, 1.10.9 etc. ${BASH_REMATCH[1]} matches last
-            # minor digit of version and it's length is 0 for v1_10_test, 1 for 1.10.9 and 2 for 1.10.10+
-            AIRFLOW_MINOR_VERSION_NUMBER=${BASH_REMATCH[1]}
-            if [[ ${#AIRFLOW_MINOR_VERSION_NUMBER} == "0" ]]; then
-                # For v1_10_* branches use constraints-1-10 branch
-                AIRFLOW_CONSTRAINTS_REFERENCE=constraints-1-10
-            else
-                AIRFLOW_CONSTRAINTS_REFERENCE=constraints-${AIRFLOW_VERSION}
-            fi
-        elif  [[ ${AIRFLOW_VERSION} =~ v?2.* ]]; then
+        if  [[ ${AIRFLOW_VERSION} =~ v?2.* ]]; then
             AIRFLOW_CONSTRAINTS_REFERENCE=constraints-${AIRFLOW_VERSION}
         else
             AIRFLOW_CONSTRAINTS_REFERENCE=${DEFAULT_CONSTRAINTS_BRANCH}

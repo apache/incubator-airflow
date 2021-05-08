@@ -261,7 +261,11 @@ cd "${AIRFLOW_REPO_ROOT}"
   --package-filter 'apache-airflow-providers-*'
 ```
 
-for all providers, or if you have just few providers:
+Usually when we release packages we also build documentation for the "documentation-only" packages. This
+means that unless we release just few selected packages or if we need to deliberately skip some packages
+we should release documentation for all provider packages and the above command is the one to use.
+
+If we want to just release some providers you can release them in this way:
 
 ```shell script
 cd "${AIRFLOW_REPO_ROOT}"
@@ -273,11 +277,13 @@ cd "${AIRFLOW_REPO_ROOT}"
   ...
 ```
 
-If you have providers as list of provider ids beacuse you just released them you can build them with
+
+If you have providers as list of provider ids becuse you just released them you can build them with
 
 ```shell script
 ./dev/provider_packages/build_provider_documentation.sh amazon apache.beam google ....
 ```
+
 
 - Now you can preview the documentation.
 
@@ -499,24 +505,24 @@ warning. By importing the server in the previous step and importing it via ID fr
 this is a valid Key already.
 
 ```
-Checking apache-airflow-1.10.12rc4-bin.tar.gz.asc
-gpg: assuming signed data in 'apache-airflow-1.10.12rc4-bin.tar.gz'
+Checking apache-airflow-2.0.2rc4-bin.tar.gz.asc
+gpg: assuming signed data in 'apache-airflow-2.0.2rc4-bin.tar.gz'
 gpg: Signature made sob, 22 sie 2020, 20:28:28 CEST
 gpg:                using RSA key 12717556040EEF2EEAF1B9C275FCCD0A25FA0E4B
 gpg: Good signature from "Kaxil Naik <kaxilnaik@gmail.com>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
 gpg:          There is no indication that the signature belongs to the owner.
 Primary key fingerprint: 1271 7556 040E EF2E EAF1  B9C2 75FC CD0A 25FA 0E4B
-Checking apache_airflow-1.10.12rc4-py2.py3-none-any.whl.asc
-gpg: assuming signed data in 'apache_airflow-1.10.12rc4-py2.py3-none-any.whl'
+Checking apache_airflow-2.0.2rc4-py2.py3-none-any.whl.asc
+gpg: assuming signed data in 'apache_airflow-2.0.2rc4-py2.py3-none-any.whl'
 gpg: Signature made sob, 22 sie 2020, 20:28:31 CEST
 gpg:                using RSA key 12717556040EEF2EEAF1B9C275FCCD0A25FA0E4B
 gpg: Good signature from "Kaxil Naik <kaxilnaik@gmail.com>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
 gpg:          There is no indication that the signature belongs to the owner.
 Primary key fingerprint: 1271 7556 040E EF2E EAF1  B9C2 75FC CD0A 25FA 0E4B
-Checking apache-airflow-1.10.12rc4-source.tar.gz.asc
-gpg: assuming signed data in 'apache-airflow-1.10.12rc4-source.tar.gz'
+Checking apache-airflow-2.0.2rc4-source.tar.gz.asc
+gpg: assuming signed data in 'apache-airflow-2.0.2rc4-source.tar.gz'
 gpg: Signature made sob, 22 sie 2020, 20:28:25 CEST
 gpg:                using RSA key 12717556040EEF2EEAF1B9C275FCCD0A25FA0E4B
 gpg: Good signature from "Kaxil Naik <kaxilnaik@gmail.com>" [unknown]
@@ -570,8 +576,8 @@ Here is a typical scenario.
 First copy all the provider packages .whl files to the `dist` folder.
 
 ```shell script
-./breeze start-airflow --install-airflow-version <VERSION>rc<X> \
-    --python 3.7 --backend postgres --install-packages-from-dist
+./breeze start-airflow --use-airflow-version <VERSION>rc<X> \
+    --python 3.7 --backend postgres --use-packages-from-dist
 ```
 
 ### Building your own docker image
@@ -751,10 +757,7 @@ twine upload -r pypi ${AIRFLOW_REPO_ROOT}/dist/*
 
 ## Publish documentation prepared before
 
-Merge the PR that you prepared before with the documentation. If you removed some of the providers
-from the release - remove the versions from the prepared documentation and update stable.txt with the
-previous version for those providers before merging the PR.
-
+Merge the PR that you prepared before with the documentation.
 
 ## Add tags in git
 

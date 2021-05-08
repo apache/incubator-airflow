@@ -55,14 +55,14 @@ function run_bats_tests() {
     if [[ ${#@} == "0" ]]; then
         # Run al tests
         docker run --workdir /airflow -v "$(pwd):/airflow" --rm \
-            apache/airflow:bats-2020.09.05-1.2.1 --tap /airflow/tests/bats/
+            apache/airflow:bats-2021.04.28-1.2.1 --tap /airflow/tests/bats/
     elif [[ ${#bats_arguments} == "0" ]]; then
         # Skip running anything if all filtered out
         true
     else
         # Run selected tests
         docker run --workdir /airflow -v "$(pwd):/airflow" --rm \
-            apache/airflow:bats-2020.09.05-1.2.1 --tap "${bats_arguments[@]}"
+            apache/airflow:bats-2021.04.28-1.2.1 --tap "${bats_arguments[@]}"
     fi
 }
 

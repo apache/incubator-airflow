@@ -191,6 +191,10 @@
       "items": {
         "type": "string"
       }
+    },
+    "additional-extras": {
+      "type": "object",
+      "description": "Additional extras that the provider should have"
     }
   },
   "additionalProperties": false,

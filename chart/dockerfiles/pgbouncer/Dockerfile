@@ -16,7 +16,7 @@
 # under the License.
 ARG ALPINE_VERSION="3.12"
 FROM alpine:${ALPINE_VERSION} AS builder
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/ash", "-e", "-x", "-c", "-o", "pipefail"]
 
 ARG PGBOUNCER_VERSION
 ARG AIRFLOW_PGBOUNCER_VERSION
@@ -30,15 +30,16 @@ RUN apk --no-cache add make pkgconfig build-base libtool wget gcc g++ libevent-d
 # We are not using Dash so we can safely ignore the "Dash warning"
 # "In dash, something is not supported." https://github.com/koalaman/shellcheck/wiki/SC2169
 # hadolint ignore=SC2169
-RUN wget "https://github.com/pgbouncer/pgbouncer/releases/download/pgbouncer_${PGBOUNCER_VERSION//\./_}/pgbouncer-${PGBOUNCER_VERSION}.tar.gz"
-RUN echo "${PGBOUNCER_SHA256}  pgbouncer-${PGBOUNCER_VERSION}.tar.gz" | sha256sum -c -
-RUN tar -xzvf pgbouncer-$PGBOUNCER_VERSION.tar.gz
+RUN wget --progress=dot:giga "https://github.com/pgbouncer/pgbouncer/releases/download/pgbouncer_${PGBOUNCER_VERSION//\./_}/pgbouncer-${PGBOUNCER_VERSION}.tar.gz" \
+    && echo "${PGBOUNCER_SHA256}  pgbouncer-${PGBOUNCER_VERSION}.tar.gz" | sha256sum -c - \
+    && tar -xzvf pgbouncer-$PGBOUNCER_VERSION.tar.gz
+
 WORKDIR /pgbouncer-$PGBOUNCER_VERSION
-RUN ./configure --prefix=/usr --disable-debug && make && make install
-RUN mkdir /etc/pgbouncer
-RUN cp ./etc/pgbouncer.ini /etc/pgbouncer/
-RUN touch /etc/pgbouncer/userlist.txt
-RUN sed -i -e "s|logfile = |#logfile = |"  \
+RUN ./configure --prefix=/usr --disable-debug && make && make install \
+    && mkdir /etc/pgbouncer \
+    && cp ./etc/pgbouncer.ini /etc/pgbouncer/ \
+    && touch /etc/pgbouncer/userlist.txt \
+    && sed -i -e "s|logfile = |#logfile = |"  \
            -e "s|pidfile = |#pidfile = |"  \
            -e "s|listen_addr = .*|listen_addr = 0.0.0.0|" \
            -e "s|auth_type = .*|auth_type = md5|" \
@@ -52,8 +53,8 @@ ARG COMMIT_SHA
 
 LABEL org.apache.airflow.component="pgbouncer"
 LABEL org.apache.airflow.pgbouncer.version="${PGBOUNCER_VERSION}"
-LABEL org.apache.airflow.airflow_pgbouncer.version="${AIRFLOW_PGBOUNCER_VERSION}"
-LABEL org.apache.airflow.commit_sha="${COMMIT_SHA}"
+LABEL org.apache.airflow.airflow-pgbouncer.version="${AIRFLOW_PGBOUNCER_VERSION}"
+LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
 LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # We want to make sure this one includes latest security fixes.

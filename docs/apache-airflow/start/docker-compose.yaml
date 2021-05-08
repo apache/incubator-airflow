@@ -39,7 +39,7 @@
 version: '3'
 x-airflow-common:
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.0.2}
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:|version|}
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -102,11 +102,23 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 10s
+      timeout: 10s
+      retries: 5
     restart: always
 
   airflow-worker:
     <<: *airflow-common
     command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
     restart: always
 
   airflow-init:

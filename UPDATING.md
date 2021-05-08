@@ -26,6 +26,7 @@ assists users migrating to a new version.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of contents**
 
+- [Airflow 2.0.3](#airflow-203)
 - [Airflow 2.0.2](#airflow-202)
 - [Airflow 2.0.1](#airflow-201)
 - [Airflow 2.0.0](#airflow-200)
@@ -66,6 +67,12 @@ More tips can be found in the guide:
 https://developers.google.com/style/inclusive-documentation
 
 -->
+
+## Airflow 2.0.3
+
+### Use PIP 21
+
+You can now use PIP 21 to install airflow
 
 ## Airflow 2.0.2
 
@@ -1726,13 +1733,6 @@ you should use `pip install apache-airflow[apache.atlas]`.
 
 
 NOTE!
-
-On November 2020, new version of PIP (20.3) has been released with a new, 2020 resolver. This resolver
-does not yet work with Apache Airflow and might lead to errors in installation - depends on your choice
-of extras. In order to install Airflow you need to either downgrade pip to version 20.2.4
-`pip install --upgrade pip==20.2.4` or, in case you use Pip 20.3, you need to add option
-`--use-deprecated legacy-resolver` to your pip install command.
-
 
 If you want to install integration for Microsoft Azure, then instead of
 

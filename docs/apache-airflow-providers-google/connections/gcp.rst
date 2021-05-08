@@ -180,7 +180,8 @@ For example, with the following ``terraform`` setup...
         terraform {
           required_version = "> 0.11.14"
         }
-        provider "google" {}
+        provider "google" {
+        }
         variable "project_id" {
           type = "string"
         }

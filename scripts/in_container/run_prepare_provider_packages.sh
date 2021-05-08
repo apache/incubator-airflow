@@ -169,7 +169,6 @@ function rename_packages_if_needed() {
     popd >/dev/null
 }
 
-install_remaining_dependencies
 setup_provider_packages
 
 cd "${PROVIDER_PACKAGES_DIR}" || exit 1

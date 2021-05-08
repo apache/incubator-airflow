@@ -25,15 +25,11 @@ WORKDIR /root/
 
 # Dev stuff
 # hadolint ignore=DL3033
-RUN yum -y install curl wget && yum clean all
-
-# python
-RUN curl "https://bootstrap.pypa.io/get-pip.py" -o /tmp/get-pip.py && \
-    python /tmp/get-pip.py && \
-    rm /tmp/get-pip.py
-
-# supervisord
-RUN pip install --no-cache-dir supervisor==3.3.3 && \
+RUN yum -y install curl wget python36 && yum clean all && \
+    curl "https://bootstrap.pypa.io/get-pip.py" -o /tmp/get-pip.py && \
+    python3 /tmp/get-pip.py && \
+    rm /tmp/get-pip.py && \
+    pip install --no-cache-dir supervisor && \
     mkdir -p /var/log/supervisord/
 
 # kerberos server
@@ -65,9 +61,9 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 LABEL org.apache.airflow.component="krb5-kdc-server" \
     org.apache.airflow.krb5-kdc-server.core.version="krb5" \
-    org.apache.airflow.airflow_bats.version="${AIRFLOW_KRB5KDCSERVER_VERSION}" \
-    org.apache.airflow.commit_sha="${COMMIT_SHA}" \
+    org.apache.airflow.airflow-krb5-kdc-server.version="${AIRFLOW_KRB5KDCSERVER_VERSION}" \
+    org.apache.airflow.commit-sha="${COMMIT_SHA}" \
     maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # when container is starting
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]
+CMD ["/usr/local/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]

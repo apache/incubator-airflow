@@ -24,7 +24,7 @@ cd "${AIRFLOW_SOURCES}"
 # [START build]
 docker build . \
     --build-arg PYTHON_BASE_IMAGE="python:3.6-slim-buster" \
-    --build-arg AIRFLOW_VERSION="2.0.1" \
+    --build-arg AIRFLOW_VERSION="2.0.2" \
     --build-arg ADDITIONAL_PYTHON_DEPS="mpi4py" \
     --build-arg ADDITIONAL_DEV_APT_DEPS="libopenmpi-dev" \
     --build-arg ADDITIONAL_RUNTIME_APT_DEPS="openmpi-common" \

@@ -22,20 +22,9 @@ import pytest
 
 from airflow.models import Connection
 from airflow.providers.trino.hooks.trino import TrinoHook
+from airflow.utils.session import create_session
 from tests.providers.google.cloud.utils.gcp_authenticator import GCP_BIGQUERY_KEY, GCP_GCS_KEY
 from tests.test_utils.gcp_system_helpers import CLOUD_DAG_FOLDER, GoogleSystemTest, provide_gcp_context
-
-try:
-    from airflow.utils.session import create_session
-except ImportError:
-    # This is a hack to import create_session from old destination and
-    # fool the pre-commit check that looks for old imports...
-    # TODO remove this once we don't need to test this on 1.10
-    import importlib
-
-    db_module = importlib.import_module("airflow.utils.db")
-    create_session = getattr(db_module, "create_session")
-
 
 GCS_BUCKET = os.environ.get("GCP_TRINO_TO_GCS_BUCKET_NAME", "test-trino-to-gcs-bucket")
 DATASET_NAME = os.environ.get("GCP_TRINO_TO_GCS_DATASET_NAME", "test_trino_to_gcs_dataset")

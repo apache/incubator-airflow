@@ -21,7 +21,7 @@
 #             "." - installs airflow from local sources
 #             "apache-airflow" - installs airflow from PyPI 'apache-airflow' package
 # AIRFLOW_VERSION_SPECIFICATION - optional specification for Airflow version to install (
-#                                 might be ==2.0.2 for example or <3.0.0
+#                                 might be ==2.0.3 for example or <3.0.0
 # UPGRADE_TO_NEWER_DEPENDENCIES - determines whether eager-upgrade should be performed with the
 #                                 dependencies (with EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS added)
 #

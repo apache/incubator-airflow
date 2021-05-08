@@ -49,7 +49,7 @@ class TestPodGenerator(unittest.TestCase):
                     {
                         'args': ['--vm', '1', '--vm-bytes', '150M', '--vm-hang', '1'],
                         'command': ['stress'],
-                        'image': 'apache/airflow:stress-2020.07.10-1.0.4',
+                        'image': 'apache/airflow:stress-2021.04.28-1.0.4',
                         'name': 'memory-demo-ctr',
                         'resources': {'limits': {'memory': '200Mi'}, 'requests': {'memory': '100Mi'}},
                     }
@@ -666,7 +666,7 @@ metadata:
 spec:
   containers:
     - name: memory-demo-ctr
-      image: apache/airflow:stress-2020.07.10-1.0.4
+      image: apache/airflow:stress-2021.04.28-1.0.4
       resources:
         limits:
           memory: "200Mi"

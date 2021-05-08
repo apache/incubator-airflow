@@ -24,15 +24,7 @@ This quick start guide will help you bootstrap a Airflow standalone instance on 
 
 .. note::
 
-   On November 2020, new version of PIP (20.3) has been released with a new, 2020 resolver. This resolver
-   might work with Apache Airflow as of 20.3.3, but it might lead to errors in installation. It might
-   depend on your choice of extras. In order to install Airflow you might need to either downgrade
-   pip to version 20.2.4 ``pip install --upgrade pip==20.2.4`` or, in case you use Pip 20.3,
-   you need to add option ``--use-deprecated legacy-resolver`` to your pip install command.
-
-   While ``pip 20.3.3`` solved most of the ``teething`` problems of 20.3, this note will remain here until we
-   set ``pip 20.3`` as official version in our CI pipeline where we are testing the installation as well.
-   Due to those constraints, only ``pip`` installation is currently officially supported.
+   Only ``pip`` installation is currently officially supported.
 
    While they are some successes with using other tools like `poetry <https://python-poetry.org/>`_ or
    `pip-tools <https://pypi.org/project/pip-tools/>`_, they do not share the same workflow as
@@ -46,17 +38,18 @@ The installation of Airflow is painless if you are following the instructions be
 constraint files to enable reproducible installation, so using ``pip`` and constraint files is recommended.
 
 .. code-block:: bash
+    :substitutions:
 
     # airflow needs a home, ~/airflow is the default,
     # but you can lay foundation somewhere else if you prefer
     # (optional)
     export AIRFLOW_HOME=~/airflow
 
-    AIRFLOW_VERSION=2.0.1
+    AIRFLOW_VERSION=|version|
     PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
     # For example: 3.6
     CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-2.0.1/constraints-3.6.txt
+    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-|version|/constraints-3.6.txt
     pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
 
     # initialize the database

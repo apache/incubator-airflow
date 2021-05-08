@@ -78,7 +78,7 @@ function sanity_checks::check_if_coreutils_installed() {
         verbosity::print_info
         if [[ $(uname -s) == 'Darwin' ]] ; then
             echo """
-${COLOR_RED}ERROR: You are running ${CMDNAME} in OSX environment and ou need to install gnu commands
+${COLOR_RED}ERROR: You are running ${CMDNAME} in OSX environment and you need to install gnu commands
 
 Run 'brew install gnu-getopt coreutils'
 

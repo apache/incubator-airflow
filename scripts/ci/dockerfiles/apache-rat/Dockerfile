@@ -32,14 +32,13 @@ SHELL ["/bin/sh", "-e", "-x", "-c"]
 RUN apk add -U --no-cache --virtual .build-deps \
         gnupg \
         unzip \
-    && gpg --recv-key 0x33c67755184053ec2d26e10727cce8f1b1313de2 \
-                      0xb920d295bf0e61cb4cf0896c33cd6733af5ec452 \
-                      0x2ce6302b944f8492ca763ff3843ddb767188601c \
-                      0x6bfab2e3c6490b421b25c76c9c8c892f91f8e6d1 \
+    && wget -qT 30 "${APACHE_MIRROR}/creadur/KEYS" \
+    && gpg --import KEYS \
+    && rm KEYS \
     && dist_name="apache-rat-${APACHERAT_VERSION}" \
     && rat_tgz="${dist_name}-bin.tar.gz" \
-    && wget -T 30 "${APACHE_MIRROR}/creadur/${dist_name}/${rat_tgz}.asc" \
-    && wget -T 30 "${APACHE_MIRROR}/creadur/${dist_name}/${rat_tgz}" \
+    && wget -qT 30 "${APACHE_MIRROR}/creadur/${dist_name}/${rat_tgz}.asc" \
+    && wget -qT 30 "${APACHE_MIRROR}/creadur/${dist_name}/${rat_tgz}" \
     && gpg --verify "${rat_tgz}.asc" "${rat_tgz}" \
     && tar --extract --gzip --file "${rat_tgz}" --strip-components=1 "${dist_name}/${dist_name}.jar" "${dist_name}/LICENSE" \
     && rm -vrf "${rat_tgz}" "${rat_tgz}.asc" \
@@ -48,9 +47,9 @@ RUN apk add -U --no-cache --virtual .build-deps \
     && rm -rf ~/.gnupg
 
 LABEL org.apache.airflow.component="apache-rat"
-LABEL org.apache.airflow.apache_rat.version="${APACHERAT_VERSION}"
-LABEL org.apache.airflow.airflow_apache_rat.version="${AIRFLOW_APACHERAT_VERSION}"
-LABEL org.apache.airflow.commit_sha="${COMMIT_SHA}"
+LABEL org.apache.airflow.apache-rat.version="${APACHERAT_VERSION}"
+LABEL org.apache.airflow.airflow-apache-rat.version="${AIRFLOW_APACHERAT_VERSION}"
+LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
 LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 ENTRYPOINT ["java", "-jar", "apache-rat.jar" ]

@@ -23,7 +23,7 @@ metadata:
 spec:
   containers:
     - name: memory-demo-ctr
-      image: apache/airflow:stress-2020.07.10-1.0.4
+      image: apache/airflow:stress-2021.04.28-1.0.4
       resources:
         limits:
           memory: "200Mi"

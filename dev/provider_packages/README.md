@@ -455,7 +455,8 @@ This prepares airflow package in the "dist" folder
 2. Enter the container:
 
 ```shell script
-export INSTALL_AIRFLOW_VERSION="wheel"
+export USE_AIRFLOW_VERSION="wheel"
+export USE_PACKAGES_FROM_DIST="true"
 
 ./dev/provider_packages/enter_breeze_provider_package_tests.sh
 ```

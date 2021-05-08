@@ -29,13 +29,30 @@ function install_airflow_and_providers_from_docker_context_files(){
     if [[ ${INSTALL_MYSQL_CLIENT} != "true" ]]; then
         AIRFLOW_EXTRAS=${AIRFLOW_EXTRAS/mysql,}
     fi
+
+    # shellcheck disable=SC2206
+    local pip_flags=(
+        # Don't quote this -- if it is empty we don't want it to create an
+        # empty array element
+        ${AIRFLOW_INSTALL_USER_FLAG}
+        --find-links="file:///docker-context-files"
+    )
+
     # Find Apache Airflow packages in docker-context files
     local reinstalling_apache_airflow_package
     reinstalling_apache_airflow_package=$(ls \
         /docker-context-files/apache?airflow?[0-9]*.{whl,tar.gz} 2>/dev/null || true)
     # Add extras when installing airflow
     if [[ -n "${reinstalling_apache_airflow_package}" ]]; then
-        reinstalling_apache_airflow_package="${reinstalling_apache_airflow_package}[${AIRFLOW_EXTRAS}]"
+        # When a provider depends on a dev version of Airflow, we need to
+        # specify `apache-airflow==$VER`, otherwise pip will look for it on
+        # pip, and fail to find it
+
+        # This will work as long as the wheel file is correctly named, which it
+        # will be if it was build by wheel tooling
+        local ver
+        ver=$(basename "$reinstalling_apache_airflow_package" | cut -d "-" -f 2)
+        reinstalling_apache_airflow_package="apache-airflow[${AIRFLOW_EXTRAS}]==$ver"
     fi
 
     # Find Apache Airflow packages in docker-context files
@@ -52,12 +69,9 @@ function install_airflow_and_providers_from_docker_context_files(){
         echo Force re-installing airflow and providers from local files with eager upgrade
         echo
         # force reinstall all airflow + provider package local files with eager upgrade
-        pip install ${AIRFLOW_INSTALL_USER_FLAG} --force-reinstall --upgrade --upgrade-strategy eager \
+        pip install "${pip_flags[@]}" --upgrade --upgrade-strategy eager \
             ${reinstalling_apache_airflow_package} ${reinstalling_apache_airflow_providers_packages} \
             ${EAGER_UPGRADE_ADDITIONAL_REQUIREMENTS}
-        # make sure correct PIP version is used
-        pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
-        pip check || ${CONTINUE_ON_PIP_CHECK_FAILURE}
     else
         echo
         echo Force re-installing airflow and providers from local files with constraints and upgrade if needed
@@ -69,7 +83,7 @@ function install_airflow_and_providers_from_docker_context_files(){
             curl -L "${AIRFLOW_CONSTRAINTS_LOCATION}" | grep -ve '^apache-airflow' > /tmp/constraints.txt
         fi
         # force reinstall airflow + provider package local files with constraints + upgrade if needed
-        pip install ${AIRFLOW_INSTALL_USER_FLAG} --force-reinstall \
+        pip install "${pip_flags[@]}" --force-reinstall \
             ${reinstalling_apache_airflow_package} ${reinstalling_apache_airflow_providers_packages} \
             --constraint /tmp/constraints.txt
         rm /tmp/constraints.txt
@@ -78,10 +92,11 @@ function install_airflow_and_providers_from_docker_context_files(){
         # then upgrade if needed without using constraints to account for new limits in setup.py
         pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade --upgrade-strategy only-if-needed \
              ${reinstalling_apache_airflow_package} ${reinstalling_apache_airflow_providers_packages}
-        # make sure correct PIP version is used
-        pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
-        pip check || ${CONTINUE_ON_PIP_CHECK_FAILURE}
     fi
+
+    # make sure correct PIP version is left installed
+    pip install ${AIRFLOW_INSTALL_USER_FLAG} --upgrade "pip==${AIRFLOW_PIP_VERSION}"
+    pip check || ${CONTINUE_ON_PIP_CHECK_FAILURE}
 
 }
 

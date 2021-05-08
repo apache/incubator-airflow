@@ -44,7 +44,7 @@ function testing::get_docker_compose_local() {
         DOCKER_COMPOSE_LOCAL+=("-f" "${SCRIPTS_CI_DIR}/docker-compose/forward-credentials.yml")
     fi
 
-    if [[ -n ${INSTALL_AIRFLOW_VERSION=} || -n ${INSTALL_AIRFLOW_REFERENCE} ]]; then
+    if [[ -n ${USE_AIRFLOW_VERSION=} ]]; then
         DOCKER_COMPOSE_LOCAL+=("-f" "${SCRIPTS_CI_DIR}/docker-compose/remove-sources.yml")
     fi
     readonly DOCKER_COMPOSE_LOCAL
