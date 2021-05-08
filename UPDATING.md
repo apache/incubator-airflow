@@ -1712,7 +1712,7 @@ Rename `sign_in` function to `get_conn`.
 
 #### `airflow.providers.apache.pinot.hooks.pinot.PinotAdminHook.create_segment`
 
-Rename parameter name from ``format`` to ``segment_format`` in PinotAdminHook function create_segment fro pylint compatible
+Rename parameter name from ``format`` to ``segment_format`` in PinotAdminHook function create_segment for pylint compatible
 
 #### `airflow.providers.apache.hive.hooks.hive.HiveMetastoreHook.get_partitions`
 

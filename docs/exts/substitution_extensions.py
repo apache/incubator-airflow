@@ -51,7 +51,7 @@ class SubstitutionCodeBlock(OriginalCodeBlock):  # type: ignore
 
 
 class SubstitutionCodeBlockTransform(SphinxTransform):
-    """Substitue ``|variables|`` in code and code-block nodes"""
+    """Substitute ``|variables|`` in code and code-block nodes"""
 
     # Run before we highlight the code!
     default_priority = HighlightLanguageTransform.default_priority - 1

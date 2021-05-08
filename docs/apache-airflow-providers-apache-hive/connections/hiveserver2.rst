@@ -52,7 +52,7 @@ Port (optional)
     Specify your Hive Server2 port number.
 
 Schema (optional)
-    Specify the name fo the database you would like to connect to with Hive Server2.
+    Specify the name for the database you would like to connect to with Hive Server2.
 
 Extra (optional)
     Specify the extra parameters (as json dictionary) that can be used in Hive Server2 connection.

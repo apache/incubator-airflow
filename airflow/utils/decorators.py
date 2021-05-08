@@ -44,7 +44,7 @@ def apply_defaults(func: T) -> T:
         stacklevel=3,
     )
 
-    # Make it still be a wraper to keep the previous behaviour of an extra stack frame
+    # Make it still be a wrapper to keep the previous behaviour of an extra stack frame
     @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)

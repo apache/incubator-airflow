@@ -31,7 +31,7 @@ integrations:
     external-doc-url: https://www.postgresql.org/
     how-to-guide:
       - /docs/apache-airflow-providers-postgres/operators/postgres_operator_howto_guide.rst
-    logo: /integration-logos/postgress/Postgress.png
+    logo: /integration-logos/postgres/Postgres.png
     tags: [software]
 
 operators:

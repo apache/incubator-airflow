@@ -168,7 +168,7 @@ class AwsGlueJobHook(AwsBaseHook):
             return get_job_response['Job']['Name']
 
         except glue_client.exceptions.EntityNotFoundException:
-            self.log.info("Job doesnt exist. Now creating and running AWS Glue Job")
+            self.log.info("Job doesn't exist. Now creating and running AWS Glue Job")
             if self.s3_bucket is None:
                 raise AirflowException('Could not initialize glue job, error: Specify Parameter `s3_bucket`')
             s3_log_path = f's3://{self.s3_bucket}/{self.s3_glue_logs}{self.job_name}'

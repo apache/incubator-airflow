@@ -110,7 +110,7 @@ class TestSecretsMasker:
         (It would likely need to construct a custom traceback that changed the
         source. I have no idead if that is even possible)
 
-        This test illustrates that, but ix marked xfail incase someone wants to
+        This test illustrates that, but ix marked xfail in case someone wants to
         fix this later.
         """
         try:
@@ -163,7 +163,7 @@ class TestSecretsMasker:
             # We don't mask dict _keys_.
             ({"secret", "other"}, None, {"data": {"secret": "secret"}}, {"data": {"secret": "***"}}),
             (
-                # Since this is a sensitve name, all the values should be redacted!
+                # Since this is a sensitive name, all the values should be redacted!
                 {"secret"},
                 "api_key",
                 {"other": "innoent", "nested": ["x", "y"]},

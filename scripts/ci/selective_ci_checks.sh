@@ -345,7 +345,7 @@ function check_if_setup_files_changed() {
 
 
 function check_if_javascript_security_scans_should_be_run() {
-    start_end::group_start "Check Javascript security scans"
+    start_end::group_start "Check JavaScript security scans"
     local pattern_array=(
         "^airflow/.*\.[jt]sx?"
         "^airflow/.*\.lock"

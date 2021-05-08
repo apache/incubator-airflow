@@ -446,7 +446,7 @@ test in parallel. This way we can decrease the time of running all tests in self
 .. note::
 
   We need to split tests manually into separate suites rather than utilise
-  ``pytest-xdist`` or ``pytest-parallel`` which could ba a simpler and much more "native" parallelization
+  ``pytest-xdist`` or ``pytest-parallel`` which could be a simpler and much more "native" parallelization
   mechanism. Unfortunately, we cannot utilise those tools because our tests are not truly ``unit`` tests that
   can run in parallel. A lot of our tests rely on shared databases - and they update/reset/cleanup the
   databases while they are executing. They are also exercising features of the Database such as locking which

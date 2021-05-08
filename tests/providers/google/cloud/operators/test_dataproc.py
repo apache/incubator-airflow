@@ -596,10 +596,10 @@ class TestDataprocClusterCreateOperator(DataprocClusterTestBase):
 
         ti = TaskInstance(task=op, execution_date=DEFAULT_DATE)
 
-        # Assert operator link is empty when no XCom push occured
+        # Assert operator link is empty when no XCom push occurred
         self.assertEqual(op.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name), "")
 
-        # Assert operator link is empty for deserialized task when no XCom push occured
+        # Assert operator link is empty for deserialized task when no XCom push occurred
         self.assertEqual(
             deserialized_task.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name),
             "",
@@ -700,10 +700,10 @@ class TestDataprocClusterScaleOperator(DataprocClusterTestBase):
 
         ti = TaskInstance(task=op, execution_date=DEFAULT_DATE)
 
-        # Assert operator link is empty when no XCom push occured
+        # Assert operator link is empty when no XCom push occurred
         self.assertEqual(op.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name), "")
 
-        # Assert operator link is empty for deserialized task when no XCom push occured
+        # Assert operator link is empty for deserialized task when no XCom push occurred
         self.assertEqual(
             deserialized_task.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name),
             "",
@@ -909,10 +909,10 @@ class TestDataprocSubmitJobOperator(DataprocJobTestBase):
 
         ti = TaskInstance(task=op, execution_date=DEFAULT_DATE)
 
-        # Assert operator link is empty when no XCom push occured
+        # Assert operator link is empty when no XCom push occurred
         self.assertEqual(op.get_extra_links(DEFAULT_DATE, DataprocJobLink.name), "")
 
-        # Assert operator link is empty for deserialized task when no XCom push occured
+        # Assert operator link is empty for deserialized task when no XCom push occurred
         self.assertEqual(deserialized_task.get_extra_links(DEFAULT_DATE, DataprocJobLink.name), "")
 
         ti.xcom_push(key="job_conf", value=DATAPROC_JOB_CONF_EXPECTED)
@@ -1009,10 +1009,10 @@ class TestDataprocUpdateClusterOperator(DataprocClusterTestBase):
 
         ti = TaskInstance(task=op, execution_date=DEFAULT_DATE)
 
-        # Assert operator link is empty when no XCom push occured
+        # Assert operator link is empty when no XCom push occurred
         self.assertEqual(op.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name), "")
 
-        # Assert operator link is empty for deserialized task when no XCom push occured
+        # Assert operator link is empty for deserialized task when no XCom push occurred
         self.assertEqual(
             deserialized_task.get_extra_links(DEFAULT_DATE, DataprocClusterLink.name),
             "",
@@ -1385,10 +1385,10 @@ class TestDataProcSparkOperator(DataprocJobTestBase):
 
         ti = TaskInstance(task=op, execution_date=DEFAULT_DATE)
 
-        # Assert operator link is empty when no XCom push occured
+        # Assert operator link is empty when no XCom push occurred
         self.assertEqual(op.get_extra_links(DEFAULT_DATE, DataprocJobLink.name), "")
 
-        # Assert operator link is empty for deserialized task when no XCom push occured
+        # Assert operator link is empty for deserialized task when no XCom push occurred
         self.assertEqual(deserialized_task.get_extra_links(DEFAULT_DATE, DataprocJobLink.name), "")
 
         ti.xcom_push(key="job_conf", value=DATAPROC_JOB_CONF_EXPECTED)

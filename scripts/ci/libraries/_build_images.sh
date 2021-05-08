@@ -114,7 +114,7 @@ function build_images::confirm_via_terminal() {
     RES=$?
 }
 
-# Confirms if hte image should be rebuild and interactively checks it with the user.
+# Confirms if the image should be rebuild and interactively checks it with the user.
 # In case iit needs to be rebuild. It only ask the user if it determines that the rebuild
 # is needed and that the rebuild is not already forced. It asks the user using available terminals
 # So that the script works also from within pre-commit run via git hooks - where stdin is not

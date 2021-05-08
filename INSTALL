@@ -71,7 +71,7 @@ This is useful if you want to develop providers:
 pip install -e . \
   --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-master/constraints-3.6.txt"
 
-You can als skip installing provider packages from PyPI by setting INSTALL_PROVIDERS_FROM_SOURCE to "true".
+You can also skip installing provider packages from PyPI by setting INSTALL_PROVIDERS_FROM_SOURCE to "true".
 In this case Airflow will be installed in non-editable mode with all providers installed from the sources.
 Additionally `provider.yaml` files will also be copied to providers folders which will make the providers
 discoverable by Airflow even if they are not installed from packages in this case.

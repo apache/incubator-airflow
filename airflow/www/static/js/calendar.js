@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .on('click', (data) => {
         window.location.href = getTreeViewURL(
-          // add 1 day and substract 1 ms to not show any run from the next day.
+          // add 1 day and subtract 1 ms to not show any run from the next day.
           toMoment(data.year, data.month, data.day).add(1, 'day').subtract(1, 'ms'),
         );
       })

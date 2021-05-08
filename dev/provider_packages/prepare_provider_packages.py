@@ -1639,7 +1639,7 @@ def update_setup_files(
 
     :param provider_package_id: id of the package
     :param version_suffix: version suffix corresponding to the version in the code
-    :returns False if the package should be skipped, Tre if everything generated properly
+    :returns False if the package should be skipped, True if everything generated properly
     """
     verify_provider_package(provider_package_id)
     provider_details = get_provider_details(provider_package_id)

@@ -574,7 +574,7 @@ class DagBag(LoggingMixin):
             if dag.is_subdag:
                 return []
             try:
-                # We cant use bulk_write_to_db as we want to capture each error individually
+                # We can't use bulk_write_to_db as we want to capture each error individually
                 dag_was_updated = SerializedDagModel.write_dag(
                     dag,
                     min_update_interval=settings.MIN_SERIALIZED_DAG_UPDATE_INTERVAL,

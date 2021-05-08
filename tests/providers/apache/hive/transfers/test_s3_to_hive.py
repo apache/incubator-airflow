@@ -162,25 +162,25 @@ class TestS3ToHiveTransfer(unittest.TestCase):
         self.kwargs['delimiter'] = '\t'
         fn_txt = self._get_fn('.txt', True)
         header_list = S3ToHiveOperator(**self.kwargs)._get_top_row_as_list(fn_txt)
-        assert header_list == ['Sno', 'Some,Text'], "Top row from file doesnt matched expected value"
+        assert header_list == ['Sno', 'Some,Text'], "Top row from file doesn't matched expected value"
 
         self.kwargs['delimiter'] = ','
         header_list = S3ToHiveOperator(**self.kwargs)._get_top_row_as_list(fn_txt)
-        assert header_list == ['Sno\tSome', 'Text'], "Top row from file doesnt matched expected value"
+        assert header_list == ['Sno\tSome', 'Text'], "Top row from file doesn't matched expected value"
 
     def test__match_headers(self):
         self.kwargs['field_dict'] = OrderedDict([('Sno', 'BIGINT'), ('Some,Text', 'STRING')])
         assert S3ToHiveOperator(**self.kwargs)._match_headers(
             ['Sno', 'Some,Text']
-        ), "Header row doesnt match expected value"
+        ), "Header row doesn't match expected value"
         # Testing with different column order
         assert not S3ToHiveOperator(**self.kwargs)._match_headers(
             ['Some,Text', 'Sno']
-        ), "Header row doesnt match expected value"
+        ), "Header row doesn't match expected value"
         # Testing with extra column in header
         assert not S3ToHiveOperator(**self.kwargs)._match_headers(
             ['Sno', 'Some,Text', 'ExtraColumn']
-        ), "Header row doesnt match expected value"
+        ), "Header row doesn't match expected value"
 
     def test__delete_top_row_and_compress(self):
         s32hive = S3ToHiveOperator(**self.kwargs)

@@ -461,7 +461,7 @@ class CustomSQLAInterface(SQLAInterface):
     filter_converter_class = UtcAwareFilterConverter
 
 
-# This class is used directly (i.e. we cant tell Fab to use a different
+# This class is used directly (i.e. we can't tell Fab to use a different
 # subclass) so we have no other option than to edit the conversion table in
 # place
 FieldConverter.conversion_table = (

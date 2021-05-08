@@ -2031,7 +2031,7 @@ class TestSchedulerJob(unittest.TestCase):
         self.scheduler_job.executor = mock.MagicMock(slots_available=8)
         self.scheduler_job._run_scheduler_loop = mock.MagicMock(side_effect=Exception("oops"))
         mock_processor_agent.return_value.end.side_effect = Exception("double oops")
-        self.scheduler_job.executor.end = mock.MagicMock(side_effect=Exception("tripple oops"))
+        self.scheduler_job.executor.end = mock.MagicMock(side_effect=Exception("triple oops"))
 
         with self.assertRaises(Exception):
             self.scheduler_job.run()
@@ -3921,7 +3921,7 @@ class TestSchedulerJob(unittest.TestCase):
             schedule_interval='@once',
             max_active_runs=1,
         ) as dag:
-            # Cant use DummyOperator as that goes straight to success
+            # Can't use DummyOperator as that goes straight to success
             task1 = BashOperator(task_id='dummy1', bash_command='true')
 
         session = settings.Session()
@@ -4034,7 +4034,7 @@ class TestSchedulerJob(unittest.TestCase):
             schedule_interval='@once',
             max_active_runs=1,
         ) as dag:
-            # Cant use DummyOperator as that goes straight to success
+            # Can't use DummyOperator as that goes straight to success
             task1 = BashOperator(task_id='dummy1', bash_command='true')
 
         session = settings.Session()
@@ -4081,7 +4081,7 @@ class TestSchedulerJob(unittest.TestCase):
             schedule_interval='@once',
             max_active_runs=1,
         ) as dag:
-            # Cant use DummyOperator as that goes straight to success
+            # Can't use DummyOperator as that goes straight to success
             task1 = BashOperator(task_id='dummy1', bash_command='true')
             task2 = BashOperator(task_id='dummy2', bash_command='true')
 
