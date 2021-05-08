@@ -45,6 +45,9 @@ data:
   airflow_local_settings.py: |
 {{- if .Values.scheduler.airflowLocalSettings }}
     {{ .Values.scheduler.airflowLocalSettings | nindent 4 }}
+{{- else if .Values.podMutation.enabled }}
+  airflow_local_settings.py: |
+    {{ tpl  .Values.podMutation.podMutationHookTpl . | nindent 4 }}
 {{- end }}
 {{- if and .Values.dags.gitSync.enabled  .Values.dags.gitSync.knownHosts }}
   known_hosts: |

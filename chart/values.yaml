@@ -837,6 +837,42 @@ quotas: {}
 # Define default/max/min values for pods and containers in namespace
 limits: []
 
+# Config Settings for pod_mutation_hook
+# podMutation values will not apply if `scheduler.airflowLocalSettings` have been modified
+podMutation:
+  enabled: false
+  # You can just add `tolerations` and `affinity` below
+  # or define this podMutationHookTpl however you like.
+  # Anything can be templated here since it is using `tpl` helm function
+  # If using Airflow < 2.0.0 use following mutation hook:
+  #    from airflow.contrib.kubernetes.pod import Pod
+  #    def pod_mutation_hook(pod: Pod):
+  #        pod.tolerations += {{ toJson .Values.podMutation.tolerations }}
+  #        pod.affinity.update({{ toJson .Values.podMutation.affinity }})
+  podMutationHookTpl: |
+    # Airflow >= 2.0.0 pod_mutation_hook
+    def pod_mutation_hook(pod): # type pod: k8s.V1Pod
+        pod.spec.tolerations = {{ toJson .Values.podMutation.tolerations }}
+        pod.spec.affinity = {{ toJson .Values.podMutation.affinity }}
+
+  # Any pods spun up using KubernetesExecutor or KubernetesPodOperator will contain these tolerations.
+  tolerations: []
+  #  - key: "dynamic-pods"
+  #    operator: "Equal"
+  #    value: "true"
+  #    effect: "NoSchedule"
+
+  # Pods spun up would land in the node that matches the affinity
+  affinity: {}
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #       nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: "company.io/dynamic-pods"
+  #           operator: In
+  #           values:
+  #           - "true"
+
 # This runs as a CronJob to cleanup old pods.
 cleanup:
   enabled: false

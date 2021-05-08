@@ -162,7 +162,7 @@ spec:
               mountPath: {{ template "airflow_config_path" . }}
               subPath: airflow.cfg
               readOnly: true
-{{- if .Values.scheduler.airflowLocalSettings }}
+{{- if or ( .Values.scheduler.airflowLocalSettings ) ( .Values.podMutation.enabled ) }}
             - name: config
               mountPath: {{ template "airflow_local_setting_path" . }}
               subPath: airflow_local_settings.py
