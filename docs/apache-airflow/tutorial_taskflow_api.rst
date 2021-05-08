@@ -207,7 +207,7 @@ Building this dependency is shown in the code below:
 
 .. code-block:: python
 
-    @task()
+    @task
     def extract_from_file():
         """
         #### Extract from file task
