@@ -314,6 +314,15 @@ class TestPythonOperator(TestPythonBase):
         )
         python_operator.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
 
+    def test_execute_return(self):
+        def f():
+            return 'execute_return'
+
+        return_value = f()
+
+        task = PythonOperator(task_id='task', python_callable=f, dag=self.dag)
+        assert task.execute({}) == return_value
+
 
 class TestBranchOperator(unittest.TestCase):
     @classmethod
@@ -1024,6 +1033,15 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
             pass
 
         self._run_as_operator(f, use_dill=True, system_site_packages=False, requirements=None)
+
+    def test_execute_return(self):
+        def f():
+            return 'execute_return'
+
+        return_value = f()
+
+        task = PythonVirtualenvOperator(task_id='task', python_callable=f, dag=self.dag)
+        assert task.execute(unittest.mock.MagicMock()) == return_value
 
 
 DEFAULT_ARGS = {
