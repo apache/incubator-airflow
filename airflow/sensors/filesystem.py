@@ -61,7 +61,7 @@ class FileSensor(BaseSensorOperator):
                 self.log.info('Found File %s last modified: %s', str(path), str(mod_time))
                 return True
 
-            for _, _, files in os.walk(full_path):
+            for _, _, files in os.walk(path):
                 if len(files) > 0:
                     return True
         return False
