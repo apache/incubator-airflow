@@ -60,7 +60,7 @@ class TestKubernetesPodOperator(unittest.TestCase):
         }
 
     def run_pod(self, operator) -> k8s.V1Pod:
-        self.monitor_mock.return_value = (State.SUCCESS, None)
+        self.monitor_mock.return_value = (State.SUCCESS, None, None)
         context = self.create_context(operator)
         operator.execute(context=context)
         return self.start_mock.call_args[0][0]
@@ -83,7 +83,7 @@ class TestKubernetesPodOperator(unittest.TestCase):
             config_file=file_path,
             cluster_context="default",
         )
-        self.monitor_mock.return_value = (State.SUCCESS, None)
+        self.monitor_mock.return_value = (State.SUCCESS, None, None)
         self.client_mock.list_namespaced_pod.return_value = []
         context = self.create_context(k)
         k.execute(context=context)
@@ -411,8 +411,8 @@ class TestKubernetesPodOperator(unittest.TestCase):
             do_xcom_push=False,
             cluster_context="default",
         )
-        self.monitor_mock.return_value = (State.FAILED, None)
         failed_pod_status = "read_pod_namespaced_result"
+        self.monitor_mock.return_value = (State.FAILED, failed_pod_status, None)
         read_namespaced_pod_mock = self.client_mock.return_value.read_namespaced_pod
         read_namespaced_pod_mock.return_value = failed_pod_status
 
@@ -424,8 +424,7 @@ class TestKubernetesPodOperator(unittest.TestCase):
             str(ctx.value)
             == f"Pod Launching failed: Pod {k.pod.metadata.name} returned a failure: {failed_pod_status}"
         )
-        assert self.client_mock.return_value.read_namespaced_pod.called
-        assert read_namespaced_pod_mock.call_args[0][0] == k.pod.metadata.name
+        assert not self.client_mock.return_value.read_namespaced_pod.called
 
     def test_no_need_to_describe_pod_on_success(self):
         name_base = "test"
@@ -442,7 +441,7 @@ class TestKubernetesPodOperator(unittest.TestCase):
             do_xcom_push=False,
             cluster_context="default",
         )
-        self.monitor_mock.return_value = (State.SUCCESS, None)
+        self.monitor_mock.return_value = (State.SUCCESS, None, None)
 
         context = self.create_context(k)
         k.execute(context=context)
