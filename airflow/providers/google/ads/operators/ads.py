@@ -61,6 +61,8 @@ class GoogleAdsListAccountsOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type impersonation_chain: Union[str, Sequence[str]]
+    :param api_version: The Google Ads API version to use.
+    :type api_version: str
     """
 
     template_fields = (
@@ -78,6 +80,7 @@ class GoogleAdsListAccountsOperator(BaseOperator):
         google_ads_conn_id: str = "google_ads_default",
         gzip: bool = False,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        api_version: str = "v5",
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -87,11 +90,16 @@ class GoogleAdsListAccountsOperator(BaseOperator):
         self.google_ads_conn_id = google_ads_conn_id
         self.gzip = gzip
         self.impersonation_chain = impersonation_chain
+        self.api_version = api_version
 
     def execute(self, context: dict) -> str:
         uri = f"gs://{self.bucket}/{self.object_name}"
 
-        ads_hook = GoogleAdsHook(gcp_conn_id=self.gcp_conn_id, google_ads_conn_id=self.google_ads_conn_id)
+        ads_hook = GoogleAdsHook(
+            gcp_conn_id=self.gcp_conn_id,
+            google_ads_conn_id=self.google_ads_conn_id,
+            api_version=self.api_version,
+        )
 
         gcs_hook = GCSHook(gcp_conn_id=self.gcp_conn_id, impersonation_chain=self.impersonation_chain)
         with NamedTemporaryFile("w+") as temp_file:

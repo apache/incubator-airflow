@@ -66,6 +66,8 @@ class GoogleAdsToGcsOperator(BaseOperator):
         Service Account Token Creator IAM role to the directly preceding identity, with first
         account from the list granting this role to the originating account (templated).
     :type impersonation_chain: Union[str, Sequence[str]]
+    :param api_version: The Google Ads API version to use.
+    :type api_version: str
     """
 
     template_fields = (
@@ -90,6 +92,7 @@ class GoogleAdsToGcsOperator(BaseOperator):
         page_size: int = 10000,
         gzip: bool = False,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        api_version: str = "v5",
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -103,9 +106,14 @@ class GoogleAdsToGcsOperator(BaseOperator):
         self.page_size = page_size
         self.gzip = gzip
         self.impersonation_chain = impersonation_chain
+        self.api_version = api_version
 
     def execute(self, context: dict) -> None:
-        service = GoogleAdsHook(gcp_conn_id=self.gcp_conn_id, google_ads_conn_id=self.google_ads_conn_id)
+        service = GoogleAdsHook(
+            gcp_conn_id=self.gcp_conn_id,
+            google_ads_conn_id=self.google_ads_conn_id,
+            api_version=self.api_version,
+        )
         rows = service.search(client_ids=self.client_ids, query=self.query, page_size=self.page_size)
 
         try:

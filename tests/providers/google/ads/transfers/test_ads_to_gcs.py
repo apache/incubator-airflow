@@ -25,6 +25,7 @@ from tests.providers.google.ads.operators.test_ads import (
     GCS_OBJ_PATH,
     IMPERSONATION_CHAIN,
     QUERY,
+    api_version,
     gcp_conn_id,
     google_ads_conn_id,
 )
@@ -44,9 +45,14 @@ class TestGoogleAdsToGcsOperator:
             bucket=BUCKET,
             task_id="run_operator",
             impersonation_chain=IMPERSONATION_CHAIN,
+            api_version=api_version,
         )
         op.execute({})
-        mock_ads_hook.assert_called_once_with(gcp_conn_id=gcp_conn_id, google_ads_conn_id=google_ads_conn_id)
+        mock_ads_hook.assert_called_once_with(
+            gcp_conn_id=gcp_conn_id,
+            google_ads_conn_id=google_ads_conn_id,
+            api_version=api_version,
+        )
         mock_ads_hook.return_value.search.assert_called_once_with(
             client_ids=CLIENT_IDS, query=QUERY, page_size=10000
         )
