@@ -31,8 +31,8 @@ from tests.test_utils.api_connexion_utils import assert_401, create_user, delete
 from tests.test_utils.db import clear_db_runs, clear_db_sla_miss
 
 DEFAULT_DATETIME_1 = datetime(2020, 1, 1)
-DEFAULT_DATETIME_STR_1 = "2020-01-01T00:00:00+00:00"
-DEFAULT_DATETIME_STR_2 = "2020-01-02T00:00:00+00:00"
+DEFAULT_DATETIME_STR_1 = "2020-01-01T00:00:00Z"
+DEFAULT_DATETIME_STR_2 = "2020-01-02T00:00:00Z"
 
 
 @pytest.fixture(scope="module")
@@ -658,12 +658,30 @@ class TestGetTaskInstancesBatch(TestTaskInstanceEndpoint):
 
     @parameterized.expand(
         [
-            ({"end_date_lte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
-            ({"end_date_gte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
-            ({"start_date_lte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
-            ({"start_date_gte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
-            ({"execution_date_gte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
-            ({"execution_date_lte": '2020-11-10T12:42:39.442973'}, "Naive datetime is disallowed"),
+            (
+                {"end_date_lte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'end_date_lte'",
+            ),
+            (
+                {"end_date_gte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'end_date_gte'",
+            ),
+            (
+                {"start_date_lte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'start_date_lte'",
+            ),
+            (
+                {"start_date_gte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'start_date_gte'",
+            ),
+            (
+                {"execution_date_gte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'execution_date_gte'",
+            ),
+            (
+                {"execution_date_lte": '2020-11-10T12:42:39.442973'},
+                "'2020-11-10T12:42:39.442973' is not a 'date-time' - 'execution_date_lte'",
+            ),
         ]
     )
     @provide_session
