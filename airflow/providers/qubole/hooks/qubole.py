@@ -233,8 +233,9 @@ class QuboleHook(BaseHook):
             cmd_id = ti.xcom_pull(key="qbol_cmd_id", task_ids=self.task_id)
             self.cmd = self.cls.find(cmd_id)
 
+        include_headers_str = 'true' if include_headers else 'false'
         self.cmd.get_results(
-            fp, inline, delim, fetch, arguments=[include_headers]
+            fp, inline, delim, fetch, arguments=[include_headers_str]
         )  # type: ignore[attr-defined]
         fp.flush()
         fp.close()
