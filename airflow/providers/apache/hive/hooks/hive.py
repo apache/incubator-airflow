@@ -382,6 +382,7 @@ class HiveCliHook(BaseHook):
         filepath: str,
         table: str,
         delimiter: str = ",",
+        quotechar: str = '\\"',
         field_dict: Optional[Dict[Any, Any]] = None,
         create: bool = True,
         overwrite: bool = True,
@@ -434,8 +435,12 @@ class HiveCliHook(BaseHook):
             if partition:
                 pfields = ",\n    ".join([p + " STRING" for p in partition])
                 hql += f"PARTITIONED BY ({pfields})\n"
-            hql += "ROW FORMAT DELIMITED\n"
-            hql += f"FIELDS TERMINATED BY '{delimiter}'\n"
+            hql += "ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'\n"
+            hql += "WITH SERDEPROPERTIES (\n"
+            hql += f'    "separatorChar" = "{delimiter}",\n'
+            hql += f'    "quoteChar" = "{quotechar}",\n'
+            hql += '    "escapeChar" = "\\\\"\n'
+            hql += ")\n"
             hql += "STORED AS textfile\n"
             if tblproperties is not None:
                 tprops = ", ".join([f"'{k}'='{v}'" for k, v in tblproperties.items()])
