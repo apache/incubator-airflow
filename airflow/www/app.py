@@ -63,7 +63,12 @@ def sync_appbuilder_roles(flask_app):
     if conf.getboolean('webserver', 'UPDATE_FAB_PERMS'):
         security_manager = flask_app.appbuilder.sm
         security_manager.sync_roles()
-        security_manager.sync_resource_permissions()
+        security_manager.sync_resource_permissions(
+            security_manager.VIEWER_PERMISSIONS
+            + security_manager.USER_PERMISSIONS
+            + security_manager.OP_PERMISSIONS
+            + security_manager.ADMIN_PERMISSIONS
+        )
 
 
 def create_app(config=None, testing=False):
