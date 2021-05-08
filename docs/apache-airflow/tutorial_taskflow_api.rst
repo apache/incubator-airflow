@@ -180,6 +180,39 @@ and even a different python version to run your function.
 
 This option should allow for far greater flexibility for users who wish to keep their workflows more simple
 and pythonic.
+Using the Taskflow API with Docker or Virtual Environments
+----------------------------------------------------------
+
+As of Airflow <Airflow version>, you will have the ability to use the Taskflow API with either a
+docker container or python virtual environment. This added functionality will allow a much more
+comprehensive range of use-cases for the Taskflow API, as you will not be limited to the
+packages and system libraries of the Airflow worker.
+
+To use a docker image with the Taskflow API, change the decorator to ``@task.docker``
+and add any needed arguments to correctly run the task. Please note that the docker
+image must have a python library and take in a bash command as the ``command`` argument.
+
+Below is an example of using the ``@task.docker`` decorator to run a python task.
+
+.. exampleinclude:: /../../airflow/example_dags/tutorial_taskflow_api_etl_docker_virtualenv.py
+    :language: python
+    :dedent: 4
+    :start-after: [START transform_docker]
+    :end-before: [END transform_docker]
+
+If you don't want to run your image on a docker environment, and instead want to create a separate virtual
+environment on the same machine, you can use the ``@task.virtualenv`` decorator instead. The ``@task.virtualenv``
+decorator will allow you to create a new virtualenv with custom libraries and even a different
+python version to run your function.
+
+.. exampleinclude:: /../../airflow/example_dags/tutorial_taskflow_api_etl_docker_virtualenv.py
+    :language: python
+    :dedent: 4
+    :start-after: [START extract_virtualenv]
+    :end-before: [END extract_virtualenv]
+
+These two options should allow for far greater flexibility for users who wish to keep their workflows more simple
+and pythonic.
 
 Multiple outputs inference
 --------------------------

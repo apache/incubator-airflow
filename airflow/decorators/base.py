@@ -134,8 +134,7 @@ class DecoratedOperator(BaseOperator):
 
     def execute(self, context: Dict):
         return_value = super().execute(context)
-        self._handle_output(return_value=return_value, context=context, xcom_push=self.xcom_push)
-        return return_value
+        return self._handle_output(return_value=return_value, context=context, xcom_push=self.xcom_push)
 
     def _handle_output(self, return_value: Any, context: Dict, xcom_push: Callable):
         """
