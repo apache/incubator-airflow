@@ -1603,10 +1603,9 @@ class DAG(LoggingMixin):
         :param task: the task you want to add
         :type task: task
         """
-        if not self.start_date and not task.start_date:
-            raise AirflowException("Task is missing the start_date parameter")
+
         # if the task has no start date, assign it the same as the DAG
-        elif not task.start_date:
+        if not task.start_date:
             task.start_date = self.start_date
         # otherwise, the task will start on the later of its own start date and
         # the DAG's start date
