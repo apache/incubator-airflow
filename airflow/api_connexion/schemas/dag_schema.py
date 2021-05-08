@@ -49,6 +49,7 @@ class DAGSchema(SQLAlchemySchema):
     dag_id = auto_field(dump_only=True)
     root_dag_id = auto_field(dump_only=True)
     is_paused = auto_field()
+    is_active = auto_field(dump_only=True)
     is_subdag = auto_field(dump_only=True)
     fileloc = auto_field(dump_only=True)
     file_token = fields.Method("get_token", dump_only=True)
@@ -85,6 +86,8 @@ class DAGDetailSchema(DAGSchema):
     default_view = fields.String()
     params = fields.Dict()
     tags = fields.Method("get_tags", dump_only=True)
+    is_paused = fields.Method("get_is_paused", dump_only=True)
+    is_active = fields.Method("get_is_active", dump_only=True)
 
     @staticmethod
     def get_tags(obj: DAG):
@@ -100,6 +103,16 @@ class DAGDetailSchema(DAGSchema):
         if not getattr(obj, 'owner', None):
             return []
         return obj.owner.split(",")
+
+    @staticmethod
+    def get_is_paused(obj: DAG):
+        """Checks entry in DAG table to see if this DAG is paused"""
+        return obj.get_is_paused()
+
+    @staticmethod
+    def get_is_active(obj: DAG):
+        """Checks entry in DAG table to see if this DAG is active"""
+        return obj.get_is_active()
 
 
 class DAGCollection(NamedTuple):

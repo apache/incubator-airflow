@@ -379,6 +379,13 @@ paths:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
         - $ref: '#/components/parameters/OrderBy'
+        - name: only_active
+          in: query
+          schema:
+            type: boolean
+            default: true
+          required: false
+          description: Only return active DAGs.
       responses:
         '200':
           description: Success.
@@ -896,6 +903,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
+        - name: only_active
+          in: query
+          schema:
+            type: boolean
+            default: true
+          required: false
+          description: Only return active DAGs.
       responses:
         '200':
           description: Success.
@@ -1756,6 +1770,10 @@ components:
           type: boolean
           nullable: true
           description: Whether the DAG is paused.
+        is_active:
+          type: boolean
+          nullable: true
+          description: Whether the DAG is currently seen by the scheduler(s).
         is_subdag:
           description: Whether the DAG is SubDAG.
           type: boolean
