@@ -43,7 +43,7 @@ Login
     Specify the username used for the IMAP client.
 
 Password
-    Specify the password used fot the IMAP client.
+    Specify the password used for the IMAP client.
 
 Host
     Specify the the IMAP host url.

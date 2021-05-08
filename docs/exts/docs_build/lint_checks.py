@@ -195,7 +195,7 @@ def _extract_file_content(file_path: str, message: Optional[str], pattern: str, 
 
 def filter_file_list_by_pattern(file_paths: Iterable[str], pattern: str) -> List[str]:
     """
-    Filters file list to those tha content matches the pattern
+    Filters file list to those that content matches the pattern
     :param file_paths: file paths to check
     :param pattern: pattern to match
     :return: list of files matching the pattern
