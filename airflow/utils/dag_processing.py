@@ -834,7 +834,7 @@ class DagFileProcessorManager(LoggingMixin):  # pylint: disable=too-many-instanc
             rows.append((file_path, processor_pid, runtime, num_dags, num_errors, last_runtime, last_run))
 
         # Sort by longest last runtime. (Can't sort None values in python3)
-        rows = sorted(rows, key=lambda x: x[3] or 0.0)
+        rows = sorted(rows, key=lambda x: x[5] or 0.0)
 
         formatted_rows = []
         for file_path, pid, runtime, num_dags, num_errors, last_runtime, last_run in rows:
