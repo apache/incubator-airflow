@@ -244,6 +244,6 @@ class GoogleDisplayVideo360Hook(GoogleBaseHook):
         request = (
             self.get_conn_to_display_video()  # pylint: disable=no-member
             .media()
-            .download_media(resource_name=resource_name)
+            .download_media(resourceName=resource_name)
         )
         return request

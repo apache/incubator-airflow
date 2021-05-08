@@ -627,6 +627,10 @@ class GoogleDisplayVideo360CreateSDFDownloadTaskOperator(BaseOperator):
         self.log.info("Creating operation for SDF download task...")
         operation = hook.create_sdf_download_operation(body_request=self.body_request)
 
+        name = operation["name"]
+        self.xcom_push(context, key="name", value=name)
+        self.log.info("Created SDF operation with name: %s", name)
+
         return operation
 
 
@@ -718,7 +722,8 @@ class GoogleDisplayVideo360SDFtoGCSOperator(BaseOperator):
         operation = hook.get_sdf_download_operation(operation_name=self.operation_name)
 
         self.log.info("Creating file for upload...")
-        media = hook.download_media(resource_name=operation)
+        resource_name = operation["response"]["resourceName"]
+        media = hook.download_media(resource_name=resource_name)
 
         self.log.info("Sending file to the Google Cloud Storage...")
         with tempfile.NamedTemporaryFile() as temp_file:
