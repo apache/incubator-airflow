@@ -129,10 +129,14 @@ class ElasticsearchTaskHandler(FileTaskHandler, LoggingMixin):
             key = getattr(log, 'host', 'default_host')
             grouped_logs[key].append(log)
 
-        # return items sorted by timestamp.
-        result = sorted(grouped_logs.items(), key=lambda kv: getattr(kv[1][0], 'message', '_'))
+        # return items sorted by asctime.
+        def sorter(log):
+            return getattr(log, 'asctime', '_')
 
-        return result
+        for host_logs in grouped_logs.values():
+            host_logs.sort(key=sorter)
+
+        return grouped_logs.items()
 
     def _read_grouped_logs(self):
         return True

@@ -70,7 +70,12 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
         self.index_name = 'test_index'
         self.doc_type = 'log'
         self.test_message = 'some random stuff'
-        self.body = {'message': self.test_message, 'log_id': self.LOG_ID, 'offset': 1}
+        self.body = {
+            'asctime': '2020-12-24 19:25:00,962',
+            'message': self.test_message,
+            'log_id': self.LOG_ID,
+            'offset': 1,
+        }
 
         self.es.index(index=self.index_name, doc_type=self.doc_type, body=self.body, id=1)
 
@@ -147,6 +152,23 @@ class TestElasticsearchTaskHandler(unittest.TestCase):
         assert 1 == len(logs)
         assert len(logs) == len(metadatas)
         assert self.test_message == logs[0][0][-1]
+        assert not metadatas[0]['end_of_log']
+        assert '1' == metadatas[0]['offset']
+        assert timezone.parse(metadatas[0]['last_log_timestamp']) < pendulum.now()
+
+    def test_read_asctime_order(self):
+        another_test_message = 'another message'
+        outdated_body = {
+            'asctime': '2020-12-24 19:25:00,862',
+            'message': another_test_message,
+            'log_id': self.LOG_ID,
+            'offset': 1,
+        }
+        self.es.index(index=self.index_name, doc_type=self.doc_type, body=outdated_body, id=1)
+        logs, metadatas = self.es_task_handler.read(self.ti, 1)
+        assert 1 == len(logs)
+        assert len(logs) == len(metadatas)
+        assert another_test_message + '\n' + self.test_message == logs[0][0][-1]
         assert not metadatas[0]['end_of_log']
         assert '1' == metadatas[0]['offset']
         assert timezone.parse(metadatas[0]['last_log_timestamp']) < pendulum.now()
