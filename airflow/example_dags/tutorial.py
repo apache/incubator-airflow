@@ -89,18 +89,21 @@ with DAG(
     # [END basic_task]
 
     # [START documentation]
-    dag.doc_md = __doc__
-
     t1.doc_md = dedent(
         """\
     #### Task Documentation
     You can document your task using the attributes `doc_md` (markdown),
     `doc` (plain text), `doc_rst`, `doc_json`, `doc_yaml` which gets
     rendered in the UI's Task Instance Details page.
-
     ![img](http://montcs.bloomu.edu/~bobmon/Semesters/2012-01/491/import%20soul.png)
+
     """
     )
+
+    dag.doc_md = __doc__  # providing that you have a docstring at the beggining of the DAG
+    dag.doc_md = """
+    This is a documentation placed anywhere
+    """  # otherwise, type it like this
     # [END documentation]
 
     # [START jinja_template]
