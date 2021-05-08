@@ -158,17 +158,19 @@
       default: ~
     - name: parallelism
       description: |
-        The amount of parallelism as a setting to the executor. This defines
-        the max number of task instances that should run simultaneously
-        on this airflow installation
+        This defines the maximum number of task instances that can run concurrently in Airflow
+        regardless of scheduler count and worker count. Generally, this value is reflective of
+        the number of task instances with the running state in the metadata database.
       version_added: ~
       type: string
       example: ~
       default: "32"
     - name: dag_concurrency
       description: |
-        The number of task instances allowed to run concurrently by the scheduler
-        in one DAG. Can be overridden by ``concurrency`` on DAG level.
+        The maximum number of task instances allowed to run concurrently in each DAG. To calculate
+        the number of tasks that is running concurrently for a DAG, add up the number of running
+        tasks for all DAG runs of the DAG. This is configurable at the DAG level with ``concurrency``,
+        which is defaulted as ``dag_concurrency``.
       version_added: ~
       type: string
       example: ~
@@ -182,7 +184,9 @@
       default: "True"
     - name: max_active_runs_per_dag
       description: |
-        The maximum number of active DAG runs per DAG
+        The maximum number of active DAG runs per DAG. The scheduler will not create more DAG runs
+        if it reaches the limit. This is configurable at the DAG level with ``max_active_runs``,
+        which is defaulted as ``max_active_runs_per_dag``.
       version_added: ~
       type: string
       example: ~

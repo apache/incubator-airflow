@@ -15,16 +15,18 @@
     specific language governing permissions and limitations
     under the License.
 
-
+.. _faq:
 
 FAQ
 ========
 
-Why isn't my task getting scheduled?
-------------------------------------
+Scheduling
+^^^^^^^^^^
 
-There are very many reasons why your task might not be getting scheduled.
-Here are some of the common causes:
+Why is task not getting scheduled?
+----------------------------------
+
+There are very many reasons why your task might not be getting scheduled. Here are some of the common causes:
 
 - Does your script "compile", can the Airflow engine parse it and find your
   DAG object? To test this, you can run ``airflow dags list`` and
@@ -78,14 +80,47 @@ Here are some of the common causes:
 - Is the ``max_active_runs`` parameter of your DAG reached? ``max_active_runs`` defines
   how many ``running`` concurrent instances of a DAG there are allowed to be.
 
-You may also want to read the Scheduler section of the docs and make
-sure you fully understand how it proceeds.
+You may also want to read about the :ref:`scheduler` and make
+sure you fully understand how the scheduler cycle.
+
+
+How to improve DAG performance?
+-------------------------------
+
+There are some Airflow configuration to allow for a larger scheduling capacity and frequency:
+
+- :ref:`config:core__parallelism`
+- :ref:`config:core__dag_concurrency`
+- :ref:`config:core__max_active_runs_per_dag`
+
+DAGs have configurations that improves efficiency:
+
+- ``concurrency``: Overrides :ref:`config:core__dag_concurrency`.
+- ``max_active_runs``: Overrides :ref:`config:core__max_active_runs_per_dag`.
+
+Operators or tasks also have configurations that improves efficiency and scheduling priority:
+
+- ``task_concurrency``: This parameter controls the number of concurrent running task instances across ``dag_runs``
+  per task.
+- ``pool``: See :ref:`concepts:pool`.
+- ``priority_weight``: See :ref:`concepts:priority-weight`.
+- ``queue``: See :ref:`executor:CeleryExecutor:queue` for CeleryExecutor deployments only.
+
+
+How to reduce DAG scheduling latency / task delay?
+--------------------------------------------------
+
+Airflow 2.0 has low DAG scheduling latency out of the box (particularly when compared with Airflow 1.10.x),
+however if you need more throughput you can :ref:`start multiple schedulers<scheduler:ha>`.
 
 
 How do I trigger tasks based on another task's failure?
 -------------------------------------------------------
 
 You can achieve this with :ref:`concepts:trigger-rules`.
+
+DAG construction
+^^^^^^^^^^^^^^^^
 
 What's the deal with ``start_date``?
 ------------------------------------
@@ -131,8 +166,29 @@ backfill CLI command, gets overridden by the backfill's ``start_date`` commands.
 This allows for a backfill on tasks that have ``depends_on_past=True`` to
 actually start. If this were not the case, the backfill just would not start.
 
-How can I create DAGs dynamically?
+
+What does ``execution_date`` mean?
 ----------------------------------
+
+Airflow was developed as a solution for ETL needs. In the ETL world, you typically summarize data. So, if you want to
+summarize data for 2016-02-19, You would do it at 2016-02-20 midnight UTC, which would be right after all data for
+2016-02-19 becomes available.
+
+This datetime value is available to you as :ref:`Macros<macros:default_variables>` as various forms in Jinja templated
+fields. They are also included in the context dictionary given to an Operator's execute function.
+
+.. code-block:: python
+
+        class MyOperator(BaseOperator):
+
+            def execute(self, context):
+                logging.info(context['execution_date'])
+
+Note that ``ds`` refers to date_string, not date start as may be confusing to some.
+
+
+How to create DAGs dynamically?
+-------------------------------
 
 Airflow looks in your ``DAGS_FOLDER`` for modules that contain ``DAG`` objects
 in their global namespace and adds the objects it finds in the
@@ -159,8 +215,131 @@ simple dictionary.
         other_dag_id = f'bar_{i}'
         globals()[other_dag_id] = create_dag(other_dag_id)
 
-What are all the ``airflow tasks run`` commands in my process list?
--------------------------------------------------------------------
+Even though Airflow supports multiple DAG definition per python file, dynamically generated or otherwise, it is not
+recommended as Airflow would like better isolation between DAGs from a fault and deployment perspective and multiple
+DAGs in the same file goes against that.
+
+
+Are top level Python code allowed?
+----------------------------------
+
+While it is not recommended to write any code outside of defining Airflow constructs, Airflow does support any
+arbitrary python code as long as it does not break the DAG file processor or prolong file processing time past the
+:ref:`config:core__dagbag_import_timeout` value.
+
+A common example is the violation of the time limit when building a dynamic DAG which usually requires querying data
+from another service like a database. At the same time, the requested service is being swamped with DAG file
+processors requests for data to process the file. These unintended interactions may cause the service to deteriorate
+and eventually cause DAG file processing to fail.
+
+Refer to :ref:`DAG writing best practices<best_practice:writing_a_dag>` for more information.
+
+
+Do Macros resolves in another Jinja template?
+---------------------------------------------
+
+It is not possible to render :ref:`Macros<macros>` or any Jinja template within another Jinja template. This is
+commonly attempted in ``user_defined_macros``.
+
+.. code-block:: python
+
+        dag = DAG(
+            ...
+            user_defined_macros={
+                'my_custom_macro': 'day={{ ds }}'
+            }
+        )
+
+        bo = BashOperator(
+            task_id='my_task',
+            bash_command="echo {{ my_custom_macro }}",
+            dag=dag
+        )
+
+This will echo "day={{ ds }}" instead of "day=2020-01-01" for a dagrun with the execution date 2020-01-01 00:00:00.
+
+.. code-block:: python
+
+        bo = BashOperator(
+            task_id='my_task',
+            bash_command="echo day={{ ds }}",
+            dag=dag
+        )
+
+By using the ds macros directly in the template_field, the rendered value results in "day=2020-01-01".
+
+
+Why ``next_ds`` or ``prev_ds`` might not contain expected values?
+------------------------------------------------------------------
+
+- When scheduling DAG, the ``next_ds`` ``next_ds_nodash`` ``prev_ds`` ``prev_ds_nodash`` are calculated using
+  ``execution_date`` and ``schedule_interval``. If you set ``schedule_interval`` as ``None`` or ``@once``,
+  the ``next_ds``, ``next_ds_nodash``, ``prev_ds``, ``prev_ds_nodash`` values will be set to ``None``.
+- When manually triggering DAG, the schedule will be ignored, and ``prev_ds == next_ds == ds``
+
+
+Task execution interactions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+What does TemplateNotFound mean?
+---------------------------------
+
+TemplateNotFound errors are usually due to misalignment with user expectations when passing path to operator
+that trigger Jinja templating. A common occurrence is with :ref:`BashOperators<howto/operator:BashOperator>`.
+
+Another commonly missed fact is that the files are resolved relative to where the pipeline file lives. You can add
+other directories to the ``template_searchpath`` of the DAG object to allow for other non-relative location.
+
+
+How to trigger tasks based on another task's failure?
+-----------------------------------------------------
+
+For tasks that are related through dependency, you can set the ``trigger_rule`` to ``TriggerRule.ALL_FAILED`` if the
+task execution depends on the failure of ALL its upstream tasks or ``TriggerRule.ONE_FAILED`` for just one of the
+upstream task.
+
+.. code-block:: python
+
+    from airflow.decorators import dag, task
+    from airflow.exceptions import AirflowException
+    from airflow.utils.trigger_rule import TriggerRule
+
+    from datetime import datetime
+
+
+    @task
+    def a_func():
+        raise AirflowException
+
+
+    @task(
+        trigger_rule=TriggerRule.ALL_FAILED,
+    )
+    def b_func():
+        pass
+
+    @dag(
+        schedule_interval='@once',
+        start_date=datetime(2021, 1, 1)
+    )
+    def my_dag():
+        a = a_func()
+        b = b_func()
+
+        a >> b
+
+    dag = my_dag()
+
+See :ref:`concepts:trigger-rules` for more information.
+
+If the tasks are not related by dependency, you will need to :ref:`build a custom Operator<custom_operator>`.
+
+
+Airflow CLI
+^^^^^^^^^^^
+
+What are all the ``airflow tasks run`` commands in the process list?
+---------------------------------------------------------------------
 
 There are many layers of ``airflow tasks run`` commands, meaning it can call itself.
 
@@ -176,21 +355,59 @@ There are many layers of ``airflow tasks run`` commands, meaning it can call its
   performs the actual work.
 
 
-How can my airflow dag run faster?
-----------------------------------
+Airflow UI
+^^^^^^^^^^
 
-There are a few variables we can control to improve airflow dag performance:
+How do I stop the sync perms happening multiple times per webserver?
+--------------------------------------------------------------------
 
-- ``parallelism``: This variable controls the number of task instances that runs simultaneously across the whole Airflow cluster. User could increase the ``parallelism`` variable in the ``airflow.cfg``.
-- ``concurrency``: The Airflow scheduler will run no more than ``concurrency`` task instances for your DAG at any given time. Concurrency is defined in your Airflow DAG. If you do not set the concurrency on your DAG, the scheduler will use the default value from the ``dag_concurrency`` entry in your ``airflow.cfg``.
-- ``task_concurrency``: This variable controls the number of concurrent running task instances across ``dag_runs`` per task.
-- ``max_active_runs``: the Airflow scheduler will run no more than ``max_active_runs`` DagRuns of your DAG at a given time. If you do not set the ``max_active_runs`` in your DAG, the scheduler will use the default value from the ``max_active_runs_per_dag`` entry in your ``airflow.cfg``.
-- ``pool``: This variable controls the number of concurrent running task instances assigned to the pool.
+Set the value of ``update_fab_perms`` configuration in ``airflow.cfg`` to ``False``.
 
-How can we reduce the airflow UI page load time?
+
+How to reduce the airflow UI page load time?
 ------------------------------------------------
 
-If your dag takes long time to load, you could reduce the value of ``default_dag_run_display_number`` configuration in ``airflow.cfg`` to a smaller value. This configurable controls the number of dag run to show in UI with default value 25.
+If your dag takes long time to load, you could reduce the value of ``default_dag_run_display_number`` configuration
+in ``airflow.cfg`` to a smaller value. This configurable controls the number of dag run to show in UI with default
+value ``25``.
+
+
+Why did the pause dag toggle turn red?
+--------------------------------------
+
+If pausing or unpausing a dag fails for any reason, the dag toggle will
+revert to its previous state and turn red. If you observe this behavior,
+try pausing the dag again, or check the console or server logs if the
+issue recurs.
+
+
+MySQL and MySQL variant Databases
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+What does "MySQL Server has gone away" mean?
+--------------------------------------------
+
+You may occasionally experience OperationalError with the message "MySQL Server has gone away". This is due to the
+connection pool keeping connections open too long and you are given an old connection that has expired. To ensure a
+valid connection, you can set :ref:`config:core__sql_alchemy_pool_recycle` to ensure connections are invalidated after
+that many seconds and new ones are created.
+
+
+Does Airflow support extended ASCII or unicode characters?
+----------------------------------------------------------
+
+If you intend to use extended ASCII or Unicode characters in Airflow, you have to provide a proper connection string to
+the MySQL database since they define charset explicitly.
+
+.. code-block:: text
+
+    sql_alchemy_conn = mysql://airflow@localhost:3306/airflow?charset=utf8
+
+You will experience UnicodeDecodeError thrown by WTForms templating and other Airflow modules like below.
+
+.. code-block:: text
+
+   'ascii' codec can't decode byte 0xae in position 506: ordinal not in range(128)
 
 
 How to fix Exception: Global variable explicit_defaults_for_timestamp needs to be on (1)?
@@ -200,31 +417,3 @@ This means ``explicit_defaults_for_timestamp`` is disabled in your mysql server 
 
 #. Set ``explicit_defaults_for_timestamp = 1`` under the ``mysqld`` section in your ``my.cnf`` file.
 #. Restart the Mysql server.
-
-
-How to reduce airflow dag scheduling latency in production?
------------------------------------------------------------
-
-Airflow 2 has low DAG scheduling latency out of the box (particularly when compared with Airflow 1.10.x),
-however if you need more throughput you can :ref:`start multiple schedulers<scheduler:ha>`.
-
-Why next_ds or prev_ds might not contain expected values?
----------------------------------------------------------
-
-- When scheduling DAG, the ``next_ds`` ``next_ds_nodash`` ``prev_ds`` ``prev_ds_nodash`` are calculated using
-  ``execution_date`` and ``schedule_interval``. If you set ``schedule_interval`` as ``None`` or ``@once``,
-  the ``next_ds``, ``next_ds_nodash``, ``prev_ds``, ``prev_ds_nodash`` values will be set to ``None``.
-- When manually triggering DAG, the schedule will be ignored, and ``prev_ds == next_ds == ds``
-
-How do I stop the sync perms happening multiple times per webserver?
---------------------------------------------------------------------
-
-Set the value of ``update_fab_perms`` configuration in ``airflow.cfg`` to ``False``.
-
-Why did the pause dag toggle turn red?
---------------------------------------
-
-If pausing or unpausing a dag fails for any reason, the dag toggle will
-revert to its previous state and turn red. If you observe this behavior,
-try pausing the dag again, or check the console or server logs if the
-issue recurs.
