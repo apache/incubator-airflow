@@ -418,6 +418,12 @@ repos:
         language: system
         files: ^\.pre-commit-config\.yaml$|^docs/spelling_wordlist\.txt$
         require_serial: true
+      - id: sort-static-code-check-hooks
+        name: Sort alphabetically and uniquify static code check hooks
+        entry: ./scripts/ci/pre_commit/pre_commit_sort_static_code_check_hooks.sh
+        language: system
+        files: ^\.pre-commit-config\.yaml$|$breeze-complete$|^BREEZE\.rst$|^STATIC_CODE_CHECKS\.rst$
+        require_serial: true
       - id: helm-lint
         name: Lint Helm Chart
         entry: ./scripts/ci/pre_commit/pre_commit_helm_lint.sh

@@ -77,11 +77,11 @@ _breeze_allowed_static_checks=$(cat <<-EOF
 all
 all-but-pylint
 airflow-config-yaml
-airflow-providers-available
 airflow-provider-yaml-files-ok
+airflow-providers-available
 base-operator
-bats-tests
 bats-in-container-tests
+bats-tests
 black
 build
 build-providers-dependencies
@@ -122,8 +122,8 @@ no-relative-imports
 pre-commit-descriptions
 pre-commit-hook-names
 provide-create-sessions
-providers-init-file
 provider-yamls
+providers-init-file
 pydevd
 pydocstyle
 pylint
@@ -132,11 +132,12 @@ python-no-log-warn
 pyupgrade
 restrict-start_date
 rst-backticks
-setup-order
 setup-extra-packages
+setup-order
 shellcheck
 sort-in-the-wild
 sort-spelling-wordlist
+sort-static-code-check-hooks
 stylelint
 trailing-whitespace
 ui-lint
