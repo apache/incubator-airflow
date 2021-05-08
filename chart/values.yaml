@@ -895,15 +895,13 @@ config:
     statsd_port: 9125
     statsd_prefix: airflow
     statsd_host: '{{ printf "%s-statsd" .Release.Name }}'
-  operators:
-    default_queue: celery
   webserver:
     enable_proxy_fix: 'True'
+    # For Airflow 1.10, backward compatibility
     rbac: 'True'
   celery:
     worker_concurrency: 16
   scheduler:
-    scheduler_heartbeat_sec: 5
     # statsd params included for Airflow 1.10 backward compatibility; moved to [metrics] in 2.0
     statsd_on: '{{ ternary "True" "False" .Values.statsd.enabled }}'
     statsd_port: 9125
@@ -914,10 +912,6 @@ config:
   elasticsearch:
     json_format: 'True'
     log_id_template: "{dag_id}_{task_id}_{execution_date}_{try_number}"
-  elasticsearch_configs:
-    max_retries: 3
-    timeout: 30
-    retry_timeout: 'True'
   kerberos:
     keytab: '{{ .Values.kerberos.keytabPath }}'
     reinit_frequency: '{{ .Values.kerberos.reinitFrequency }}'
@@ -930,7 +924,6 @@ config:
     pod_template_file: '{{ include "airflow_pod_template_file" . }}/pod_template_file.yaml'
     worker_container_repository: '{{ .Values.images.airflow.repository | default .Values.defaultAirflowRepository }}'
     worker_container_tag: '{{ .Values.images.airflow.tag | default .Values.defaultAirflowTag }}'
-    delete_worker_pods: 'True'
     multi_namespace_mode: '{{ if .Values.multiNamespaceMode }}True{{ else }}False{{ end }}'
 # yamllint enable rule:line-length
 
