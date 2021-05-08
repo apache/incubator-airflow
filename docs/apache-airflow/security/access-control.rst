@@ -18,7 +18,7 @@
 Access Control
 ==============
 
-Access Control of Airflow Webserver UI is handled by Flask AppBuilder (FAB).
+Access Control of Airflow's Webserver UI is handled by Flask AppBuilder (FAB).
 Please read its related `security document <http://flask-appbuilder.readthedocs.io/en/latest/security.html>`_
 regarding its security model.
 
@@ -37,15 +37,22 @@ regarding its security model.
 
 Default Roles
 '''''''''''''
-Airflow ships with a set of roles by default: Admin, User, Op, Viewer, and Public.
-Only ``Admin`` users could configure/alter the permissions for other roles. But it is not recommended
-that ``Admin`` users alter these default roles in any way by removing
-or adding permissions to these roles.
+
+By default, Airflow 2.0+ uses role-based access control (RBAC) to manage all permissions across your environment. Each role has permissions which provide varying levels of access to Airflow's key resources (DAGs, Connections, etc).
+
+An environment's roles can be found under the **Security** tab:
+
+.. image:: /img/list-roles.png
+
+Airflow ships with a default set of roles:
 
 Admin
 ^^^^^
 ``Admin`` users have all possible permissions, including granting or revoking permissions from
 other users.
+
+Only ``Admin`` users can configure/alter the permissions for other roles. While they can reconfigure Airflow's other default rules, it's not recommended.
+The best practice is to instead create a new role with the desired permissions.
 
 Public
 ^^^^^^
@@ -53,85 +60,88 @@ Public
 
 Viewer
 ^^^^^^
-``Viewer`` users have limited viewer permissions
+``Viewer`` users have limited viewer permissions on limited web views. The following table lists all permissions granted to ``Viewers``:
 
 .. exampleinclude:: /../../airflow/www/security.py
     :language: python
     :start-after: [START security_viewer_perms]
     :end-before: [END security_viewer_perms]
 
-on limited web views.
 
 User
 ^^^^
-``User`` users have ``Viewer`` permissions plus additional user permissions
+``User`` users have all of the ``Viewer`` permissions listed above, plus additional user permissions for modifying DAGs, task instances, and DAG runs:
 
 .. exampleinclude:: /../../airflow/www/security.py
     :language: python
     :start-after: [START security_user_perms]
     :end-before: [END security_user_perms]
 
-on User web views which is the same as Viewer web views.
-
 Op
-^^
-``Op`` users have ``User`` permissions plus additional op permissions
+^^^
+``Op`` users have all of the permissions that ``Viewers`` and ``Users`` have, plus additional permissions for modifying resources like connections and pools:
 
 .. exampleinclude:: /../../airflow/www/security.py
     :language: python
     :start-after: [START security_op_perms]
     :end-before: [END security_op_perms]
 
-on ``User`` web views.
-
 
 Custom Roles
-'''''''''''''
+''''''''''''
 
-DAG Level Role
-^^^^^^^^^^^^^^
-``Admin`` can create a set of roles which are only allowed to view a certain set of dags. This is called DAG level access. Each dag defined in the dag model table
-is treated as a ``View`` which has two permissions associated with it (``can_read`` and ``can_edit``. ``can_dag_read`` and ``can_dag_edit`` are deprecated since 2.0.0).
-There is a special view called ``DAGs`` (it was called ``all_dags`` in versions 1.10.*) which
-allows the role to access all the dags. The default ``Admin``, ``Viewer``, ``User``, ``Op`` roles can all access ``DAGs`` view.
+Creating custom roles is the recommended way to customize your environment access. To do so:
 
-.. image:: /img/add-role.png
-.. image:: /img/new-role.png
+1. In the **List Roles** menu, click the blue button to create a new role. Alternatively, select an existing role and click **Actions** > **Copy Role** to create a role based on your selection.
 
-The image shows the creation of a role which can only write to
-``example_python_operator``. You can also create roles via the CLI
-using the ``airflow roles create`` command, e.g.:
+ .. image:: /img/list-roles.png
+
+2. Specify a name and add permissions for the role. Note that the names for permissions will vary slightly between the UI and the source code.
+
+ .. image:: /img/add-permissions.png
+
+3. Click Save.
+
+You can also create roles via the CLI using the following command:
 
 .. code-block:: bash
 
-  airflow roles create Role1 Role2
+  airflow roles create <Role1> <Role2>
 
-And we could assign the given role to a new user using the ``airflow
-users add-role`` CLI command.
-
-
-Permissions
-'''''''''''
+You can then assign the given role to a new user using the ``airflow users add-role`` CLI command. Note that adding and removing permissions for a role can only be completed in the UI.
 
 Resource-Based permissions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting with version 2.0, permissions are based on individual resources and a small subset of actions on those
+Starting with version 2.0, permissions are based on individual resources and a small set of actions with those
 resources. Resources match standard Airflow concepts, such as ``Dag``, ``DagRun``, ``Task``, and
 ``Connection``. Actions include ``can_create``, ``can_read``, ``can_edit``, and ``can_delete``.
 
-Permissions (each consistent of a resource + action pair) are then added to roles.
+Each endpoint in Airflow requires one or more permissions to be accessed. To access an endpoint, a role needs all permissions required by that endpoint.
 
-**To access an endpoint, the user needs all permissions assigned to that endpoint**
-
-There are five default roles: Public, Viewer, User, Op, and Admin. Each one has the permissions of the preceding role, as well as additional permissions.
-
-DAG-level permissions
+DAG-Based Permissions
 ^^^^^^^^^^^^^^^^^^^^^
 
-For DAG-level permissions exclusively, access can be controlled at the level of all DAGs or individual DAG objects. This includes ``DAGs.can_create``, ``DAGs.can_read``, ``DAGs.can_edit``, and ``DAGs.can_delete``. When these permissions are listed, access is granted to users who either have the listed permission or the same permission for the specific DAG being acted upon. For individual DAGs, the resource name is ``DAG:`` + the DAG ID.
+``Admin`` users can create roles with permission to access only specific DAGs. This is called DAG-level access.
 
-For example, if a user is trying to view DAG information for the ``example_dag_id``, and the endpoint requires ``DAGs.can_read`` access, access will be granted if the user has either ``DAGs.can_read`` or ``DAG:example_dag_id.can_read`` access.
+DAG-level permissions differ from resource-level permissions in a few key ways:
+- Resource-based permissions apply to all DAGs, while DAG-based permissions apply only to specific DAGs.
+- DAG-based permissions control only``can_read`` and ``can_edit`` actions (``can_dag_read`` and ``can_dag_edit`` were deprecated in 2.0.0).
+- You have to specify an existing DAG in the name of a DAG-based permission. The specific naming convention is ``DAG:<dag-name>.can_read`` or ``DAG:<dag-name>.can_edit``.
+
+For example, the following images show how you would create a role which can only write to ``example_python_operator``. Once you create the role, the permission appears in the **List Roles** menu.
+
+.. image:: /img/add-role.png
+.. image:: /img/new-role.png
+
+If an endpoint for a specific DAG requires a permission based on the DAG resource (for example, ``DAGs.can_create``), a role will have access if it has either the resource-based permission or a DAG-based permission.
+
+For example, if an endpoint for the ``example_python_operator`` DAG requires the resource-based ``DAGS.can_read`` permission, a role with the DAG-based permission ``DAG:example_python_operator.can_read`` can still access that endpoint even without ``DAGS.can_read``.
+
+Reference: Action and Endpoint Permissions
+''''''''''''''''''''''''''''''''''''''''''
+
+The following tables list all of the necessary permissions required for access to various Airflow endpoints and actions. Note that the ``Minimum Role`` table only applies if you haven't edited your default roles.
 
 ================================================================================== ====== ================================================================= ============
 Stable API Permissions
