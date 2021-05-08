@@ -627,6 +627,10 @@ class GoogleDisplayVideo360CreateSDFDownloadTaskOperator(BaseOperator):
         self.log.info("Creating operation for SDF download task...")
         operation = hook.create_sdf_download_operation(body_request=self.body_request)
 
+        name = operation["name"]
+        self.xcom_push(context, key="name", value=name)
+        self.log.info("Created SDF operation with name: %s", name)
+
         return operation
 
 
