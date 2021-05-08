@@ -42,3 +42,5 @@ In your Dag file, pass a list of tags you want to add to DAG object:
 **Screenshot**:
 
 .. image:: ../img/add-dag-tags.png
+
+Note: This feature is only available for the RBAC UI (enabled using rbac=True in [webserver] section in your airflow.cfg).
