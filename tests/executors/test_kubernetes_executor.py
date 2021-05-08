@@ -36,8 +36,10 @@ try:
         AirflowKubernetesScheduler,
         KubernetesExecutor,
         KubernetesJobWatcher,
+        ResourceVersion,
         create_pod_id,
         get_base_pod_from_template,
+        get_latest_resource_version,
     )
     from airflow.kubernetes import pod_generator
     from airflow.kubernetes.kubernetes_helper_functions import annotations_to_key
@@ -760,3 +762,63 @@ class TestKubernetesJobWatcher(unittest.TestCase):
 
         self._run()
         self.watcher.watcher_queue.put.assert_not_called()
+
+    @mock.patch('airflow.executors.kubernetes_executor.get_latest_resource_version')
+    def test_process_error_event(self, mock_get_resource_version):
+        mock_get_resource_version.return_value = '43334'
+        self.pod.status.phase = 'Pending'
+        self.pod.metadata.resource_version = '43334'
+        raw_object = {"code": 410, "message": "too old resource version: 27272 (43334)"}
+        self.events.append({"type": "ERROR", "object": self.pod, "raw_object": raw_object})
+        self._run()
+        mock_get_resource_version.assert_called_once()
+
+    @mock.patch('airflow.executors.kubernetes_executor.get_latest_resource_version')
+    @mock.patch.object(KubernetesJobWatcher, '_run')
+    def test_apiexception_for_410_is_handled(self, mock_run, mock_get_resource_version):
+        self.events.append({"type": 'MODIFIED', "object": self.pod})
+        mock_run.side_effect = mock.Mock(side_effect=ApiException(status=410, reason='too old error'))
+        with self.assertRaises(ApiException):
+            self.watcher._run(
+                kube_client=self.kube_client,
+                resource_version=self.watcher.resource_version,
+                scheduler_job_id=self.watcher.scheduler_job_id,
+                kube_config=self.watcher.kube_config,
+            )
+            mock_get_resource_version.assert_called_once()
+
+
+class TestResourceVersion(unittest.TestCase):
+    # pylint: disable=no-member
+    def tearDown(self) -> None:
+        ResourceVersion._drop()
+
+    def test_can_update_with_resource_version_arg(self):
+        resource_instance = ResourceVersion(resource_version='4567')
+        assert resource_instance.resource_version == '4567'
+
+    @mock.patch('airflow.executors.kubernetes_executor.get_latest_resource_version')
+    def test_different_instance_share_state(self, mock_get_resource_version):
+        kube_client = mock.MagicMock()
+        mock_get_resource_version.return_value = '4566'
+        resource_instance = ResourceVersion(kube_client=kube_client, namespace='mynamespace')
+        resource_instance2 = ResourceVersion(kube_client=kube_client, namespace='mynamespace')
+        assert resource_instance.resource_version == '4566'
+        assert resource_instance2.resource_version == '4566'
+        resource_instance3 = ResourceVersion(resource_version='6787')
+        resource_instance4 = ResourceVersion(kube_client=kube_client, namespace='mynamespace')
+        assert resource_instance.resource_version == '6787'
+        assert resource_instance2.resource_version == '6787'
+        assert resource_instance3.resource_version == '6787'
+        assert resource_instance4.resource_version == '6787'
+        mock_get_resource_version.assert_called_once()
+
+
+class TestGetLatestResourceVersion(unittest.TestCase):
+    def test_get_latest_resource_version(self):
+        kube_client = mock.MagicMock()
+        list_namespaced_pod = kube_client.list_namespaced_pod
+        list_namespaced_pod.return_value.metadata.resource_version = '5688'
+        resource_version = get_latest_resource_version(kube_client, 'mynamespace')
+        assert list_namespaced_pod.called
+        assert resource_version == '5688'

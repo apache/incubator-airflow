@@ -61,15 +61,45 @@ KubernetesWatchType = Tuple[str, str, Optional[str], Dict[str, str], str]
 
 
 class ResourceVersion:
-    """Singleton for tracking resourceVersion from Kubernetes"""
+    """
+    Track resourceVersion from Kubernetes
 
-    _instance = None
-    resource_version = "0"
+    All instances of this class share the same state
+    """
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    _shared_state = {}
+
+    def __init__(
+        self,
+        *,
+        kube_client: client.CoreV1Api = None,
+        namespace: str = None,
+        resource_version: Optional[str] = None,
+    ):
+        self.__dict__ = self._shared_state
+        if resource_version:
+            # Update the state
+            self.resource_version = resource_version
+        if not hasattr(self, 'resource_version'):
+            if not (kube_client and namespace):
+                raise AirflowException("kube_client and namespace is required to get resource version")
+            re_version = get_latest_resource_version(kube_client, namespace)
+            self._shared_state.update(resource_version=re_version)
+
+    @classmethod
+    def _drop(cls):
+        """Clear shared state (For testing purposes)"""
+        cls._shared_state = {}
+
+
+def get_latest_resource_version(kube_client: client.CoreV1Api, namespace: str) -> None:
+    """
+    List pods to get the latest resource version
+
+    See https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes
+    """
+    pod_list = kube_client.list_namespaced_pod(namespace)
+    return pod_list.metadata.resource_version
 
 
 class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
@@ -80,7 +110,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
         namespace: Optional[str],
         multi_namespace_mode: bool,
         watcher_queue: 'Queue[KubernetesWatchType]',
-        resource_version: Optional[str],
+        resource_version: str,
         scheduler_job_id: Optional[str],
         kube_config: Configuration,
     ):
@@ -102,6 +132,22 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 self.resource_version = self._run(
                     kube_client, self.resource_version, self.scheduler_job_id, self.kube_config
                 )
+            except ApiException as err:
+                if err.status == 410:
+                    self.log.info(
+                        "KubernetesJobWatcher encountered an error, error code: %s, reason: %s",
+                        err.status,
+                        err.reason,
+                    )
+                    self.log.info("Relisting pod to get the latest resource version")
+                    self.resource_version = get_latest_resource_version(kube_client, self.namespace)
+                else:
+                    self.log.exception(
+                        'KubernetesJobWatcher encountered an error, failing, error code: %s, reason: %s',
+                        err.status,
+                        err.reason,
+                    )
+                    raise
             except ReadTimeoutError:
                 self.log.warning(
                     "There was a timeout error accessing the Kube API. Retrying request.", exc_info=True
@@ -119,21 +165,22 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
     def _run(
         self,
         kube_client: client.CoreV1Api,
-        resource_version: Optional[str],
+        resource_version: str,
         scheduler_job_id: str,
         kube_config: Any,
     ) -> Optional[str]:
         self.log.info('Event: and now my watch begins starting at resource_version: %s', resource_version)
         watcher = watch.Watch()
 
-        kwargs = {'label_selector': f'airflow-worker={scheduler_job_id}'}
-        if resource_version:
-            kwargs['resource_version'] = resource_version
+        kwargs = {
+            'label_selector': f'airflow-worker={scheduler_job_id}',
+            'resource_version': resource_version,
+        }
         if kube_config.kube_client_request_args:
             for key, value in kube_config.kube_client_request_args.items():
                 kwargs[key] = value
 
-        last_resource_version: Optional[str] = None
+        last_resource_version: str = resource_version
         if self.multi_namespace_mode:
             list_worker_pods = functools.partial(
                 watcher.stream, kube_client.list_pod_for_all_namespaces, **kwargs
@@ -146,7 +193,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
             task = event['object']
             self.log.info('Event: %s had an event of type %s', task.metadata.name, event['type'])
             if event['type'] == 'ERROR':
-                return self.process_error(event)
+                return self.process_error(event, kube_client)
             annotations = task.metadata.annotations
             task_instance_related_annotations = {
                 'dag_id': annotations['dag_id'],
@@ -154,7 +201,6 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
                 'execution_date': annotations['execution_date'],
                 'try_number': annotations['try_number'],
             }
-
             self.process_status(
                 pod_id=task.metadata.name,
                 namespace=task.metadata.namespace,
@@ -167,16 +213,21 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
 
         return last_resource_version
 
-    def process_error(self, event: Any) -> str:
+    def process_error(
+        self,
+        event: Any,
+        kube_client: client.CoreV1Api,
+    ) -> str:
         """Process error response"""
         self.log.error('Encountered Error response from k8s list namespaced pod stream => %s', event)
         raw_object = event['raw_object']
         if raw_object['code'] == 410:
             self.log.info(
-                'Kubernetes resource version is too old, must reset to 0 => %s', (raw_object['message'],)
+                'Kubernetes resource version is too old, '
+                'relisting pods to get the latest version. Error => %s',
+                (raw_object['message'],),
             )
-            # Return resource version 0
-            return '0'
+            return get_latest_resource_version(kube_client, self.namespace)
         raise AirflowException(
             'Kubernetes failure for %s with code %s and message: %s'
             % (raw_object['reason'], raw_object['code'], raw_object['message'])
@@ -261,7 +312,9 @@ class AirflowKubernetesScheduler(LoggingMixin):
         return resp
 
     def _make_kube_watcher(self) -> KubernetesJobWatcher:
-        resource_version = ResourceVersion().resource_version
+        resource_version = ResourceVersion(
+            kube_client=self.kube_client, namespace=self.kube_config.kube_namespace
+        ).resource_version  # pylint: disable=no-member
         watcher = KubernetesJobWatcher(
             watcher_queue=self.watcher_queue,
             namespace=self.kube_config.kube_namespace,
@@ -535,7 +588,6 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         if not self.task_queue:
             raise AirflowException(NOT_STARTED_MESSAGE)
         self.kube_scheduler.sync()
-
         last_resource_version = None
         while True:  # pylint: disable=too-many-nested-blocks
             try:
@@ -558,9 +610,8 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
                     self.result_queue.task_done()
             except Empty:
                 break
-
-        resource_instance = ResourceVersion()
-        resource_instance.resource_version = last_resource_version or resource_instance.resource_version
+        if last_resource_version:
+            ResourceVersion(resource_version=last_resource_version)
 
         # pylint: disable=too-many-nested-blocks
         for _ in range(self.kube_config.worker_pods_creation_batch_size):
