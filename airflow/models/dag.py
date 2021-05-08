@@ -1149,6 +1149,7 @@ class DAG(LoggingMixin):
         max_recursion_depth=None,
         dag_bag=None,
         visited_external_tis=None,
+        exclude_task_ids: FrozenSet[str] = frozenset({}),
     ):
         """
         Clears a set of task instances associated with the current dag for
@@ -1189,6 +1190,8 @@ class DAG(LoggingMixin):
         :param visited_external_tis: A set used internally to keep track of the visited TaskInstance when
             clearing tasks across multiple DAGs linked by ExternalTaskMarker to avoid redundant work.
         :type visited_external_tis: set
+        :param exclude_task_ids: A set of task_id that should not be cleared
+        :type exclude_task_ids: frozenset
         """
         TI = TaskInstance
         tis = session.query(TI)
@@ -1315,7 +1318,8 @@ class DAG(LoggingMixin):
         if get_tis:
             return tis
 
-        tis = tis.all()
+        # Exclude these task_ids from clearing
+        tis = [ti for ti in tis if ti.task_id not in exclude_task_ids]
 
         if dry_run:
             session.expunge_all()
