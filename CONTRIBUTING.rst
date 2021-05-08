@@ -582,12 +582,12 @@ apache.hdfs, apache.hive, apache.kylin, apache.livy, apache.pig, apache.pinot, a
 apache.sqoop, apache.webhdfs, async, atlas, aws, azure, cassandra, celery, cgroups, cloudant,
 cncf.kubernetes, crypto, dask, databricks, datadog, devel, devel_all, devel_ci, devel_hadoop,
 dingding, discord, doc, docker, druid, elasticsearch, exasol, facebook, ftp, gcp, gcp_api,
-github_enterprise, google, google_auth, grpc, hashicorp, hdfs, hive, http, imap, jdbc, jenkins,
-jira, kerberos, kubernetes, ldap, microsoft.azure, microsoft.mssql, microsoft.winrm, mongo, mssql,
-mysql, neo4j, odbc, openfaas, opsgenie, oracle, pagerduty, papermill, password, pinot, plexus,
-postgres, presto, qds, qubole, rabbitmq, redis, s3, salesforce, samba, segment, sendgrid, sentry,
-sftp, singularity, slack, snowflake, spark, sqlite, ssh, statsd, tableau, telegram, trino, vertica,
-virtualenv, webhdfs, winrm, yandex, zendesk
+github_enterprise, google, google_auth, grafana, grpc, hashicorp, hdfs, hive, http, imap, jdbc,
+jenkins, jira, kerberos, kubernetes, ldap, microsoft.azure, microsoft.mssql, microsoft.winrm, mongo,
+mssql, mysql, neo4j, odbc, openfaas, opsgenie, oracle, pagerduty, papermill, password, pinot,
+plexus, postgres, presto, qds, qubole, rabbitmq, redis, s3, salesforce, samba, segment, sendgrid,
+sentry, sftp, singularity, slack, snowflake, spark, sqlite, ssh, statsd, tableau, telegram, trino,
+vertica, virtualenv, webhdfs, winrm, yandex, zendesk
 
   .. END EXTRAS HERE
 

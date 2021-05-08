@@ -162,6 +162,8 @@ Those are extras that add dependencies needed for integration with external serv
 +---------------------+-----------------------------------------------------+-----------------------------------------------------+
 | google              | ``pip install 'apache-airflow[google]'``            | Google Cloud                                        |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------+
+| grafana              | ``pip install 'apache-airflow[grafana]'``          | Grafana Loki                                        |
++---------------------+-----------------------------------------------------+-----------------------------------------------------+
 | hashicorp           | ``pip install 'apache-airflow[hashicorp]'``         | Hashicorp Services (Vault)                          |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------+
 | jira                | ``pip install 'apache-airflow[jira]'``              | Jira hooks and operators                            |

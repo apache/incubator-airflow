@@ -47,6 +47,7 @@ ALL_PROVIDERS = [
     'apache-airflow-providers-facebook',
     'apache-airflow-providers-ftp',
     'apache-airflow-providers-google',
+    'apache-airflow-providers-grafana',
     'apache-airflow-providers-grpc',
     'apache-airflow-providers-hashicorp',
     'apache-airflow-providers-http',

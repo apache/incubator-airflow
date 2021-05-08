@@ -163,6 +163,7 @@ Github
 Gitter
 Glassdoor
 Gmail
+Grafana
 Groupalia
 Groupon
 Grpc
@@ -238,6 +239,7 @@ LineItem
 ListGenerator
 ListInfoTypesResponse
 Logstash
+Loki
 Lowin
 Lyft
 Maheshwari
