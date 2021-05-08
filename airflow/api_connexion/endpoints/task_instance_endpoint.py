@@ -251,18 +251,8 @@ def post_clear_task_instances(dag_id: str, session=None):
     task_instances = dag.clear(get_tis=True, **data)
     if not data["dry_run"]:
         clear_task_instances(
-            task_instances,
-            session,
-            dag=dag,
-            activate_dag_runs=False,  # We will set DagRun state later.
+            task_instances, session, dag=dag, dag_run_state=State.RUNNING if reset_dag_runs else False
         )
-        if reset_dag_runs:
-            dag.set_dag_runs_state(
-                session=session,
-                start_date=data["start_date"],
-                end_date=data["end_date"],
-                state=State.RUNNING,
-            )
     task_instances = task_instances.join(
         DR, and_(DR.dag_id == TI.dag_id, DR.execution_date == TI.execution_date)
     ).add_column(DR.run_id)

@@ -1114,23 +1114,6 @@ class DAG(LoggingMixin):
         return tuple(graph_sorted)
 
     @provide_session
-    def set_dag_runs_state(
-        self,
-        state: str = State.RUNNING,
-        session: Session = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        dag_ids: List[str] = None,
-    ) -> None:
-        dag_ids = dag_ids or [self.dag_id]
-        query = session.query(DagRun).filter(DagRun.dag_id.in_(dag_ids))
-        if start_date:
-            query = query.filter(DagRun.execution_date >= start_date)
-        if end_date:
-            query = query.filter(DagRun.execution_date <= end_date)
-        query.update({DagRun.state: state}, synchronize_session='fetch')
-
-    @provide_session
     def clear(
         self,
         task_ids=None,
@@ -1171,7 +1154,8 @@ class DAG(LoggingMixin):
         :type include_subdags: bool
         :param include_parentdag: Clear tasks in the parent dag of the subdag.
         :type include_parentdag: bool
-        :param dag_run_state: state to set DagRun to
+        :param dag_run_state: state to set DagRun to. If set to False, dagrun state will not
+            be changed.
         :param dry_run: Find the tasks to clear but don't clear them.
         :type dry_run: bool
         :param session: The sqlalchemy session to use
@@ -1192,13 +1176,11 @@ class DAG(LoggingMixin):
         """
         TI = TaskInstance
         tis = session.query(TI)
-        dag_ids = []
         if include_subdags:
             # Crafting the right filter for dag_id and task_ids combo
             conditions = []
             for dag in self.subdags + [self]:
                 conditions.append((TI.dag_id == dag.dag_id) & TI.task_id.in_(dag.task_ids))
-                dag_ids.append(dag.dag_id)
             tis = tis.filter(or_(*conditions))
         else:
             tis = session.query(TI).filter(TI.dag_id == self.dag_id)
@@ -1339,15 +1321,7 @@ class DAG(LoggingMixin):
                 tis,
                 session,
                 dag=self,
-                activate_dag_runs=False,  # We will set DagRun state later.
-            )
-
-            self.set_dag_runs_state(
-                session=session,
-                start_date=start_date,
-                end_date=end_date,
-                state=dag_run_state,
-                dag_ids=dag_ids,
+                dag_run_state=dag_run_state,
             )
         else:
             count = 0
