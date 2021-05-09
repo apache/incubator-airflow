@@ -23,6 +23,7 @@ CURRENT_KUBERNETES_VERSIONS=()
 CURRENT_KUBERNETES_MODES=()
 CURRENT_POSTGRES_VERSIONS=()
 CURRENT_MYSQL_VERSIONS=()
+CURRENT_MSSQL_VERSIONS=()
 CURRENT_KIND_VERSIONS=()
 CURRENT_HELM_VERSIONS=()
 ALL_PYTHON_MAJOR_MINOR_VERSIONS=()
@@ -73,6 +74,7 @@ function initialization::initialize_base_variables() {
     export WEBSERVER_HOST_PORT=${WEBSERVER_HOST_PORT:="28080"}
     export POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT:="25433"}
     export MYSQL_HOST_PORT=${MYSQL_HOST_PORT:="23306"}
+    export MSSQL_HOST_PORT=${MSSQL_HOST_PORT:="21433"}
     export FLOWER_HOST_PORT=${FLOWER_HOST_PORT:="25555"}
     export REDIS_HOST_PORT=${REDIS_HOST_PORT:="26379"}
 
@@ -102,6 +104,10 @@ function initialization::initialize_base_variables() {
     CURRENT_MYSQL_VERSIONS+=("5.7" "8")
     export CURRENT_MYSQL_VERSIONS
 
+    # Currently supported versions of MSSQL
+    CURRENT_MSSQL_VERSIONS+=("2017-latest" "2019-latest")
+    export CURRENT_MSSQL_VERSIONS
+
     BACKEND=${BACKEND:="sqlite"}
     export BACKEND
 
@@ -110,6 +116,9 @@ function initialization::initialize_base_variables() {
 
     # Default MySQL versions
     export MYSQL_VERSION=${MYSQL_VERSION:=${CURRENT_MYSQL_VERSIONS[0]}}
+
+    #Default MS SQL version
+    export MSSQL_VERSION=${MSSQL_VERSION:=${CURRENT_MSSQL_VERSIONS[0]}}
 
     # If set to true, the database will be reset at entry. Works for Postgres and MySQL
     export DB_RESET=${DB_RESET:="false"}
@@ -901,6 +910,7 @@ function initialization::make_constants_read_only() {
     readonly CURRENT_KUBERNETES_MODES
     readonly CURRENT_POSTGRES_VERSIONS
     readonly CURRENT_MYSQL_VERSIONS
+    readonly CURRENT_MSSQL_VERSIONS
     readonly CURRENT_KIND_VERSIONS
     readonly CURRENT_HELM_VERSIONS
     readonly CURRENT_EXECUTOR

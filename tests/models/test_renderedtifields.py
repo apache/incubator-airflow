@@ -172,7 +172,14 @@ class TestRenderedTaskInstanceFields(unittest.TestCase):
         assert rtif_num == len(result)
 
         # Verify old records are deleted and only 'num_to_keep' records are kept
-        with assert_queries_count(expected_query_count):
+        # For other DBs,an extra query is fired in RenderedTaskInstanceFields.delete_old_records
+        expected_query_count_based_on_db = (
+            expected_query_count + 1
+            if session.bind.dialect.name == "mssql" and expected_query_count != 0
+            else expected_query_count
+        )
+
+        with assert_queries_count(expected_query_count_based_on_db):
             RTIF.delete_old_records(task_id=task.task_id, dag_id=task.dag_id, num_to_keep=num_to_keep)
         result = session.query(RTIF).filter(RTIF.dag_id == dag.dag_id, RTIF.task_id == task.task_id).all()
         assert remaining_rtifs == len(result)

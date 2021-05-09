@@ -20,7 +20,8 @@ import struct
 from datetime import datetime
 from typing import Iterable, List, Optional
 
-from sqlalchemy import BigInteger, Column, String, Text, exists
+from sqlalchemy import BigInteger, Column, String, Text
+from sqlalchemy.sql.expression import literal
 
 from airflow.exceptions import AirflowException, DagCodeNotFound
 from airflow.models.base import Base
@@ -147,7 +148,7 @@ class DagCode(Base):
         :param session: ORM Session
         """
         fileloc_hash = cls.dag_fileloc_hash(fileloc)
-        return session.query(exists().where(cls.fileloc_hash == fileloc_hash)).scalar()
+        return session.query(literal(True)).filter(cls.fileloc_hash == fileloc_hash).one_or_none() is not None
 
     @classmethod
     def get_code_by_fileloc(cls, fileloc: str) -> str:

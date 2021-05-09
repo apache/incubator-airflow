@@ -26,7 +26,7 @@ Create Date: 2020-10-01 12:13:32.968148
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import mysql
+from sqlalchemy.dialects import mssql, mysql
 
 # revision identifiers, used by Alembic.
 revision = '98271e7606e2'
@@ -35,12 +35,32 @@ branch_labels = None
 depends_on = None
 
 
+def __use_date_time2(conn):
+    result = conn.execute(
+        """SELECT CASE WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
+        like '8%' THEN '2000' WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
+        like '9%' THEN '2005' ELSE '2005Plus' END AS MajorVersion"""
+    ).fetchone()
+    mssql_version = result[0]
+    return mssql_version not in ("2000", "2005")
+
+
+def __get_timestamp(conn):
+    dialect_name = conn.dialect.name
+    if dialect_name == "mssql":
+        return mssql.DATETIME2(precision=6) if __use_date_time2(conn) else mssql.DATETIME
+    elif dialect_name != "mysql":
+        return sa.TIMESTAMP(timezone=True)
+    else:
+        return mysql.TIMESTAMP(fsp=6, timezone=True)
+
+
 def upgrade():
     """Apply Add scheduling_decision to DagRun and DAG"""
     conn = op.get_bind()  # pylint: disable=no-member
-    is_mysql = bool(conn.dialect.name == "mysql")
     is_sqlite = bool(conn.dialect.name == "sqlite")
-    timestamp = sa.TIMESTAMP(timezone=True) if not is_mysql else mysql.TIMESTAMP(fsp=6, timezone=True)
+    is_mssql = bool(conn.dialect.name == "mssql")
+    timestamp = __get_timestamp(conn)
 
     if is_sqlite:
         op.execute("PRAGMA foreign_keys=off")
@@ -71,7 +91,7 @@ def upgrade():
 
     op.execute(
         "UPDATE dag SET concurrency={}, has_task_concurrency_limits={} where concurrency IS NULL".format(
-            concurrency, 1 if is_sqlite else sa.true()
+            concurrency, 1 if is_sqlite or is_mssql else sa.true()
         )
     )
 

@@ -76,7 +76,7 @@ from jinja2.utils import htmlsafe_json_dumps, pformat  # type: ignore
 from pendulum.datetime import DateTime
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter  # noqa pylint: disable=no-name-in-module
-from sqlalchemy import and_, desc, func, or_, union_all
+from sqlalchemy import Date, and_, desc, func, or_, union_all
 from sqlalchemy.orm import joinedload
 from wtforms import SelectField, validators
 from wtforms.validators import InputRequired
@@ -2091,6 +2091,14 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
     @action_logging  # pylint: disable=too-many-locals
     def calendar(self):
         """Get DAG runs as calendar"""
+
+        def _convert_to_date(session, column):
+            """Convert column to date."""
+            if session.bind.dialect.name == 'mssql':
+                return column.cast(Date)
+            else:
+                return func.date(column)
+
         dag_id = request.args.get('dag_id')
         dag = current_app.dag_bag.get_dag(dag_id)
         if not dag:
@@ -2104,13 +2112,13 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
         with create_session() as session:
             dag_states = (
                 session.query(
-                    func.date(DagRun.execution_date).label('date'),
+                    (_convert_to_date(session, DagRun.execution_date)).label('date'),
                     DagRun.state,
                     func.count('*').label('count'),
                 )
                 .filter(DagRun.dag_id == dag.dag_id)
-                .group_by(func.date(DagRun.execution_date), DagRun.state)
-                .order_by(func.date(DagRun.execution_date).asc())
+                .group_by(_convert_to_date(session, DagRun.execution_date), DagRun.state)
+                .order_by(_convert_to_date(session, DagRun.execution_date).asc())
                 .all()
             )
 

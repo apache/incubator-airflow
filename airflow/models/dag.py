@@ -52,6 +52,7 @@ from jinja2.nativetypes import NativeEnvironment
 from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String, Text, func, or_
 from sqlalchemy.orm import backref, joinedload, relationship
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql import expression
 
 from airflow import settings, utils
 from airflow.configuration import conf
@@ -99,7 +100,7 @@ def get_last_dagrun(dag_id, session, include_externally_triggered=False):
     DR = DagRun
     query = session.query(DR).filter(DR.dag_id == dag_id)
     if not include_externally_triggered:
-        query = query.filter(DR.external_trigger == False)  # noqa pylint: disable=singleton-comparison
+        query = query.filter(DR.external_trigger == expression.false())
     query = query.order_by(DR.execution_date.desc())
     return query.first()
 
@@ -896,7 +897,7 @@ class DAG(LoggingMixin):
         )
 
         if external_trigger is not None:
-            query = query.filter(DagRun.external_trigger == external_trigger)
+            query = query.filter(DagRun.external_trigger == expression.literal(external_trigger))
 
         return query.scalar()
 
@@ -1876,7 +1877,7 @@ class DAG(LoggingMixin):
             .filter(
                 DagRun.dag_id.in_(existing_dag_ids),
                 DagRun.state == State.RUNNING,  # pylint: disable=comparison-with-callable
-                DagRun.external_trigger.is_(False),
+                DagRun.external_trigger == expression.false(),
             )
             .group_by(DagRun.dag_id)
             .all()
@@ -2190,7 +2191,7 @@ class DagModel(Base):
         """
         paused_dag_ids = (
             session.query(DagModel.dag_id)
-            .filter(DagModel.is_paused.is_(True))
+            .filter(DagModel.is_paused == expression.true())
             .filter(DagModel.dag_id.in_(dag_ids))
             .all()
         )
@@ -2274,8 +2275,8 @@ class DagModel(Base):
         query = (
             session.query(cls)
             .filter(
-                cls.is_paused.is_(False),
-                cls.is_active.is_(True),
+                cls.is_paused == expression.false(),
+                cls.is_active == expression.true(),
                 cls.next_dagrun_create_after <= func.now(),
             )
             .order_by(cls.next_dagrun_create_after)

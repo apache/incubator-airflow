@@ -239,6 +239,22 @@
   assert_equal "${_breeze_default_mysql_version}" "${MYSQL_VERSION}"
 }
 
+@test "Test allowed MSSQL versions same as CURRENT" {
+  load ../bats_utils
+  #shellcheck source=breeze-complete
+  source "${AIRFLOW_SOURCES}/breeze-complete"
+
+  assert_equal "${_breeze_allowed_mssql_versions}" "${CURRENT_MSSQL_VERSIONS[*]}"
+}
+
+@test "Test default MSSQL version same as MSSQL_VERSION" {
+  load ../bats_utils
+  #shellcheck source=breeze-complete
+  source "${AIRFLOW_SOURCES}/breeze-complete"
+
+  assert_equal "${_breeze_default_mssql_version}" "${MSSQL_VERSION}"
+}
+
 @test "Test allowed Postgres versions same as CURRENT" {
   load ../bats_utils
   #shellcheck source=breeze-complete

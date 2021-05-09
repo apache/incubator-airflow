@@ -98,6 +98,8 @@ function check_db_backend {
         check_service "PostgreSQL" "run_nc postgres 5432" "${MAX_CHECK}"
     elif [[ ${BACKEND} == "mysql" ]]; then
         check_service "MySQL" "run_nc mysql 3306" "${MAX_CHECK}"
+    elif [[ ${BACKEND} == "mssql" ]]; then
+        check_service "MSSQL" "run_nc mssql 1433" "${MAX_CHECK}"
     elif [[ ${BACKEND} == "sqlite" ]]; then
         return
     else

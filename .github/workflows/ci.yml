@@ -141,6 +141,7 @@ jobs:
       postgresVersions: ${{ steps.selective-checks.outputs.postgres-versions }}
       defaultPostgresVersion: ${{ steps.selective-checks.outputs.default-postgres-version }}
       mysqlVersions: ${{ steps.selective-checks.outputs.mysql-versions }}
+      mssqlVersions: ${{ steps.selective-checks.outputs.mssql-versions }}
       defaultMySQLVersion: ${{ steps.selective-checks.outputs.default-mysql-version }}
       helmVersions: ${{ steps.selective-checks.outputs.helm-versions }}
       defaultHelmVersion: ${{ steps.selective-checks.outputs.default-helm-version }}
@@ -149,6 +150,7 @@ jobs:
       testTypes: ${{ steps.selective-checks.outputs.test-types }}
       postgresExclude: ${{ steps.selective-checks.outputs.postgres-exclude }}
       mysqlExclude: ${{ steps.selective-checks.outputs.mysql-exclude }}
+      mssqlExclude: ${{ steps.selective-checks.outputs.mssql-exclude }}
       sqliteExclude: ${{ steps.selective-checks.outputs.sqlite-exclude }}
       run-tests: ${{ steps.selective-checks.outputs.run-tests }}
       run-ui-tests: ${{ steps.selective-checks.outputs.run-ui-tests }}
@@ -767,6 +769,62 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
           path: "./files/coverage*.xml"
           retention-days: 7
 
+  tests-mssql:
+    timeout-minutes: 130
+    name: >
+      MSSQL${{matrix.mssql-version}}, Py${{matrix.python-version}}: ${{needs.build-info.outputs.testTypes}}
+    runs-on: ${{ fromJson(needs.build-info.outputs.runsOn) }}
+    needs: [build-info, ci-images]
+    strategy:
+      matrix:
+        python-version: ${{ fromJson(needs.build-info.outputs.pythonVersions) }}
+        mssql-version: ${{ fromJson(needs.build-info.outputs.mssqlVersions) }}
+        exclude: ${{ fromJson(needs.build-info.outputs.mssqlExclude) }}
+      fail-fast: false
+    env:
+      RUNS_ON: ${{ fromJson(needs.build-info.outputs.runsOn) }}
+      BACKEND: mssql
+      PYTHON_MAJOR_MINOR_VERSION: ${{ matrix.python-version }}
+      MSSQL_VERSION: ${{ matrix.mssql-version }}
+      TEST_TYPES: "${{needs.build-info.outputs.testTypes}}"
+      GITHUB_REGISTRY: ${{ needs.ci-images.outputs.githubRegistry }}
+    if: needs.build-info.outputs.run-tests == 'true'
+    steps:
+      - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: "Setup python"
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_MAJOR_MINOR_VERSION }}
+      - name: "Free space"
+        run: ./scripts/ci/tools/ci_free_space_on_ci.sh
+      - name: "Prepare CI image ${{env.PYTHON_MAJOR_MINOR_VERSION}}:${{ env.GITHUB_REGISTRY_PULL_IMAGE_TAG }}"
+        run: ./scripts/ci/images/ci_prepare_ci_image_on_ci.sh
+      - name: "Tests: ${{needs.build-info.outputs.testTypes}}"
+        run: ./scripts/ci/testing/ci_run_airflow_testing.sh
+      - name: "Upload airflow logs"
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: airflow-logs-${{matrix.python-version}}-${{matrix.mssql-version}}
+          path: "./files/airflow_logs*"
+          retention-days: 7
+      - name: "Upload container logs"
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: container-logs-mssql-${{matrix.python-version}}-${{matrix.mssql-version}}
+          path: "./files/container_logs*"
+          retention-days: 7
+      - name: "Upload artifact for coverage"
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-mssql-${{matrix.python-version}}-${{matrix.mssql-version}}
+          path: "./files/coverage*.xml"
+          retention-days: 7
+
   tests-sqlite:
     timeout-minutes: 130
     name: >
@@ -903,6 +961,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - tests-postgres
       - tests-sqlite
       - tests-mysql
+      - tests-mssql
       - tests-quarantined
     env:
       RUNS_ON: ${{ fromJson(needs.build-info.outputs.runsOn) }}
@@ -1047,6 +1106,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - tests-sqlite
       - tests-postgres
       - tests-mysql
+      - tests-mssql
       - tests-kubernetes
       - prod-images
       - docs
@@ -1107,6 +1167,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - tests-sqlite
       - tests-postgres
       - tests-mysql
+      - tests-mssql
       - tests-kubernetes
       - ci-images
       - docs
@@ -1150,6 +1211,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - static-checks-pylint
       - tests-sqlite
       - tests-mysql
+      - tests-mssql
       - tests-postgres
       - tests-kubernetes
     env:
@@ -1219,6 +1281,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
       - tests-sqlite
       - tests-postgres
       - tests-mysql
+      - tests-mssql
       - tests-kubernetes
       - constraints
       - prepare-test-provider-packages-wheel

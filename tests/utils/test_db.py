@@ -68,6 +68,12 @@ class TestDb(unittest.TestCase):
             lambda t: (t[0] == 'remove_index' and t[1].name == 'permission_view_id'),
             # from test_security unit test
             lambda t: (t[0] == 'remove_table' and t[1].name == 'some_model'),
+            # MSSQL default tables
+            lambda t: (t[0] == 'remove_table' and t[1].name == 'spt_monitor'),
+            lambda t: (t[0] == 'remove_table' and t[1].name == 'spt_fallback_db'),
+            lambda t: (t[0] == 'remove_table' and t[1].name == 'spt_fallback_usg'),
+            lambda t: (t[0] == 'remove_table' and t[1].name == 'MSreplication_options'),
+            lambda t: (t[0] == 'remove_table' and t[1].name == 'spt_fallback_dev'),
         ]
         for ignore in ignores:
             diff = [d for d in diff if not ignore(d)]

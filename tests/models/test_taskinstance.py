@@ -2098,8 +2098,15 @@ class TestRunRawTaskQueriesCount(unittest.TestCase):
                 run_type=DagRunType.SCHEDULED,
                 session=session,
             )
+        # an extra query is fired in RenderedTaskInstanceFields.delete_old_records
+        # for other DBs. delete_old_records is called only when mark_success is False
+        expected_query_count_based_on_db = (
+            expected_query_count + 1
+            if session.bind.dialect.name == "mssql" and expected_query_count > 0 and not mark_success
+            else expected_query_count
+        )
 
-        with assert_queries_count(expected_query_count):
+        with assert_queries_count(expected_query_count_based_on_db):
             ti._run_raw_task(mark_success=mark_success)
 
     def test_execute_queries_count_store_serialized(self):
@@ -2116,8 +2123,11 @@ class TestRunRawTaskQueriesCount(unittest.TestCase):
                 run_type=DagRunType.SCHEDULED,
                 session=session,
             )
+        # an extra query is fired in RenderedTaskInstanceFields.delete_old_records
+        # for other DBs
+        expected_query_count_based_on_db = 13 if session.bind.dialect.name == "mssql" else 12
 
-        with assert_queries_count(12):
+        with assert_queries_count(expected_query_count_based_on_db):
             ti._run_raw_task()
 
     def test_operator_field_with_serialization(self):

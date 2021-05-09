@@ -44,7 +44,7 @@ def get_event_log(event_log_id, session):
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_AUDIT_LOG)])
 @format_parameters({'limit': check_limit})
 @provide_session
-def get_event_logs(session, limit, offset=None, order_by='event_log_id'):
+def get_event_logs(session, limit, offset=0, order_by='event_log_id'):
     """Get all log entries from event log"""
     to_replace = {"event_log_id": "id", "when": "dttm"}
     allowed_filter_attrs = [

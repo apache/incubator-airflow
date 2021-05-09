@@ -3067,6 +3067,9 @@ function breeze::read_saved_environment_variables() {
     MYSQL_VERSION="${MYSQL_VERSION:=$(parameters::read_from_file MYSQL_VERSION)}"
     MYSQL_VERSION=${MYSQL_VERSION:=${_breeze_default_mysql_version}}
 
+    MSSQL_VERSION="${MSSQL_VERSION:=$(parameters::read_from_file MSSQL_VERSION)}"
+    MSSQL_VERSION=${MSSQL_VERSION:=${_breeze_default_mssql_version}}
+
     # Here you read DockerHub user/account that you use
     # You can populate your own images in DockerHub this way and work with the,
     # You can override it with "--dockerhub-user" option and it will be stored in .build directory
@@ -3100,6 +3103,7 @@ function breeze::read_saved_environment_variables() {
 #     EXECUTOR
 #     POSTGRES_VERSION
 #     MYSQL_VERSION
+#     MSSQL_VERSION
 #     DOCKERHUB_USER
 #     DOCKERHUB_REPO
 #
@@ -3129,6 +3133,7 @@ function breeze::check_and_save_all_params() {
     parameters::check_and_save_allowed_param "EXECUTOR" "Executors" "--executor"
     parameters::check_and_save_allowed_param "POSTGRES_VERSION" "Postgres version" "--postgres-version"
     parameters::check_and_save_allowed_param "MYSQL_VERSION" "Mysql version" "--mysql-version"
+    parameters::check_and_save_allowed_param "MSSQL_VERSION" "MSSql version" "--mssql-version"
     parameters::check_and_save_allowed_param "GITHUB_REGISTRY" "GitHub Registry" "--github-registry"
 
     parameters::check_allowed_param TEST_TYPE "Type of tests" "--test-type"
@@ -3150,6 +3155,7 @@ function breeze::check_and_save_all_params() {
 #     WEBSERVER_HOST_PORT
 #     POSTGRES_HOST_PORT
 #     MYSQL_HOST_PORT
+#     MSSQL_HOST_PORT
 #
 #######################################################################################################
 function breeze::print_cheatsheet() {
@@ -3182,6 +3188,7 @@ function breeze::print_cheatsheet() {
         echo "     * ${FLOWER_HOST_PORT} -> forwarded to Flower dashboard -> airflow:5555"
         echo "     * ${POSTGRES_HOST_PORT} -> forwarded to Postgres database -> postgres:5432"
         echo "     * ${MYSQL_HOST_PORT} -> forwarded to MySQL database  -> mysql:3306"
+        echo "     * ${MSSQL_HOST_PORT} -> forwarded to MSSQL database  -> mssql:1443"
         echo "     * ${REDIS_HOST_PORT} -> forwarded to Redis broker -> redis:6379"
         echo
         echo "   Here are links to those services that you can use on host:"
