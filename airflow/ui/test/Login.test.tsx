@@ -23,9 +23,6 @@ import { render, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import nock from 'nock';
 import axios from 'axios';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 
 import Login from 'views/Login';
 import App from 'App';
@@ -33,13 +30,10 @@ import AuthProvider from 'providers/auth/AuthProvider';
 
 import { url, defaultHeaders, QueryWrapper } from './utils';
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
 axios.defaults.adapter = require('axios/lib/adapters/http');
 
 describe('test login component', () => {
   beforeAll(() => {
-    dayjs.tz.setDefault('UTC');
     nock(url)
       .defaultReplyHeaders(defaultHeaders)
       .persist()
