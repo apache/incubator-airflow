@@ -36,7 +36,7 @@ branch_labels = None
 depends_on = None
 
 
-def __use_date_time2(conn):
+def _use_date_time2(conn):
     result = conn.execute(
         """SELECT CASE WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
         like '8%' THEN '2000' WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
@@ -46,10 +46,10 @@ def __use_date_time2(conn):
     return mssql_version not in ("2000", "2005")
 
 
-def __get_timestamp(conn):
+def _get_timestamp(conn):
     dialect_name = conn.dialect.name
     if dialect_name == "mssql":
-        return mssql.DATETIME2(precision=6) if __use_date_time2(conn) else mssql.DATETIME
+        return mssql.DATETIME2(precision=6) if _use_date_time2(conn) else mssql.DATETIME
     elif dialect_name != "mysql":
         return sa.TIMESTAMP(timezone=True)
     else:
@@ -61,7 +61,7 @@ def upgrade():
     conn = op.get_bind()
     with op.batch_alter_table('xcom') as bop:
         bop.alter_column("key", type_=sa.String(length=512, **COLLATION_ARGS), nullable=False)
-        bop.alter_column("execution_date", type_=__get_timestamp(conn), nullable=False)
+        bop.alter_column("execution_date", type_=_get_timestamp(conn), nullable=False)
         if conn.dialect.name == 'mssql':
             bop.create_primary_key('pk_xcom', ['dag_id', 'task_id', 'key', 'execution_date'])
 
@@ -73,4 +73,4 @@ def downgrade():
         if conn.dialect.name == 'mssql':
             bop.drop_constraint('pk_xcom', 'primary')
         bop.alter_column("key", type_=sa.String(length=512, **COLLATION_ARGS), nullable=True)
-        bop.alter_column("execution_date", type_=__get_timestamp(conn), nullable=True)
+        bop.alter_column("execution_date", type_=_get_timestamp(conn), nullable=True)

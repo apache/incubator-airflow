@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""change ts/datetime columns to datetime/datetime2 on mssql
+"""improve mssql compatibility
 
 Revision ID: 83f031fd9f1c
 Revises: a13f7613ad25
@@ -105,7 +105,7 @@ def create_constraints(operator, column_name, constraint_dict):
                 operator.create_unique_constraint(constraint_name=constraint[0], columns=columns)
 
 
-def __use_date_time2(conn):
+def _use_date_time2(conn):
     result = conn.execute(
         """SELECT CASE WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
         like '8%' THEN '2000' WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
@@ -115,7 +115,7 @@ def __use_date_time2(conn):
     return mssql_version not in ("2000", "2005")
 
 
-def __is_timestamp(conn, table_name, column_name):
+def _is_timestamp(conn, table_name, column_name):
     query = f"""SELECT
     TYPE_NAME(C.USER_TYPE_ID) AS DATA_TYPE
     FROM SYS.COLUMNS C
@@ -132,12 +132,12 @@ def recreate_mssql_ts_column(conn, op, table_name, column_name):
     Drop the timestamp column and recreate it as
     datetime or datetime2(6)
     """
-    if __is_timestamp(conn, table_name, column_name) and is_table_empty(conn, table_name):
+    if _is_timestamp(conn, table_name, column_name) and is_table_empty(conn, table_name):
         with op.batch_alter_table(table_name) as batch_op:
             constraint_dict = get_table_constraints(conn, table_name)
             drop_column_constraints(batch_op, column_name, constraint_dict)
             batch_op.drop_column(column_name=column_name)
-            if __use_date_time2(conn):
+            if _use_date_time2(conn):
                 batch_op.add_column(sa.Column(column_name, mssql.DATETIME2(precision=6), nullable=False))
             else:
                 batch_op.add_column(sa.Column(column_name, mssql.DATETIME, nullable=False))
@@ -146,7 +146,7 @@ def recreate_mssql_ts_column(conn, op, table_name, column_name):
 
 def alter_mssql_datetime_column(conn, op, table_name, column_name, nullable):
     """Update the datetime column to datetime2(6)"""
-    if __use_date_time2(conn):
+    if _use_date_time2(conn):
         op.alter_column(
             table_name=table_name,
             column_name=column_name,
@@ -157,25 +157,106 @@ def alter_mssql_datetime_column(conn, op, table_name, column_name, nullable):
 
 def alter_mssql_datetime2_column(conn, op, table_name, column_name, nullable):
     """Update the datetime2(6) column to datetime"""
-    if __use_date_time2(conn):
+    if _use_date_time2(conn):
         op.alter_column(
             table_name=table_name, column_name=column_name, type_=mssql.DATETIME, nullable=nullable
         )
 
 
+def _get_timestamp(conn):
+    result = conn.execute(
+        """SELECT CASE WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
+        like '8%' THEN '2000' WHEN CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion'))
+        like '9%' THEN '2005' ELSE '2005Plus' END AS MajorVersion"""
+    ).fetchone()
+    mssql_version = result[0]
+    if mssql_version not in ("2000", "2005"):
+        return mssql.DATETIME2(precision=6)
+    else:
+        return mssql.DATETIME
+
+
 def upgrade():
-    """Change timestamp and datetime to datetime2/datetime when using MSSQL as backend"""
+    """Improve compatibility with MSSQL  backend"""
     conn = op.get_bind()
     if conn.dialect.name != 'mssql':
         return
     recreate_mssql_ts_column(conn, op, 'dag_code', 'last_updated')
     recreate_mssql_ts_column(conn, op, 'rendered_task_instance_fields', 'execution_date')
     alter_mssql_datetime_column(conn, op, 'serialized_dag', 'last_updated', False)
+    op.alter_column(table_name="xcom", column_name="timestamp", type_=_get_timestamp(conn), nullable=False)
+    with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
+        task_reschedule_batch_op.alter_column(
+            column_name='end_date', type_=_get_timestamp(conn), nullable=False
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='reschedule_date', type_=_get_timestamp(conn), nullable=False
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='start_date', type_=_get_timestamp(conn), nullable=False
+        )
+    with op.batch_alter_table('task_fail') as task_fail_batch_op:
+        task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
+        task_fail_batch_op.alter_column(
+            column_name="execution_date", type_=_get_timestamp(conn), nullable=False
+        )
+        task_fail_batch_op.create_index(
+            'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )
+    with op.batch_alter_table('task_instance') as task_instance_batch_op:
+        task_instance_batch_op.drop_index('ti_state_lkp')
+        task_instance_batch_op.create_index(
+            'ti_state_lkp', ['dag_id', 'task_id', 'execution_date', 'state'], unique=False
+        )
+    constraint_dict = get_table_constraints(conn, 'dag_run')
+    for constraint, columns in constraint_dict.items():
+        if 'dag_id' in columns:
+            if constraint[1].lower().startswith("unique"):
+                op.drop_constraint(constraint[0], 'dag_run', type_='unique')
+    # create filtered indexes
+    conn.execute(
+        """CREATE UNIQUE NONCLUSTERED INDEX idx_not_null_dag_id_execution_date
+                ON dag_run(dag_id,execution_date)
+                WHERE dag_id IS NOT NULL and execution_date is not null"""
+    )
+    conn.execute(
+        """CREATE UNIQUE NONCLUSTERED INDEX idx_not_null_dag_id_run_id
+                 ON dag_run(dag_id,run_id)
+                 WHERE dag_id IS NOT NULL and run_id is not null"""
+    )
 
 
 def downgrade():
-    """Change datetime2(6) columns back to datetime when using MSSQL as backend"""
+    """Reverse  MSSQL backend compatibility improvements"""
     conn = op.get_bind()
     if conn.dialect.name != 'mssql':
         return
     alter_mssql_datetime2_column(conn, op, 'serialized_dag', 'last_updated', False)
+    op.alter_column(table_name="xcom", column_name="timestamp", type_=_get_timestamp(conn), nullable=True)
+    with op.batch_alter_table('task_reschedule') as task_reschedule_batch_op:
+        task_reschedule_batch_op.alter_column(
+            column_name='end_date', type_=_get_timestamp(conn), nullable=True
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='reschedule_date', type_=_get_timestamp(conn), nullable=True
+        )
+        task_reschedule_batch_op.alter_column(
+            column_name='start_date', type_=_get_timestamp(conn), nullable=True
+        )
+    with op.batch_alter_table('task_fail') as task_fail_batch_op:
+        task_fail_batch_op.drop_index('idx_task_fail_dag_task_date')
+        task_fail_batch_op.alter_column(
+            column_name="execution_date", type_=_get_timestamp(conn), nullable=False
+        )
+        task_fail_batch_op.create_index(
+            'idx_task_fail_dag_task_date', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )
+    with op.batch_alter_table('task_instance') as task_instance_batch_op:
+        task_instance_batch_op.drop_index('ti_state_lkp')
+        task_instance_batch_op.create_index(
+            'ti_state_lkp', ['dag_id', 'task_id', 'execution_date'], unique=False
+        )
+    op.create_unique_constraint('UQ__dag_run__dag_id_run_id', 'dag_run', ['dag_id', 'run_id'])
+    op.create_unique_constraint('UQ__dag_run__dag_id_execution_date', 'dag_run', ['dag_id', 'execution_date'])
+    op.drop_index('idx_not_null_dag_id_execution_date', table_name='dag_run')
+    op.drop_index('idx_not_null_dag_id_run_id', table_name='dag_run')
