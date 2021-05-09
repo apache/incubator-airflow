@@ -47,12 +47,16 @@ class StandardTaskRunner(BaseTaskRunner):
         return psutil.Process(subprocess.pid)
 
     def _start_by_fork(self):  # pylint: disable=inconsistent-return-statements
+        rpipe, wpipe = os.pipe()
         pid = os.fork()
         if pid:
             self.log.info("Started process %d to run task", pid)
+            os.close(wpipe)
+            self.read_task_logs(os.fdopen(rpipe))
             return psutil.Process(pid)
         else:
             import signal
+            import sys
 
             from airflow import settings
             from airflow.cli.cli_parser import get_parser
@@ -82,6 +86,11 @@ class StandardTaskRunner(BaseTaskRunner):
             setproctitle(proc_title.format(args))
 
             try:
+                os.close(rpipe)
+                # replace fds for the stdout/stderr with the newly created pipe
+                os.dup2(wpipe, 1)
+                os.dup2(wpipe, 2)
+                os.close(wpipe)
                 args.func(args, dag=self.dag)
                 return_code = 0
             except Exception:  # pylint: disable=broad-except
@@ -89,6 +98,8 @@ class StandardTaskRunner(BaseTaskRunner):
             finally:
                 # Explicitly flush any pending exception to Sentry if enabled
                 Sentry.flush()
+                sys.stdout.flush()
+                sys.stderr.flush()
                 logging.shutdown()
                 os._exit(return_code)  # pylint: disable=protected-access
 
