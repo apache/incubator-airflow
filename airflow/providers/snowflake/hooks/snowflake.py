@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import serialization
 
 # pylint: disable=no-name-in-module
 from snowflake import connector
-from snowflake.connector import SnowflakeConnection
+from snowflake.connector import DictCursor, SnowflakeConnection
 
 from airflow.hooks.dbapi import DbApiHook
 
@@ -252,7 +252,10 @@ class SnowflakeHook(DbApiHook):
         """
         Runs a command or a list of commands. Pass a list of sql
         statements to the sql parameter to get them to execute
-        sequentially
+        sequentially. The variable info_rows is returned so that
+        it can be used in the Operators to modify the behavior
+        depending on the result of the query (i.e fail the operator
+        if the copy has processed 0 files)
 
         :param sql: the sql string to be executed with possibly multiple statements,
           or a list of sql statements to execute
@@ -270,17 +273,25 @@ class SnowflakeHook(DbApiHook):
             self.set_autocommit(conn, autocommit)
 
             if isinstance(sql, str):
-                cursors = conn.execute_string(sql, return_cursors=True)
+                cursors = conn.execute_string(sql, return_cursors=True, cursor_class=DictCursor)
                 for cur in cursors:
                     self.query_ids.append(cur.sfqid)
 
+                    info_rows = []
+                    for row in cur:
+                        self.log.info("Statement execution info - %s", row)
+                        info_rows.append(row)
+
                     self.log.info("Rows affected: %s", cur.rowcount)
                     self.log.info("Snowflake query id: %s", cur.sfqid)
+
                     cur.close()
+
+                return info_rows
 
             elif isinstance(sql, list):
                 self.log.debug("Executing %d statements against Snowflake DB", len(sql))
-                with closing(conn.cursor()) as cur:
+                with closing(conn.cursor(DictCursor)) as cur:
                     for sql_statement in sql:
 
                         self.log.info("Running statement: %s, parameters: %s", sql_statement, parameters)
@@ -288,9 +299,17 @@ class SnowflakeHook(DbApiHook):
                             cur.execute(sql_statement, parameters)
                         else:
                             cur.execute(sql_statement)
+
+                        info_rows = []
+                        for row in cur:
+                            self.log.info("Statement execution info - %s", row)
+                            info_rows.append(row)
+
                         self.log.info("Rows affected: %s", cur.rowcount)
                         self.log.info("Snowflake query id: %s", cur.sfqid)
                         self.query_ids.append(cur.sfqid)
+
+                return info_rows
 
             # If autocommit was set to False for db that supports autocommit,
             # or if db does not supports autocommit, we do a manual commit.
